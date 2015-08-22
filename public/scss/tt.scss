@@ -1,0 +1,10 @@
+
+$color: #888;
+
+html, body {
+	background-color: $color;
+}
+
+li[ng-click] {
+	cursor: pointer;
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="tt">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Turn Tracker</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/tt.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body ng-controller="testCtrl as test">
+    
+    <script src="js/angular.min.js"></script>
+    <div class="container">
+        <h3>Test</h3>
+        <div class="row">
+            <div class="col-xs-1" ng-cloak>
+            	<button id="testButton" class="btn btn-default" ng-click="test.getList()">GO</button><br>
+                {{listError}}<br>
+                {{statusError}}<br>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3 col-xs-12">
+                <ul class="list-group" ng-cloak>
+                    <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-click="test.takeTurn(user.id)">{{user.name}}<span class="badge">{{user.diff}}</span></li>
+                </ul>
+            </div>
+            <div class="col-sm-9 col-xs-12">
+                <table class="table table-condensed table-hover">
+                    <tbody ng-cloak>
+                        <tr ng-repeat="item in test.list">
+                            <td>{{item.date}}</td>
+                            <td>{{item.name}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="js/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/tt.js"></script>
+  </body>
+</html>

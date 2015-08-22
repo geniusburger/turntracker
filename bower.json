@@ -1,0 +1,19 @@
+{
+  "name": "turntracker",
+  "version": "0.0.0",
+  "authors": [
+    "geniusburger <jdst8-git@yahoo.com>"
+  ],
+  "license": "Apache License 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.4.4",
+    "bootstrap": "~3.3.5"
+  }
+}

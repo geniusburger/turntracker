@@ -1,0 +1,69 @@
+var gulp = require('gulp');
+var uglify = require('gulp-uglify');
+var sass = require('gulp-sass');
+var gulpif = require('gulp-if');
+var gls = require('gulp-live-server');
+
+var merge = require('merge-stream');
+var minimist = require('minimist');
+
+var options = minimist(process.argv.slice(2), {
+  boolean: 'release',
+  default: { release: false }
+});
+options.debug = !options.release;
+
+var src = {
+	css: 'public/scss/**/*.{scss,sass}',
+	js: 'public/js/**/*.js',
+	html: 'public/**/*.html'
+}
+
+gulp.task('html', function() {
+	return gulp.src(src.html).pipe(gulp.dest('build'));
+});
+
+gulp.task('libs', function() {
+	return merge(
+		gulp.src('bower_components/jquery/dist/*').pipe(gulp.dest('build/js')),
+		gulp.src('bower_components/bootstrap/dist/**/{css/*,fonts/*,js/bootstrap*}').pipe(gulp.dest('build')),
+		gulp.src('bower_components/angular/angular*.{js,map}').pipe(gulp.dest('build/js'))
+	);	
+});
+
+gulp.task('css', function() {
+	return gulp.src(src.css)
+		.pipe(sass())
+		.pipe(gulp.dest('build/css'));
+});
+
+gulp.task('js', function() {
+	return gulp.src(src.js)
+		.pipe(gulpif(options.release, uglify()))
+		.pipe(gulp.dest('build/js'));
+});
+
+gulp.task('serve', ['default'], function() {
+	var server = gls.new(['app/server.js', '--live']);
+	var promise = server.start();
+    // handle the server process exiting
+    promise.then(function(result) {
+       server.start.bind(server);
+    });
+
+	//use gulp.watch to trigger server actions(notify, start or stop)
+	gulp.watch(src.html, ['html']);
+	gulp.watch(src.css, ['css']);
+	gulp.watch(src.js, ['js']);
+	gulp.watch(['build/**/*'], function (file) {
+		server.notify.apply(server, [file]);
+	});
+	gulp.watch('app/server.js', function() {
+		console.log('restarting server');
+	    server.start.apply(server); //restart my server
+	});
+});
+
+gulp.task('default', ['libs', 'html', 'css', 'js'], function() {
+
+});
