@@ -8,3 +8,25 @@ html, body {
 li[ng-click] {
 	cursor: pointer;
 }
+
+.control-column {
+	h3 {
+		text-align: center;
+	}
+	.btn-group {
+		left: 50%;
+		right: auto;
+		text-align: center;
+		transform: translate(-50%, 0);
+		margin-bottom: 10px;
+		z-index: 5;
+	}
+}
+
+.list-column {
+	padding-top: 10px;
+}
+
+.highlight {
+	font-weight: bold;
+}

@@ -10,6 +10,8 @@
 	    self.statusError = null;
 	    self.turnError = null;
 	    self.worst = 0;
+	    self.myId = 0;
+	    self.hoverId = 0;
 
 	    self.getList = function() {
 	    	$http.get('/api/list', {params:{id:1}}).success(function(data) {
@@ -26,6 +28,9 @@
 	    		} else {
 	    			self.listError = 'Unknown list error';
 	    			self.list = [];
+	    		}
+	    		if(data.user) {
+	    			self.myId = data.user;
 	    		}
 	    	});
 	    };

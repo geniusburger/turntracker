@@ -22,17 +22,29 @@
     
     <script src="js/angular.min.js"></script>
     <div class="container">
-        <h3>Turn Tracker</h3>
         <div class="row">
-            <div class="col-lg-3 col-md-4 col-sm-5 col-xs-12">
+            <div class="control-column col-lg-3 col-md-4 col-sm-5 col-xs-12">
+                <h3>Turn Tracker</h3>
+                <div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" ng-click="test.takeTurn(test.myId)">Take Turn</button>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="caret"></span>
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" ng-cloak>
+                            <li ng-repeat="user in test.users" ng-class="test.myId == user.id ? 'active' : ''" ng-click="test.myId = user.id"><a href="#">{{user.name}}</a></li>
+                        </ul>
+                    </div>
+                </div>
                 <ul class="list-group" ng-cloak>
-                    <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-click="test.takeTurn(user.id)">{{user.name}}<span class="badge">{{user.diff}}</span></li>
+                    <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-mouseenter="test.hoverId = user.id" ng-mouseleave="test.hoverId = 0">{{user.name}}<span class="badge">{{user.diff}}</span></li>
                 </ul>
             </div>
-            <div class="col-lg-9 col-md-8 col-sm-7 col-xs-12">
+            <div class="list-column col-lg-9 col-md-8 col-sm-7 col-xs-12">
                 <table class="table table-condensed table-hover">
                     <tbody ng-cloak>
-                        <tr ng-repeat="item in test.list">
+                        <tr ng-repeat="item in test.list" ng-class="test.hoverId == item.id ? 'highlight' : ''">
                             <td>{{item.date}}</td>
                             <td>{{item.name}}</td>
                         </tr>
