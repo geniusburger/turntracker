@@ -22,21 +22,14 @@
     
     <script src="js/angular.min.js"></script>
     <div class="container">
-        <h3>Test</h3>
+        <h3>Turn Tracker</h3>
         <div class="row">
-            <div class="col-xs-1" ng-cloak>
-            	<button id="testButton" class="btn btn-default" ng-click="test.getList()">GO</button><br>
-                {{listError}}<br>
-                {{statusError}}<br>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-3 col-xs-12">
+            <div class="col-lg-3 col-md-4 col-sm-5 col-xs-12">
                 <ul class="list-group" ng-cloak>
                     <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-click="test.takeTurn(user.id)">{{user.name}}<span class="badge">{{user.diff}}</span></li>
                 </ul>
             </div>
-            <div class="col-sm-9 col-xs-12">
+            <div class="col-lg-9 col-md-8 col-sm-7 col-xs-12">
                 <table class="table table-condensed table-hover">
                     <tbody ng-cloak>
                         <tr ng-repeat="item in test.list">

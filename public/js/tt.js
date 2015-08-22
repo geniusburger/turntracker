@@ -75,7 +75,6 @@
 	    		} else {
 	    			self.turnError = null;
 	    			self.getList();
-	    			self.getStatus();
 	    		}
 	    	});
 	    };
