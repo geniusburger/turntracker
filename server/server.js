@@ -66,7 +66,7 @@ app.get('/api/status', function(req,res) {
     });
 });
 
-app.put('/api/turn', function(req,res) {
+app.post('/api/turn', function(req,res) {
     res.setHeader('Content-Type', 'application/json');
     db.query(
     	'INSERT INTO turns SET ?', req.body, function(err, rows, fields) {

@@ -69,7 +69,7 @@
 	    };
 
 	    self.takeTurn = function(userId) {
-	    	$http.put('/api/turn', {user_id: userId, task_id: 1}).success(function(data){
+	    	$http.post('/api/turn', {user_id: userId, task_id: 1}).success(function(data){
 	    		if(data.error) {
 	    			self.turnError = data.error;
 	    		} else {
