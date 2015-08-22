@@ -34,14 +34,14 @@ app.use(express.static('build'));
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 //app.use(bodyParser.urlencoded({ extended: true }));	// to support URL-encoded bodies
 
-app.put('/api/list', function(req,res) {
+app.get('/api/list', function(req,res) {
     res.setHeader('Content-Type', 'application/json');
     db.query(
     	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
     	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
-		'WHERE tasks.id = ? ORDER BY turns.inserted DESC', req.body.id, function(err, rows, fields) {
+		'WHERE tasks.id = ? ORDER BY turns.inserted DESC', req.query.id, function(err, rows, fields) {
 		if (err) {
-			console.log('Error while performing list query');
+			console.log('Error while performing list query', err, req.query);
 			res.send({error: 'Query Error'});
 		} else {
 			res.send({list: rows});
@@ -49,16 +49,16 @@ app.put('/api/list', function(req,res) {
 	});
 });
 
-app.put('/api/status', function(req,res) {
+app.get('/api/status', function(req,res) {
     res.setHeader('Content-Type', 'application/json');
     db.query(
     	'SELECT users.id AS id, users.displayname AS name, COUNT(turns.user_id) AS turns ' +
 		'FROM turns ' +
 		'RIGHT JOIN participants ON participants.task_id = turns.task_id and participants.user_id = turns.user_id ' +
 		'INNER JOIN users ON participants.user_id = users.id ' +
-		'WHERE participants.task_id = ? GROUP BY turns.user_id', req.body.id, function(err, rows, fields) {
+		'WHERE participants.task_id = ? GROUP BY turns.user_id', req.query.id, function(err, rows, fields) {
 		if (err) {
-			console.log('Error while performing status query');
+			console.log('Error while performing status query', err);
 			res.send({error: 'Query Error'});
 		} else {
 			res.send({ users: rows });
@@ -71,7 +71,7 @@ app.put('/api/turn', function(req,res) {
     db.query(
     	'INSERT INTO turns SET ?', req.body, function(err, rows, fields) {
 		if (err) {
-			console.log('Error while performing turn query');
+			console.log('Error while performing turn query', err);
 			res.send({error: 'Query Error'});
 		} else {
 			res.send({error: false});

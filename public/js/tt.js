@@ -12,7 +12,7 @@
 	    self.worst = 0;
 
 	    self.getList = function() {
-	    	$http.put('/api/list', {id:1}).success(function(data) {
+	    	$http.get('/api/list', {params:{id:1}}).success(function(data) {
 	    		if(data.error) {
 	    			self.listError = data.listError;
 	    			self.list = [];
@@ -31,7 +31,7 @@
 	    };
 
 	    self.getStatus = function() {
-	    	$http.put('/api/status', {id:1}).success(function(data) {
+	    	$http.get('/api/status', {params:{id:1}}).success(function(data) {
 	    		if(data.error) {
 		    		self.statusError = data.error;
 		    		self.users = [];
