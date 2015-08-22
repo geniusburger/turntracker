@@ -44,7 +44,7 @@ gulp.task('js', function() {
 });
 
 gulp.task('serve', ['default'], function() {
-	var server = gls.new(['app/server.js', '--live']);
+	var server = gls.new(['server/server.js', '--live']);
 	var promise = server.start();
     // handle the server process exiting
     promise.then(function(result) {
@@ -58,7 +58,7 @@ gulp.task('serve', ['default'], function() {
 	gulp.watch(['build/**/*'], function (file) {
 		server.notify.apply(server, [file]);
 	});
-	gulp.watch('app/server.js', function() {
+	gulp.watch('server/server.js', function() {
 		console.log('restarting server');
 	    server.start.apply(server); //restart my server
 	});
