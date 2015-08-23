@@ -32,6 +32,7 @@
                             <span class="caret"></span>
                             <span class="sr-only">Toggle Dropdown</span>
                         </button>
+                        <span class="my-name" ng-cloak>{{test.userMap[test.myId]}}</span>
                         <ul class="dropdown-menu" ng-cloak>
                             <li ng-repeat="user in test.users" ng-class="test.myId == user.id ? 'active' : ''" ng-click="test.myId = user.id"><a href="#">{{user.name}}</a></li>
                         </ul>

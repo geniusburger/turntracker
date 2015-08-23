@@ -6,6 +6,7 @@
 		var self = this
 	    self.list = [];
 	    self.users = [];
+	    self.userMap = {};
 	    self.listError = null;
 	    self.statusError = null;
 	    self.turnError = null;
@@ -44,8 +45,10 @@
 		    		var max = data.users.reduce(function(max, user){ 
 		    			return Math.max(max, user.turns);
 		    		}, 0);
+		    		self.userMap = {};
 		    		data.users.forEach(function(user){
 		    			user.diff = max - user.turns;
+		    			self.userMap[user.id] = user.name;
 		    		});
 
 		    		 // descending by number of diff turns, tie-breaker is ascending most recent turn

@@ -74,8 +74,13 @@ var getUserId = function(ip, callback) {
 			console.error('Error while getting address', err);
 			callback();
 		} else {
-			console.log('Got user %d from address %s', rows[0].user_id, ip);
-			callback(rows[0].user_id);
+			if(rows[0]) {
+				console.log('Got user %d from address %s', rows[0].user_id, ip);
+				callback(rows[0].user_id);
+			} else {
+				console.warn("Didn't find user for address %s", ip);
+				callback();
+			}
 		}
 	});
 };
