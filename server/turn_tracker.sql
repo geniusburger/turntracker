@@ -3,13 +3,11 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 17, 2015 at 11:58 AM
+-- Generation Time: Aug 27, 2015 at 07:22 AM
 -- Server version: 5.6.25
 -- PHP Version: 5.6.11
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
-START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -21,6 +19,30 @@ SET time_zone = "+00:00";
 --
 -- Database: `turn_tracker`
 --
+CREATE DATABASE IF NOT EXISTS `turn_tracker` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+USE `turn_tracker`;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `addresses`
+--
+
+CREATE TABLE IF NOT EXISTS `addresses` (
+  `user_id` int(10) unsigned NOT NULL,
+  `ip` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `inserted` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `addresses`
+--
+
+INSERT INTO `addresses` (`user_id`, `ip`, `modified`, `inserted`) VALUES
+(1, '::1', '2015-08-22 13:43:10', '2015-08-22 12:48:28'),
+(1, '::ffff:192.168.2.11', '2015-08-23 04:36:54', '2015-08-23 04:36:54'),
+(3, '::ffff:192.168.2.3', '2015-08-23 04:14:51', '2015-08-23 04:14:38');
 
 -- --------------------------------------------------------
 
@@ -34,14 +56,6 @@ CREATE TABLE IF NOT EXISTS `participants` (
   `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `inserted` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- RELATIONS FOR TABLE `participants`:
---   `task_id`
---       `tasks` -> `id`
---   `user_id`
---       `users` -> `id`
---
 
 --
 -- Dumping data for table `participants`
@@ -68,12 +82,6 @@ CREATE TABLE IF NOT EXISTS `tasks` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- RELATIONS FOR TABLE `tasks`:
---   `creator_user_id`
---       `users` -> `id`
---
-
---
 -- Dumping data for table `tasks`
 --
 
@@ -92,15 +100,7 @@ CREATE TABLE IF NOT EXISTS `turns` (
   `task_id` int(10) unsigned NOT NULL,
   `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `inserted` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- RELATIONS FOR TABLE `turns`:
---   `user_id`
---       `users` -> `id`
---   `task_id`
---       `tasks` -> `id`
---
+) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Dumping data for table `turns`
@@ -157,7 +157,53 @@ INSERT INTO `turns` (`id`, `user_id`, `task_id`, `modified`, `inserted`) VALUES
 (48, 2, 1, '2015-08-17 09:52:52', '2015-08-17 09:52:52'),
 (49, 2, 1, '2015-08-17 09:52:58', '2015-08-17 09:52:58'),
 (50, 3, 1, '2015-08-17 09:52:59', '2015-08-17 09:52:59'),
-(51, 2, 1, '2015-08-17 09:52:59', '2015-08-17 09:52:59');
+(51, 2, 1, '2015-08-17 09:52:59', '2015-08-17 09:52:59'),
+(52, 3, 1, '2015-08-18 07:26:48', '2015-08-18 07:26:48'),
+(53, 1, 1, '2015-08-18 08:23:22', '2015-08-18 08:23:22'),
+(54, 1, 1, '2015-08-18 08:23:23', '2015-08-18 08:23:23'),
+(55, 1, 1, '2015-08-18 08:23:24', '2015-08-18 08:23:24'),
+(56, 2, 1, '2015-08-18 08:23:27', '2015-08-18 08:23:27'),
+(57, 1, 1, '2015-08-18 08:23:28', '2015-08-18 08:23:28'),
+(58, 3, 1, '2015-08-18 08:29:29', '2015-08-18 08:29:29'),
+(59, 2, 1, '2015-08-18 08:29:30', '2015-08-18 08:29:30'),
+(60, 1, 1, '2015-08-18 08:29:32', '2015-08-18 08:29:32'),
+(61, 3, 1, '2015-08-21 06:19:00', '2015-08-21 06:19:00'),
+(62, 3, 1, '2015-08-21 06:19:02', '2015-08-21 06:19:02'),
+(63, 1, 1, '2015-08-21 06:19:05', '2015-08-21 06:19:05'),
+(64, 2, 1, '2015-08-21 06:19:08', '2015-08-21 06:19:08'),
+(65, 1, 1, '2015-08-21 06:19:10', '2015-08-21 06:19:10'),
+(66, 2, 1, '2015-08-21 06:19:11', '2015-08-21 06:19:11'),
+(67, 1, 1, '2015-08-22 08:20:03', '2015-08-22 08:20:03'),
+(68, 3, 1, '2015-08-22 08:44:43', '2015-08-22 08:44:43'),
+(69, 2, 1, '2015-08-22 08:45:03', '2015-08-22 08:45:03'),
+(70, 1, 1, '2015-08-22 08:45:59', '2015-08-22 08:45:59'),
+(71, 2, 1, '2015-08-22 08:59:06', '2015-08-22 08:59:06'),
+(72, 3, 1, '2015-08-22 09:01:09', '2015-08-22 09:01:09'),
+(73, 1, 1, '2015-08-22 11:28:57', '2015-08-22 11:28:57'),
+(74, 1, 1, '2015-08-22 12:36:47', '2015-08-22 12:36:47'),
+(75, 1, 1, '2015-08-22 12:37:58', '2015-08-22 12:37:58'),
+(76, 3, 1, '2015-08-22 12:39:29', '2015-08-22 12:39:29'),
+(77, 2, 1, '2015-08-22 12:45:18', '2015-08-22 12:45:18'),
+(78, 3, 1, '2015-08-22 12:46:02', '2015-08-22 12:46:02'),
+(79, 2, 1, '2015-08-22 12:46:25', '2015-08-22 12:46:25'),
+(80, 3, 1, '2015-08-22 12:46:48', '2015-08-22 12:46:48'),
+(81, 1, 1, '2015-08-22 12:48:02', '2015-08-22 12:48:02'),
+(82, 1, 1, '2015-08-22 12:48:28', '2015-08-22 12:48:28'),
+(83, 2, 1, '2015-08-22 12:48:49', '2015-08-22 12:48:49'),
+(84, 2, 1, '2015-08-22 12:51:16', '2015-08-22 12:51:16'),
+(85, 2, 1, '2015-08-22 13:07:54', '2015-08-22 13:07:54'),
+(86, 2, 1, '2015-08-22 13:10:45', '2015-08-22 13:10:45'),
+(87, 3, 1, '2015-08-22 13:11:07', '2015-08-22 13:11:07'),
+(88, 3, 1, '2015-08-22 13:11:09', '2015-08-22 13:11:09'),
+(89, 3, 1, '2015-08-22 13:32:53', '2015-08-22 13:32:53'),
+(90, 3, 1, '2015-08-22 13:33:00', '2015-08-22 13:33:00'),
+(91, 1, 1, '2015-08-22 13:33:39', '2015-08-22 13:33:39'),
+(92, 2, 1, '2015-08-22 13:43:05', '2015-08-22 13:43:05'),
+(93, 1, 1, '2015-08-22 13:43:10', '2015-08-22 13:43:10'),
+(94, 1, 1, '2015-08-23 04:14:38', '2015-08-23 04:14:38'),
+(95, 1, 1, '2015-08-23 04:14:47', '2015-08-23 04:14:47'),
+(96, 3, 1, '2015-08-23 04:14:51', '2015-08-23 04:14:51'),
+(97, 1, 1, '2015-08-23 04:36:54', '2015-08-23 04:36:54');
 
 -- --------------------------------------------------------
 
@@ -175,10 +221,6 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- RELATIONS FOR TABLE `users`:
---
-
---
 -- Dumping data for table `users`
 --
 
@@ -191,6 +233,13 @@ INSERT INTO `users` (`id`, `username`, `displayname`, `picture`, `modified`, `in
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `addresses`
+--
+ALTER TABLE `addresses`
+  ADD PRIMARY KEY (`ip`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `participants`
@@ -235,7 +284,7 @@ ALTER TABLE `tasks`
 -- AUTO_INCREMENT for table `turns`
 --
 ALTER TABLE `turns`
-  MODIFY `id` int(10) unsigned NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=52;
+  MODIFY `id` int(10) unsigned NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=98;
 --
 -- AUTO_INCREMENT for table `users`
 --
@@ -244,6 +293,12 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `addresses`
+--
+ALTER TABLE `addresses`
+  ADD CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `participants`
@@ -264,7 +319,6 @@ ALTER TABLE `tasks`
 ALTER TABLE `turns`
   ADD CONSTRAINT `turns_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `turns_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`);
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
