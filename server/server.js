@@ -35,108 +35,143 @@ app.use(express.static('build'));
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 //app.use(bodyParser.urlencoded({ extended: true }));	// to support URL-encoded bodies
 
-var getList = function(id, callback) {
-	db.query(
-    	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
-    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
-		'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
-		id, callback );
-};
+var getList = function(task) {
+	return new Promise(function(resolve, reject){
+		db.query(
+	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
+	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
+			'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
+			task, function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+}
 
 var getStatus = function(id, callback) {
-	db.query(
-    	'SELECT users.id AS id, users.displayname AS name, COUNT(turns.user_id) AS turns ' +
-		'FROM turns ' +
-		'RIGHT JOIN participants ON participants.task_id = turns.task_id and participants.user_id = turns.user_id ' +
-		'INNER JOIN users ON participants.user_id = users.id ' +
-		'WHERE participants.task_id = ? GROUP BY turns.user_id',
-		id, callback );
+	return new Promise(function(resolve, reject){
+		db.query(
+	    	'SELECT users.id AS id, users.displayname AS name, COUNT(turns.user_id) AS turns ' +
+			'FROM turns ' +
+			'RIGHT JOIN participants ON participants.task_id = turns.task_id and participants.user_id = turns.user_id ' +
+			'INNER JOIN users ON participants.user_id = users.id ' +
+			'WHERE participants.task_id = ? GROUP BY turns.user_id',
+			id, function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
 };
 
 var saveAddress = function(user, ip, callback) {
-    db.query( 'INSERT INTO addresses SET ? ON DUPLICATE KEY UPDATE user_id = ?', [{user_id: user, ip: ip}, user], function(err, rows, fields) {
-		if (err) {
-			if(err.code === 'ER_DUP_ENTRY') {
-				console.log('Already saved user %d address %s', user, ip);
+	return new Promise(function(resolve, reject){
+	    db.query( 'INSERT INTO addresses SET ? ON DUPLICATE KEY UPDATE user_id = ?',
+	    	[{user_id: user, ip: ip}, user], function(err, rows, fields) {
+			if (err) {
+				if(err.code === 'ER_DUP_ENTRY') {
+					console.log('Already saved user %d address %s', user, ip);
+					resolve(user);
+				} else {
+					console.error('Error while performing addresses query', err);
+					reject(err);
+				}
 			} else {
-				console.error('Error while performing addresses query', err);
+				console.log('Saved user %d address %s', user, ip);
+				resolve(user);
 			}
-		} else {
-			console.log('Saved user %d address %s', user, ip);
-		}
-		callback();
-    });
+		})
+	});
 };
 
 var getUserId = function(ip, callback) {
-	db.query('SELECT user_id FROM addresses WHERE ip = ?', ip, function(err, rows, fields) {
-		if(err) {
-			console.error('Error while getting address', err);
-			callback();
-		} else {
-			if(rows[0]) {
-				console.log('Got user %d from address %s', rows[0].user_id, ip);
-				callback(rows[0].user_id);
+	return new Promise(function(resolve, reject){
+		db.query('SELECT user_id FROM addresses WHERE ip = ?', ip, function(err, rows, fields) {
+			if(err) {
+				console.error('Error while getting address', err);
+				reject(err);
 			} else {
-				console.warn("Didn't find user for address %s", ip);
-				callback();
+				if(rows[0]) {
+					console.log('Got user %d from address %s', rows[0].user_id, ip);
+					resolve(rows[0].user_id);
+				} else {
+					console.warn("Didn't find user for address %s", ip);
+					reject();
+				}
 			}
-		}
+		});
+	});
+};
+
+var takeTurn = function(task, user, res) {
+	return new Promise(function(resolve, reject){
+	    db.query( 'INSERT INTO turns SET ?', {user_id: user, task_id: task}, function(err, rows, fields) {
+			if (err) {
+				console.error('Error while performing turn query', err);
+				reject(err);
+			} else {
+				resolve();
+			}
+	    });
 	});
 };
 
 app.get('/api/list', function(req,res) {
-    res.setHeader('Content-Type', 'application/json');
-    getUserId(req.ip, function(user) {
-	    getList(req.query.id, function(err, rows, fields) {
-			if (err) {
-				console.error('Error while performing list query', err, req.query);
-				res.send({user: user, error: 'Query Error'});
-			} else {
-				res.send({user: user, list: rows});
-			}
-		});
+	var userPromise = getUserId(req.ip);
+	var listPromise = userPromise.then(function(){
+		return getList(req.query.id);
+	});
+
+	Promise.all([userPromise, listPromise]).then(function(results){
+		res.json({user: results[0], list: results[1]});
+	}).catch(function(err) {
+		console.error('list error', err);
+		res.json({user: null, error: 'query error'});
 	});
 });
 
 app.get('/api/status', function(req,res) {
-    res.setHeader('Content-Type', 'application/json');
-    getStatus( req.query.id, function(err, rows, fields) {
-		if (err) {
-			console.error('Error while performing status query', err);
-			res.send({error: 'Query Error'});
-		} else {
-			res.send({ users: rows });
-		}
-    });
+	getStatus(req.query.id).then(function(rows){
+		res.json({users: rows});
+	}).catch(function(err){
+		console.error('Error while performing status query', err);
+		res.json({error: 'Query Error'});
+	});
 });
 
-var takeTurn = function(task, user, res) {
-    db.query( 'INSERT INTO turns SET ?', {user_id: user, task_id: task}, function(err, rows, fields) {
-		if (err) {
-			console.error('Error while performing turn query', err);
-			res.send({error: 'Query Error'});
-		} else {
-			res.send({error: false});
-		}
-    });
-};
+app.get('/api/list-status', function(req,res) {
+	var userPromise = getUserId(req.ip);
+	var listPromise = userPromise.then(function(){
+		return getList(req.query.id);
+	});
+	Promise.all([userPromise, listPromise, getStatus(req.query.id)]).then(function(results){
+		res.json({user: results[0], list: results[1], users: results[2]});
+	}).catch(function(err){
+		console.error('list-status error', err);
+		res.json({error: 'query error'});
+	});
+});
 
 app.post('/api/turn', function(req,res) {
-    res.setHeader('Content-Type', 'application/json');
-    if(!req.body.user_id) {
-    	getUserId(req.ip, function(user) {
-    		if(user) {
-    			takeTurn(req.body.task_id, user, res);
-    		} else {
-    			res.send({error: 'No User ID'});
-    		}
-    	});
-    } else {
-    	saveAddress(req.body.user_id, req.ip, function() {
-    		takeTurn(req.body.task_id, req.body.user_id, res);
-		});
-    }
+	(req.body.user_id ? saveAddress(req.body.user_id, req.ip) : getUserId(req.ip)).then(function(user){
+		return takeTurn(req.body.task_id, user);
+	}).then(function(){
+		return Promise.all([getList(req.body.task_id), getStatus(req.body.task_id)]);
+	}, function(){
+		console.error('failed to take turn', err);
+		return Promise.all([getList(req.body.task_id), getStatus(req.body.task_id)]);
+	}).then(function(results){
+		console.log(results);
+		res.json({list: results[0], users: results[1]});
+	}).catch(function(err){
+		console.error('turn error', err);
+		res.json({error: 'query error'});
+	});
 });
 
 var server = app.listen(PORT, function() {
