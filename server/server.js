@@ -166,7 +166,6 @@ app.post('/api/turn', function(req,res) {
 		console.error('failed to take turn', err);
 		return Promise.all([getList(req.body.task_id), getStatus(req.body.task_id)]);
 	}).then(function(results){
-		console.log(results);
 		res.json({list: results[0], users: results[1]});
 	}).catch(function(err){
 		console.error('turn error', err);
