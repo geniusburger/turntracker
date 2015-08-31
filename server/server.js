@@ -35,13 +35,13 @@ app.use(express.static('build'));
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 //app.use(bodyParser.urlencoded({ extended: true }));	// to support URL-encoded bodies
 
-var getTurns = function(task) {
+var getTurns = function(taskId) {
 	return new Promise(function(resolve, reject){
 		db.query(
 	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
 			'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
-			task, function(err, rows, fields){
+			taskId, function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -67,7 +67,7 @@ var getTasks = function(userId) {
 	});
 };
 
-var getStatus = function(id, callback) {
+var getStatus = function(taskId, callback) {
 	return new Promise(function(resolve, reject){
 		db.query(
 	    	'SELECT users.id AS id, users.displayname AS name, COUNT(turns.user_id) AS turns ' +
@@ -75,7 +75,7 @@ var getStatus = function(id, callback) {
 			'RIGHT JOIN participants ON participants.task_id = turns.task_id and participants.user_id = turns.user_id ' +
 			'INNER JOIN users ON participants.user_id = users.id ' +
 			'WHERE participants.task_id = ? GROUP BY turns.user_id',
-			id, function(err, rows, fields){
+			taskId, function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -85,21 +85,21 @@ var getStatus = function(id, callback) {
 	});
 };
 
-var saveAddress = function(user, ip, callback) {
+var saveAddress = function(userId, ip, callback) {
 	return new Promise(function(resolve, reject){
 	    db.query( 'INSERT INTO addresses SET ? ON DUPLICATE KEY UPDATE user_id = ?',
-	    	[{user_id: user, ip: ip}, user], function(err, rows, fields) {
+	    	[{user_id: userId, ip: ip}, userId], function(err, rows, fields) {
 			if (err) {
 				if(err.code === 'ER_DUP_ENTRY') {
-					console.log('Already saved user %d address %s', user, ip);
-					resolve(user);
+					console.log('Already saved user %d address %s', userId, ip);
+					resolve(userId);
 				} else {
 					console.error('Error while performing addresses query', err);
 					reject(err);
 				}
 			} else {
-				console.log('Saved user %d address %s', user, ip);
-				resolve(user);
+				console.log('Saved user %d address %s', userId, ip);
+				resolve(userId);
 			}
 		})
 	});
@@ -125,9 +125,9 @@ var getUser = function(ip, callback) {
 	});
 };
 
-var takeTurn = function(task, user, res) {
+var takeTurn = function(taskId, userid) {
 	return new Promise(function(resolve, reject){
-	    db.query( 'INSERT INTO turns SET ?', {user_id: user, task_id: task}, function(err, rows, fields) {
+	    db.query( 'INSERT INTO turns SET ?', {user_id: userid, task_id: taskId}, function(err, rows, fields) {
 			if (err) {
 				console.error('Error while performing turn query', err);
 				reject(err);
@@ -137,6 +137,36 @@ var takeTurn = function(task, user, res) {
 	    });
 	});
 };
+
+app.get('/api/tasks-turns-status', function(req,res){
+	var results = {};
+	getTasks(req.query.userid).then(function(tasks){
+		results.tasks = tasks;
+		if(req.query.taskid) {
+			for(var i = 0; i < tasks.length; i++) {
+				if(tasks[i].id === req.query.taskid) {
+					results.taskid = req.query.taskid;
+					return Promise.all([getTurns(req.query.taskid), getStatus(req.query.taskid)]);
+				}
+			}
+			log.warn('tasks-turns-status invalid task id', req.query.taskid);
+		}
+		if(tasks.length) {
+			results.taskid = tasks[0].id;
+			return Promise.all([getTurns(tasks[0].id), getStatus(tasks[0].id)]);
+		} else {
+			results.taskId = 0;
+			return [[],[]];
+		}
+	}).then(function(data){
+		results.turns = data[0];
+		results.users = data[1];
+		res.json(results);
+	}).catch(function(err){
+		console.error('tasks-turns-status error', err);
+		res.json({error: 'query error'});
+	});
+});
 
 app.get('/api/tasks', function(req,res){
 	getTasks(req.query.userid).then(function(tasks){
@@ -149,11 +179,11 @@ app.get('/api/tasks', function(req,res){
 
 app.get('/api/turns', function(req,res) {
 	var userPromise = getUser(req.ip);
-	var listPromise = userPromise.then(function(){
+	var turnsPromise = userPromise.then(function(){
 		return getTurns(req.query.id);
 	});
 
-	Promise.all([userPromise, listPromise]).then(function(results){
+	Promise.all([userPromise, turnsPromise]).then(function(results){
 		res.json({user: results[0], turns: results[1]});
 	}).catch(function(err) {
 		console.error('turns error', err);

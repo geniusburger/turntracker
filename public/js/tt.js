@@ -24,7 +24,6 @@
 	    		self.tasks = data.tasks;
 	    		if(data.tasks.length) {
 	    			self.task = self.tasks[0];
-	    			self.getTurnsAndStatus();
 	    		} else {
 	    			self.listError = 'no tasks available';
 	    		}
@@ -111,6 +110,18 @@
 	    		});
 	    };
 
+	    self.getAll = function() {
+	    	return $http.get('/api/tasks-turns-status', {params: {userid:self.me.id}})
+	    		.success(function(data){
+	    			processTasksData(data);
+	    			processTurnsData(data);
+	    			processStatusData(data);
+	    		}).error(function(err){
+	    			console.error('getAll failed', err);
+	    			throw err;
+	    		});
+	    };
+
 	    self.getTasks = function() {
 	    	return $http.get('/api/tasks', {params:{userid:self.me.id}})
 	    		.success(function(data){
@@ -137,7 +148,7 @@
     		});
 	    };
 
-	    self.getTasks();
+	    self.getAll();
 	}]);
 
 	// $(document).ready(function(){
