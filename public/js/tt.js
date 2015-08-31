@@ -4,33 +4,33 @@
 
 	app.controller('testCtrl', ['$http', function($http) {
 		var self = this
-	    self.list = [];
+	    self.turns = [];
 	    self.users = [];
 	    self.userMap = {};
 	    self.listError = null;
 	    self.statusError = null;
 	    self.turnError = null;
 	    self.worst = 0;
-	    self.myId = 0;
+	    self.me = {id: -1, name: ''};
 	    self.hoverId = 0;
 
-	    var processListData = function(data) {
+	    var processTurnsData = function(data) {
     		if(data.error) {
     			self.listError = data.listError;
-    			self.list = [];
+    			self.turns = [];
     			throw data.error;
-    		} else if(data.list) {
-    			data.list.forEach(function(turn){
+    		} else if(data.turns) {
+    			data.turns.forEach(function(turn){
     				turn.date = new Date(turn.date).toLocaleString();
     			});
-    			self.list = data.list;
+    			self.turns = data.turns;
     			self.listError = null;
     		} else {
-    			self.listError = 'Unknown list error';
-    			self.list = [];
+    			self.listError = 'Unknown turns error';
+    			self.turns = [];
     		}
     		if(data.user) {
-    			self.myId = data.user;
+    			self.me = data.user;
     		}
     	};
 
@@ -53,11 +53,11 @@
 				data.users.sort(function(a,b) {
 					var diff = b.diff - a.diff;
 					if(diff === 0) {
-						for(var i = 0; i < self.list.length; i++) {
-							if(self.list[i].id == a.id) {
+						for(var i = 0; i < self.turns.length; i++) {
+							if(self.turns[i].id == a.id) {
 								return 1;
 							}
-							if(self.list[i].id == b.id) {
+							if(self.turns[i].id == b.id) {
 								return -1;
 							}
 						}
@@ -73,21 +73,21 @@
 	    	}
     	};
 
-	    self.getList = function() {
-	    	return $http.get('/api/list', {params:{id:1}}).success(processListData).error(function(err){console.error('getList failed', err); throw err;});
+	    self.getTurns = function() {
+	    	return $http.get('/api/turns', {params:{id:1}}).success(processTurnsData).error(function(err){console.error('getTurns failed', err); throw err;});
 	    };
 
 	    self.getStatus = function() {
 	    	return $http.get('/api/status', {params:{id:1}}).success(processStatusData).error(function(err){console.error('getStatus failed', err); throw err;});
 	    };
 
-	    self.getListStatus = function() {
-	    	return $http.get('/api/list-status', {params:{id:1}})
+	    self.getTurnsAndStatus = function() {
+	    	return $http.get('/api/turns-status', {params:{id:1}})
 	    		.success(function(data){
-	    			processListData(data);
+	    			processTurnsData(data);
 	    			processStatusData(data);
 	    		}).error(function(err){
-	    			console.error('getListStatus failed', err);
+	    			console.error('getTurnsAndStatus failed', err);
 	    			throw err;
 	    		});
 	    };
@@ -99,7 +99,7 @@
 	    		} else {
 	    			self.turnError = null;
 	    			console.log('take results', data);
-	    			processListData(data);
+	    			processTurnsData(data);
 	    			processStatusData(data);
 	    		}
 	    	}).error(function(err){
@@ -108,7 +108,7 @@
     		});
 	    };
 
-	    self.getListStatus();
+	    self.getTurnsAndStatus();
 	}]);
 
 	// $(document).ready(function(){

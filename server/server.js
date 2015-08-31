@@ -35,7 +35,7 @@ app.use(express.static('build'));
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 //app.use(bodyParser.urlencoded({ extended: true }));	// to support URL-encoded bodies
 
-var getList = function(task) {
+var getTurns = function(task) {
 	return new Promise(function(resolve, reject){
 		db.query(
 	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
@@ -89,21 +89,22 @@ var saveAddress = function(user, ip, callback) {
 	});
 };
 
-var getUserId = function(ip, callback) {
+var getUser = function(ip, callback) {
 	return new Promise(function(resolve, reject){
-		db.query('SELECT user_id FROM addresses WHERE ip = ?', ip, function(err, rows, fields) {
-			if(err) {
-				console.error('Error while getting address', err);
-				reject(err);
-			} else {
-				if(rows[0]) {
-					console.log('Got user %d from address %s', rows[0].user_id, ip);
-					resolve(rows[0].user_id);
+		db.query('SELECT users.id, users.displayname as name FROM addresses JOIN users ON users.id = addresses.user_id WHERE ip = ?',
+			ip, function(err, rows, fields) {
+				if(err) {
+					console.error('Error while getting address', err);
+					reject(err);
 				} else {
-					console.warn("Didn't find user for address %s", ip);
-					reject();
+					if(rows[0]) {
+						console.log('Got user from address %s', ip, rows[0]);
+						resolve(rows[0]);
+					} else {
+						console.warn("Didn't find user for address %s", ip);
+						reject();
+					}
 				}
-			}
 		});
 	});
 };
@@ -121,17 +122,17 @@ var takeTurn = function(task, user, res) {
 	});
 };
 
-app.get('/api/list', function(req,res) {
-	var userPromise = getUserId(req.ip);
+app.get('/api/turns', function(req,res) {
+	var userPromise = getUser(req.ip);
 	var listPromise = userPromise.then(function(){
-		return getList(req.query.id);
+		return getTurns(req.query.id);
 	});
 
 	Promise.all([userPromise, listPromise]).then(function(results){
-		res.json({user: results[0], list: results[1]});
+		res.json({user: results[0], turns: results[1]});
 	}).catch(function(err) {
-		console.error('list error', err);
-		res.json({user: null, error: 'query error'});
+		console.error('turns error', err);
+		res.json({user: {id: -1, name: ''}, error: 'query error'});
 	});
 });
 
@@ -144,29 +145,29 @@ app.get('/api/status', function(req,res) {
 	});
 });
 
-app.get('/api/list-status', function(req,res) {
-	var userPromise = getUserId(req.ip);
+app.get('/api/turns-status', function(req,res) {
+	var userPromise = getUser(req.ip);
 	var listPromise = userPromise.then(function(){
-		return getList(req.query.id);
+		return getTurns(req.query.id);
 	});
 	Promise.all([userPromise, listPromise, getStatus(req.query.id)]).then(function(results){
-		res.json({user: results[0], list: results[1], users: results[2]});
+		res.json({user: results[0], turns: results[1], users: results[2]});
 	}).catch(function(err){
-		console.error('list-status error', err);
+		console.error('turns-status error', err);
 		res.json({error: 'query error'});
 	});
 });
 
 app.post('/api/turn', function(req,res) {
-	(req.body.user_id ? saveAddress(req.body.user_id, req.ip) : getUserId(req.ip)).then(function(user){
-		return takeTurn(req.body.task_id, user);
+	(req.body.user_id ? saveAddress(req.body.user_id, req.ip) : getUser(req.ip)).then(function(user){
+		return takeTurn(req.body.task_id, typeof user === 'object' ? user.id : user);
 	}).then(function(){
-		return Promise.all([getList(req.body.task_id), getStatus(req.body.task_id)]);
+		return Promise.all([getTurns(req.body.task_id), getStatus(req.body.task_id)]);
 	}, function(){
 		console.error('failed to take turn', err);
-		return Promise.all([getList(req.body.task_id), getStatus(req.body.task_id)]);
+		return Promise.all([getTurns(req.body.task_id), getStatus(req.body.task_id)]);
 	}).then(function(results){
-		res.json({list: results[0], users: results[1]});
+		res.json({turns: results[0], users: results[1]});
 	}).catch(function(err){
 		console.error('turn error', err);
 		res.json({error: 'query error'});
