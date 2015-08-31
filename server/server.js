@@ -49,7 +49,23 @@ var getTurns = function(task) {
 				}
 			});
 	});
-}
+};
+
+var getTasks = function(userId) {
+	return new Promise(function(resolve, reject){
+		db.query(
+			'SELECT tasks.id,  tasks.name, tasks.periodic_hours, tasks.creator_user_id ' +
+			'FROM participants JOIN tasks ON participants.task_id = tasks.id ' +
+			'WHERE participants.user_id = ?', 
+			userId, function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
 
 var getStatus = function(id, callback) {
 	return new Promise(function(resolve, reject){
@@ -121,6 +137,15 @@ var takeTurn = function(task, user, res) {
 	    });
 	});
 };
+
+app.get('/api/tasks', function(req,res){
+	getTasks(req.query.userid).then(function(tasks){
+		res.json({tasks: tasks});
+	}).catch(function(err){
+		console.error('tasks error', err);
+		res.json({error: 'tasks error'});
+	});
+});
 
 app.get('/api/turns', function(req,res) {
 	var userPromise = getUser(req.ip);

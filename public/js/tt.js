@@ -3,7 +3,9 @@
 	var app = angular.module('tt', []);
 
 	app.controller('testCtrl', ['$http', function($http) {
-		var self = this
+		var self = this;
+		self.tasks = [];
+		self.task = {};
 	    self.turns = [];
 	    self.users = [];
 	    self.userMap = {};
@@ -11,12 +13,29 @@
 	    self.statusError = null;
 	    self.turnError = null;
 	    self.worst = 0;
-	    self.me = {id: -1, name: ''};
+	    self.me = {id: 1, name: 'Human'};
 	    self.hoverId = 0;
+
+	    var processTasksData = function(data) {
+	    	if(data.error) {
+	    		self.listError = data.error;
+	    		self.tasks = [];
+	    	} else if(data.tasks) {
+	    		self.tasks = data.tasks;
+	    		if(data.tasks.length) {
+	    			self.task = self.tasks[0];
+	    			self.getTurnsAndStatus();
+	    		} else {
+	    			self.listError = 'no tasks available';
+	    		}
+	    	} else {
+	    		self.listError = 'Unknown tasks error';
+	    	}
+	    };
 
 	    var processTurnsData = function(data) {
     		if(data.error) {
-    			self.listError = data.listError;
+    			self.listError = data.error;
     			self.turns = [];
     			throw data.error;
     		} else if(data.turns) {
@@ -74,15 +93,15 @@
     	};
 
 	    self.getTurns = function() {
-	    	return $http.get('/api/turns', {params:{id:1}}).success(processTurnsData).error(function(err){console.error('getTurns failed', err); throw err;});
+	    	return $http.get('/api/turns', {params:{id:self.task.id}}).success(processTurnsData).error(function(err){console.error('getTurns failed', err); throw err;});
 	    };
 
 	    self.getStatus = function() {
-	    	return $http.get('/api/status', {params:{id:1}}).success(processStatusData).error(function(err){console.error('getStatus failed', err); throw err;});
+	    	return $http.get('/api/status', {params:{id:self.task.id}}).success(processStatusData).error(function(err){console.error('getStatus failed', err); throw err;});
 	    };
 
 	    self.getTurnsAndStatus = function() {
-	    	return $http.get('/api/turns-status', {params:{id:1}})
+	    	return $http.get('/api/turns-status', {params:{id:self.task.id}})
 	    		.success(function(data){
 	    			processTurnsData(data);
 	    			processStatusData(data);
@@ -92,8 +111,18 @@
 	    		});
 	    };
 
+	    self.getTasks = function() {
+	    	return $http.get('/api/tasks', {params:{userid:self.me.id}})
+	    		.success(function(data){
+	    			processTasksData(data);
+	    		}).error(function(err){
+	    			console.error('getTasks failed', err);
+	    			throw err;
+	    		});
+	    };
+
 	    self.takeTurn = function(userId) {
-	    	return $http.post('/api/turn', {user_id: userId, task_id: 1}).success(function(data){
+	    	return $http.post('/api/turn', {user_id: userId, task_id: self.task.id}).success(function(data){
 	    		if(data.error) {
 	    			self.turnError = data.error;
 	    		} else {
@@ -108,7 +137,7 @@
     		});
 	    };
 
-	    self.getTurnsAndStatus();
+	    self.getTasks();
 	}]);
 
 	// $(document).ready(function(){
