@@ -70,12 +70,15 @@ var getTasks = function(userId) {
 var getStatus = function(taskId, callback) {
 	return new Promise(function(resolve, reject){
 		db.query(
-	    	'SELECT users.id AS id, users.displayname AS name, COUNT(turns.user_id) AS turns ' +
-			'FROM turns ' +
-			'RIGHT JOIN participants ON participants.task_id = turns.task_id and participants.user_id = turns.user_id ' +
-			'INNER JOIN users ON participants.user_id = users.id ' +
-			'WHERE participants.task_id = ? GROUP BY turns.user_id',
-			taskId, function(err, rows, fields){
+			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns ' + 
+			'FROM participants JOIN users on participants.user_id = users.id LEFT JOIN ( ' +
+				'SELECT turns.user_id, count(*) as turns, turns.inserted ' +
+				'FROM turns WHERE turns.task_id = ? ' +
+				'GROUP BY turns.user_id ORDER BY turns.inserted ASC ' +
+			') counts on participants.user_id = counts.user_id ' +
+			'WHERE  participants.task_id = ? ' +
+			'ORDER by turns ASC, counts.inserted ASC',
+			[taskId,taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -145,7 +148,7 @@ app.get('/api/tasks-turns-status', function(req,res){
 		if(req.query.taskid) {
 			for(var i = 0; i < tasks.length; i++) {
 				if(tasks[i].id === req.query.taskid) {
-					results.taskid = req.query.taskid;
+					results.taskid = parseInt(req.query.taskid);
 					return Promise.all([getTurns(req.query.taskid), getStatus(req.query.taskid)]);
 				}
 			}
@@ -206,7 +209,7 @@ app.get('/api/turns-status', function(req,res) {
 		return getTurns(req.query.id);
 	});
 	Promise.all([userPromise, listPromise, getStatus(req.query.id)]).then(function(results){
-		res.json({user: results[0], turns: results[1], users: results[2]});
+		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.id)});
 	}).catch(function(err){
 		console.error('turns-status error', err);
 		res.json({error: 'query error'});

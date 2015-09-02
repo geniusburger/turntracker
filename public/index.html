@@ -25,7 +25,14 @@
         <div class="row">
             <div class="control-column col-lg-3 col-md-4 col-sm-5 col-xs-12">
                 <h3>Turn Tracker</h3>
-                <h4 ng-cloak>{{test.task.name}}</h4>
+                <div>
+                    <div class="dropdown" ng-cloak>
+                        <button class="btn btn-default dropdown-toggle" type="button" id="taskDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{test.task.name}} <span class="caret"></span></button>
+                        <ul class="dropdown-menu" aria-labelledby="taskDropdown">
+                            <li ng-repeat="task in test.tasks" ng-class="task.id == test.task.id ? 'active' : ''" ng-click="test.getTurnsAndStatus(task.id)"><a href="#">{{task.name}}</a></li>
+                        </ul>
+                    </div>
+                </div>
                 <div>
                     <div class="btn-group" ng-cloak>
                         <button type="button" class="btn btn-default" ng-click="test.takeTurn(test.me.id)">Take Turn for {{test.me.name}}</button>

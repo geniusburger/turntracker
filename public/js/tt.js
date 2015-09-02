@@ -22,8 +22,12 @@
 	    		self.tasks = [];
 	    	} else if(data.tasks) {
 	    		self.tasks = data.tasks;
-	    		if(data.tasks.length) {
-	    			self.task = self.tasks[0];
+	    		if(data.tasks.length && data.taskid) {
+	    			self.tasks.forEach(function(task){
+	    				if(task.id === data.taskid) {
+	    					self.task = task;
+	    				}
+	    			});
 	    		} else {
 	    			self.listError = 'no tasks available';
 	    		}
@@ -50,6 +54,13 @@
     		if(data.user) {
     			self.me = data.user;
     		}
+    		if(data.taskid) {
+    			self.tasks.forEach(function(task){
+    				if(task.id === data.taskid) {
+    					self.task = task;
+    				}
+    			});
+    		}
     	};
 
     	var processStatusData = function(data) {
@@ -66,22 +77,6 @@
 	    			user.diff = max - user.turns;
 	    			self.userMap[user.id] = user.name;
 	    		});
-
-	    		 // descending by number of diff turns, tie-breaker is ascending most recent turn
-				data.users.sort(function(a,b) {
-					var diff = b.diff - a.diff;
-					if(diff === 0) {
-						for(var i = 0; i < self.turns.length; i++) {
-							if(self.turns[i].id == a.id) {
-								return 1;
-							}
-							if(self.turns[i].id == b.id) {
-								return -1;
-							}
-						}
-					}
-					return diff;
-				});
 				self.worst = data.users[0].diff;
 	    		self.users = data.users;
 	    		self.statusError = null;
@@ -99,8 +94,8 @@
 	    	return $http.get('/api/status', {params:{id:self.task.id}}).success(processStatusData).error(function(err){console.error('getStatus failed', err); throw err;});
 	    };
 
-	    self.getTurnsAndStatus = function() {
-	    	return $http.get('/api/turns-status', {params:{id:self.task.id}})
+	    self.getTurnsAndStatus = function(taskId) {
+	    	return $http.get('/api/turns-status', {params:{id:taskId}})
 	    		.success(function(data){
 	    			processTurnsData(data);
 	    			processStatusData(data);

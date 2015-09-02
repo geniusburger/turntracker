@@ -10,7 +10,7 @@ li[ng-click] {
 }
 
 .control-column {
-	h3, h4 {
+	h3, .dropdown {
 		text-align: center;
 	}
 	.btn-group {
@@ -18,7 +18,7 @@ li[ng-click] {
 		right: auto;
 		text-align: center;
 		transform: translate(-50%, 0);
-		margin-bottom: 10px;
+		margin: 10px;
 		z-index: 5;
 	}
 }
