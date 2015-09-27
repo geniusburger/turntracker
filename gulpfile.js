@@ -16,11 +16,16 @@ options.debug = !options.release;
 var src = {
 	css: 'public/scss/**/*.{scss,sass}',
 	js: 'public/js/**/*.js',
-	html: 'public/**/*.html'
+	html: 'public/**/*.html',
+	images: 'public/**/images/**'
 }
 
 gulp.task('html', function() {
 	return gulp.src(src.html).pipe(gulp.dest('build'));
+});
+
+gulp.task('images', function() {
+	return gulp.src(src.images).pipe(gulp.dest('build'));
 });
 
 gulp.task('libs', function() {
@@ -53,6 +58,7 @@ gulp.task('serve', ['default'], function() {
 
 	//use gulp.watch to trigger server actions(notify, start or stop)
 	gulp.watch(src.html, ['html']);
+	gulp.watch(src.images, ['images']);
 	gulp.watch(src.css, ['css']);
 	gulp.watch(src.js, ['js']);
 	gulp.watch(['build/**/*'], function (file) {
@@ -64,6 +70,6 @@ gulp.task('serve', ['default'], function() {
 	});
 });
 
-gulp.task('default', ['libs', 'html', 'css', 'js'], function() {
+gulp.task('default', ['libs', 'html', 'images', 'css', 'js'], function() {
 
 });

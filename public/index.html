@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Turn Tracker</title>
-
+    <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16" />
+    
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/tt.css" rel="stylesheet">
@@ -25,6 +27,8 @@
         <div class="row">
             <div class="control-column col-lg-3 col-md-4 col-sm-5 col-xs-12">
                 <h3>Turn Tracker</h3>
+                <button type="button" class="btn btn-warning" ng-click="test.notify()">Notify</button>
+                <button type="button" class="btn btn-info" ng-click="test.getUsers()">Users</button>
                 <div>
                     <div class="dropdown" ng-cloak>
                         <button class="btn btn-default dropdown-toggle" type="button" id="taskDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{test.task.name}} <span class="caret"></span></button>

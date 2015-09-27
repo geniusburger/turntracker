@@ -86,6 +86,33 @@
 	    	}
     	};
 
+    	var displayErrorPage = function(err) {
+    		if(typeof err === 'string') {
+	    		var match = err.match(/<html>([\s\S]*?)<\/html>/i);
+	    		if(match && match[1]) {
+	    			var existing = Array.prototype.slice.call(document.getElementsByTagName('iframe'));
+	    			for(var i = 0; i < existing.length; i++) {
+	    				existing[i].remove();
+	    			}
+
+	    			var iframe = document.createElement('iframe');
+	    			iframe.style.width = '100%';
+	    			document.getElementsByTagName('body')[0].appendChild(iframe);
+					var doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+					doc.document.open();
+					doc.document.write(err);
+					doc.document.close();
+					iframe.style.height = (iframe.contentWindow.document.body.scrollHeight + 10) + 'px';
+					return;
+				} else {
+					console.log('no match');
+				}
+			} else {
+				console.log("type of error is '" + typeof err);
+			}
+			throw err;
+    	};
+
 	    self.getTurns = function() {
 	    	return $http.get('/api/turns', {params:{id:self.task.id}}).success(processTurnsData).error(function(err){console.error('getTurns failed', err); throw err;});
 	    };
@@ -101,7 +128,7 @@
 	    			processStatusData(data);
 	    		}).error(function(err){
 	    			console.error('getTurnsAndStatus failed', err);
-	    			throw err;
+	    			displayErrorPage(err);
 	    		});
 	    };
 
@@ -113,7 +140,7 @@
 	    			processStatusData(data);
 	    		}).error(function(err){
 	    			console.error('getAll failed', err);
-	    			throw err;
+	    			displayErrorPage(err);
 	    		});
 	    };
 
@@ -123,7 +150,7 @@
 	    			processTasksData(data);
 	    		}).error(function(err){
 	    			console.error('getTasks failed', err);
-	    			throw err;
+	    			displayErrorPage(err);
 	    		});
 	    };
 
@@ -139,9 +166,27 @@
 	    		}
 	    	}).error(function(err){
     			console.error('takeTurn failed', err);
-    			throw err;
+    			displayErrorPage(err);
     		});
 	    };
+
+	    self.notify = function() {
+	    	return $http.post('/api/notify', {message: 'message from TT'}).success(function(data){
+	    		console.log('notify results', data);
+	    	}).error(function(err) {
+	    		console.error('notify failed');
+	    		displayErrorPage(err);
+	    	});
+	    };
+
+	    self.getUsers = function() {
+	    	return $http.get('/api/users').success(function(data){
+	    		console.log('users', data);
+	    	}).error(function(err){
+	    		console.error('get users failed');
+	    		displayErrorPage(err);
+	    	});
+	    }
 
 	    self.getAll();
 	}]);

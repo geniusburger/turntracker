@@ -3,6 +3,7 @@ $color: #888;
 
 html, body {
 	background-color: $color;
+	height: 100%;
 }
 
 li[ng-click] {

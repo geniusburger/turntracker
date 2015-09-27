@@ -1,0 +1,10 @@
+doctype html
+html
+	head
+		title Error
+		link(rel='stylesheet', href='/scss/error.css')
+	body
+		block content
+			h1= error.status
+			h2= error.message
+			pre #{error.stack}
