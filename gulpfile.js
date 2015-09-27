@@ -38,7 +38,7 @@ gulp.task('libs', function() {
 
 gulp.task('css', function() {
 	return gulp.src(src.css)
-		.pipe(sass())
+		.pipe(sass({outputStyle: options.release ? 'compressed' : 'nested'}))
 		.pipe(gulp.dest('build/css'));
 });
 
