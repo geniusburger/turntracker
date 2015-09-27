@@ -1,6 +1,6 @@
 var minimist = require('minimist');
 
-exports.options = minimist(process.argv.slice(2), {
+module.exports = minimist(process.argv.slice(2), {
   boolean: 'live',
   default: { live: false }
 });

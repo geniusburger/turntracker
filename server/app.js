@@ -13,6 +13,7 @@ var app = express();
 
 if(options.live)
 {
+  console.log('connecting live reload');
   app.use(require('connect-livereload')({
     port: 35729
   }));
