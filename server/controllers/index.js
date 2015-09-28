@@ -1,12 +1,13 @@
 var https = require('https');
+var log = require('debug')('turntracker:index');
 
 var db = require('./db');
 var config = require('../config');
 
-exports.getTurns = function(taskId) {
+var getTurns = function(taskId) {
 	return new Promise(function(resolve, reject){
 		db.query(
-	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id ' +
+	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id as userid, turns.id as turnid ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
 			'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
 			taskId, function(err, rows, fields){
@@ -18,14 +19,15 @@ exports.getTurns = function(taskId) {
 			});
 	});
 };
+exports.getTurns = getTurns;
 
-exports.getTasks = function(userId) {
+var getTasks = function(userId) {
 	return new Promise(function(resolve, reject){
 		db.query(
 			'SELECT tasks.id,  tasks.name, tasks.periodic_hours, tasks.creator_user_id ' +
 			'FROM participants JOIN tasks ON participants.task_id = tasks.id ' +
 			'WHERE participants.user_id = ?', 
-			userId, function(err, rows, fields){
+			[userId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -34,8 +36,9 @@ exports.getTasks = function(userId) {
 			});
 	});
 };
+exports.getTasks = getTasks;
 
-exports.getStatus = function(taskId, callback) {
+var getStatus = function(taskId, callback) {
 	return new Promise(function(resolve, reject){
 		db.query(
 			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns ' + 
@@ -55,52 +58,96 @@ exports.getStatus = function(taskId, callback) {
 			});
 	});
 };
+exports.getStatus = getStatus;
 
-exports.saveAddress = function(userId, ip, callback) {
+var getAll = function(userId, taskId) {
+	var results = {};
+	return getTasks(userId).then(function(tasks){
+		results.tasks = tasks;
+		if(taskId) {
+			for(var i = 0; i < tasks.length; i++) {
+				if(tasks[i].id === taskId) {
+					results.taskid = parseInt(taskId);
+					return Promise.all([getTurns(taskId), getStatus(taskId)]);
+				}
+			}
+			log('tasks-turns-status invalid task id', taskId);
+		}
+		if(tasks.length) {
+			results.taskid = tasks[0].id;
+			return Promise.all([getTurns(tasks[0].id),getStatus(tasks[0].id)]);
+		} else {
+			results.taskId = 0;
+			return [[],[]];
+		}
+	}).then(function(data){
+		results.turns = data[0];
+		results.users = data[1];
+		return results;
+	});
+};
+exports.getAll = getAll;
+
+var deleteTurn = function(turnId) {
+	return new Promise(function(resolve, reject){
+		db.query('DELETE FROM turns WHERE id = ?', [turnId], function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
+	});
+};
+exports.deleteTurn = deleteTurn;
+
+var saveAddress = function(userId, ip, callback) {
 	return new Promise(function(resolve, reject){
 	    db.query( 'INSERT INTO addresses SET ? ON DUPLICATE KEY UPDATE user_id = ?',
 	    	[{user_id: userId, ip: ip}, userId], function(err, rows, fields) {
 			if (err) {
 				if(err.code === 'ER_DUP_ENTRY') {
-					console.log('Already saved user %d address %s', userId, ip);
+					log('Already saved user %d address %s', userId, ip);
 					resolve(userId);
 				} else {
-					console.error('Error while performing addresses query', err);
+					log('ERROR while performing addresses query', err);
 					reject(err);
 				}
 			} else {
-				console.log('Saved user %d address %s', userId, ip);
+				log('Saved user %d address %s', userId, ip);
 				resolve(userId);
 			}
 		})
 	});
 };
+exports.saveAddress = saveAddress;
 
-exports.getUser = function(ip, callback) {
+var getUser = function(ip, callback) {
 	return new Promise(function(resolve, reject){
 		db.query('SELECT users.id, users.displayname as name FROM addresses JOIN users ON users.id = addresses.user_id WHERE ip = ?',
-			ip, function(err, rows, fields) {
+			[ip], function(err, rows, fields) {
 				if(err) {
-					console.error('Error while getting address', err);
+					log('ERROR while getting address', err);
 					reject(err);
 				} else {
 					if(rows[0]) {
-						console.log('Got user from address %s', ip, rows[0]);
+						log('Got user from address %s', ip, rows[0]);
 						resolve(rows[0]);
 					} else {
-						console.warn("Didn't find user for address %s", ip);
+						log("ERROR Didn't find user for address %s", ip);
 						reject();
 					}
 				}
 		});
 	});
 };
+exports.getUser = getUser;
 
-exports.getUsers = function() {
+var getUsers = function() {
 	return new Promise(function(resolve, reject){
 		db.query('SELECT id, displayname AS name FROM users ORDER BY displayname ASC', function(err, rows, fields) {
 			if(err) {
-				console.error('failed to get all users', err);
+				log('ERROR failed to get all users', err);
 				reject(err);
 			} else {
 				resolve(rows);
@@ -108,12 +155,13 @@ exports.getUsers = function() {
 		});
 	});
 };
+exports.getUsers = getUsers;
 
-exports.takeTurn = function(taskId, userid) {
+var takeTurn = function(taskId, userid) {
 	return new Promise(function(resolve, reject){
 	    db.query( 'INSERT INTO turns SET ?', {user_id: userid, task_id: taskId}, function(err, rows, fields) {
 			if (err) {
-				console.error('Error while performing turn query', err);
+				log('ERROR while performing turn query', err);
 				reject(err);
 			} else {
 				resolve();
@@ -121,12 +169,13 @@ exports.takeTurn = function(taskId, userid) {
 	    });
 	});
 };
+exports.takeTurn = takeTurn;
 
-exports.getAndroidUsers = function() {
+var getAndroidUsers = function() {
 	return new Promise(function(resolve, reject){
 		db.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', function(err, rows, fields) {
 			if(err) {
-				console.error('failed to get android users', err);
+				log('ERROR failed to get android users', err);
 				reject(err);
 			} else {
 				resolve(rows);
@@ -134,22 +183,24 @@ exports.getAndroidUsers = function() {
 		});
 	});
 };
+exports.getAndroidUsers = getAndroidUsers;
 
-exports.setAndroidToken = function(userid, token) {
+var setAndroidToken = function(userid, token) {
 	return new Promise(function(resolve, reject){
 		db.query('UPDATE users SET androidtoken = ? WHERE id = ?', [token, userid], function(err, rows, fields){
 			if(err) {
-				console.error('failed to set android token for user ' + userid, token);
+				log('ERROR failed to set android token for user ' + userid, token);
 				reject(err);
 			} else {
-				console.log('set android token for user ' + userid + ' to ' + token);
+				log('set android token for user ' + userid + ' to ' + token);
 				resolve();
 			}
 		});
 	});
 };
+exports.setAndroidToken = setAndroidToken;
 
-exports.sendAndroidMessage = function(dataObject, token) {
+var sendAndroidMessage = function(dataObject, token) {
 	return new Promise(function(resolve, reject){
 		// Build the post string from an object
 		var data = {
@@ -166,7 +217,7 @@ exports.sendAndroidMessage = function(dataObject, token) {
 		} else {
 			data.to = '/topics/global';
 		}
-		console.log('sending android message', data);
+		log('sending android message', data);
 		var dataString = JSON.stringify(data);
 
 		// Set up the request
@@ -191,8 +242,9 @@ exports.sendAndroidMessage = function(dataObject, token) {
 		req.write(dataString);
 		req.end();
 		req.on('error', function(err){
-			console.error('failed to send android message', err);
+			log('ERROR failed to send android message', err);
 			reject(err);
 		});
 	});
 };
+exports.sendAndroidMessage = sendAndroidMessage;

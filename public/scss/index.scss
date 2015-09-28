@@ -1,6 +1,6 @@
 @import 'base';
 
-li[ng-click] {
+[ng-click] {
 	cursor: pointer;
 }
 
@@ -29,4 +29,8 @@ li[ng-click] {
 .my-name {
 	font-weight: bold;
 	padding: 10px;
+}
+
+.pre {
+	white-space: pre;
 }

@@ -1,127 +1,115 @@
 var express = require('express');
 var router = express.Router();
-var debug = require('debug')('turntracker:api');
-var db = require('../controllers/index');
+var log = require('debug')('turntracker:api');
+var index = require('../controllers/index');
+var ApiError = require('./ApiError');
 
-router.get('/tasks-turns-status', function(req,res){
-	var results = {};
-	db.getTasks(req.query.userid).then(function(tasks){
-		results.tasks = tasks;
-		if(req.query.taskid) {
-			for(var i = 0; i < tasks.length; i++) {
-				if(tasks[i].id === req.query.taskid) {
-					results.taskid = parseInt(req.query.taskid);
-					return Promise.all([db.getTurns(req.query.taskid), db.getStatus(req.query.taskid)]);
-				}
-			}
-			log.warn('tasks-turns-status invalid task id', req.query.taskid);
-		}
-		if(tasks.length) {
-			results.taskid = tasks[0].id;
-			return Promise.all([db.getTurns(tasks[0].id),db.getStatus(tasks[0].id)]);
-		} else {
-			results.taskId = 0;
-			return [[],[]];
-		}
-	}).then(function(data){
-		results.turns = data[0];
-		results.users = data[1];
+router.get('/tasks-turns-status', function(req, res, next){
+	index.getAll(req.query.userid, req.query.taskid).then(function(results){
 		res.json(results);
 	}).catch(function(err){
-		console.error('tasks-turns-status error', err, err.stack);
-		res.json({error: 'query error'});
+		next(new ApiError(err, 'Failed to get tasks/turns/status'));
 	});
 });
 
-router.get('/tasks', function(req,res){
-	db.getTasks(req.query.userid).then(function(tasks){
+router.get('/tasks', function(req, res, next){
+	index.getTasks(req.query.userid).then(function(tasks){
 		res.json({tasks: tasks});
 	}).catch(function(err){
-		console.error('tasks error', err);
-		res.json({error: 'tasks error'});
+		next(new ApiError(err, 'Failed to get tasks'));
 	});
 });
 
-router.get('/turns', function(req,res) {
-	var userPromise = db.getUser(req.ip);
+router.get('/turns', function(req, res, next) {
+	var userPromise = index.getUser(req.ip);
 	var turnsPromise = userPromise.then(function(){
-		return db.getTurns(req.query.id);
+		return index.getTurns(req.query.id);
 	});
 
 	Promise.all([userPromise, turnsPromise]).then(function(results){
 		res.json({user: results[0], turns: results[1]});
 	}).catch(function(err) {
-		console.error('turns error', err);
-		res.json({user: {id: -1, name: ''}, error: 'query error'});
+		next(new ApiError(err, 'Failed to get turns', {user: {id: -1, name: ''}}));
 	});
 });
 
-router.get('/users', function(req,res){
-	db.getUsers().then(function(rows){
+router.get('/users', function(req, res, next){
+	index.getUsers().then(function(rows){
 		res.json({users: rows});
 	}).catch(function(err){
-		res.json({error: err});
+		next(new ApiError(err, 'Failed to get users'));
 	});
 });
 
-router.get('/status', function(req,res) {
-	db.getStatus(req.query.id).then(function(rows){
+router.get('/status', function(req, res, next) {
+	index.getStatus(req.query.id).then(function(rows){
 		res.json({users: rows});
 	}).catch(function(err){
-		console.error('Error while performing status query', err);
-		res.json({error: 'Query Error'});
+		next(new ApiError(err, 'Failed to get status'));
 	});
 });
 
-router.put('/android', function(req,res){
-	db.setAndroidToken(req.body.user_id, req.body.token).then(function(){
+router.put('/android', function(req, res, next){
+	index.setAndroidToken(req.body.user_id, req.body.token).then(function(){
 		res.json({success: true});
 	}).catch(function(err){
-		res.json({error: err});
+		next(new ApiError(err, 'Failed to set android key'));
 	});
 });
 
-router.delete('/android', function(req,res){
+router.delete('/android', function(req, res, next){
 	/// @todo Should also delete subscriptions once they exist
-	db.setAndroidToken(userid, null).then(function(){
+	index.setAndroidToken(req.query.user_id, null).then(function(){
 		res.json({success: true});
 	}).catch(function(err){
-		res.json({error: err});
+		next(new ApiError(err, 'Failed to delete android key'));
 	});
 });
 
-router.get('/turns-status', function(req,res) {
-	var userPromise = db.getUser(req.ip);
-	var listPromise = userPromise.then(function(){
-		return db.getTurns(req.query.id);
+router.delete('/turn', function(req, res, next){
+	index.deleteTurn(req.query.turn_id).then(function(){
+		return index.getAll(req.query.user_id, req.query.task_id);
+	}, function(err){
+		throw new ApiError(err, 'Failed to delete turn');
+	}).then(function(results){
+		res.json(results);
+	}, function(err){
+		throw new ApiError(err, 'Failed to get all after deleting turn');
+	}).catch(function(err){
+		next(err);
 	});
-	Promise.all([userPromise, listPromise, db.getStatus(req.query.id)]).then(function(results){
+});
+
+router.get('/turns-status', function(req, res, next) {
+	var userPromise = index.getUser(req.ip);
+	var listPromise = userPromise.then(function(){
+		return index.getTurns(req.query.id);
+	});
+	Promise.all([userPromise, listPromise, index.getStatus(req.query.id)]).then(function(results){
 		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.id)});
 	}).catch(function(err){
-		console.error('turns-status error', err);
-		res.json({error: 'query error'});
+		next(new ApiError(err, 'Failed to get turns/status'));
 	});
 });
 
-router.post('/turn', function(req,res) {
-	(req.body.user_id ? db.saveAddress(req.body.user_id, req.ip) : db.getUser(req.ip)).then(function(user){
-		return db.takeTurn(req.body.task_id, typeof user === 'object' ? user.id : user);
+router.post('/turn', function(req, res, next) {
+	(req.body.user_id ? index.saveAddress(req.body.user_id, req.ip) : index.getUser(req.ip)).then(function(user){
+		return index.takeTurn(req.body.task_id, typeof user === 'object' ? user.id : user);
 	}).then(function(){
-		return Promise.all([db.getTurns(req.body.task_id), db.getStatus(req.body.task_id)]);
+		return Promise.all([index.getTurns(req.body.task_id), index.getStatus(req.body.task_id)]);
 	}, function(){
-		console.error('failed to take turn', err);
-		return Promise.all([db.getTurns(req.body.task_id), db.getStatus(req.body.task_id)]);
+		log('ERROR failed to take turn', err);
+		return Promise.all([index.getTurns(req.body.task_id), index.getStatus(req.body.task_id)]);
 	}).then(function(results){
 		res.json({turns: results[0], users: results[1]});
 	}).catch(function(err){
-		console.error('turn error', err);
-		res.json({error: 'query error'});
+		next(new ApiError(err, 'Failed to take turn'));
 	});
 });
 
-router.post('/notify', function(req,res) {
-	db.getAndroidUsers().then(function(rows){
-		console.log('users', rows);
+router.post('/notify', function(req, res, next) {
+	index.getAndroidUsers().then(function(rows){
+		log('users', rows);
 		if(Array.isArray(rows) && rows.length) {
 			return rows.map(function(row){
 				return row.token;
@@ -131,7 +119,7 @@ router.post('/notify', function(req,res) {
 	}).catch(function(err){
 		return null;
 	}).then(function(token){
-		return db.sendAndroidMessage({
+		return index.sendAndroidMessage({
 			message: 'Android message from TT'
 		}, token);
 	}).then(function(jsonString){
@@ -139,9 +127,12 @@ router.post('/notify', function(req,res) {
 	}).then(function(jsonResults){
 		res.json(jsonResults);
 	}).catch(function(err){
-		console.error(err,err.stack);
-		res.json({error: err});
+		next(new ApiError(err, 'Failed to notify'));
 	});
+});
+
+router.use(function(req, res, next) {
+    next(new ApiError({status: 404}, 'Not Found'));
 });
 
 module.exports = router;

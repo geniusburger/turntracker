@@ -9,9 +9,12 @@
 	    self.turns = [];
 	    self.users = [];
 	    self.userMap = {};
-	    self.listError = null;
-	    self.statusError = null;
-	    self.turnError = null;
+	    self.error = {
+	    	code: undefined,
+	    	msg: undefined,
+	    	eMsg: undefined,
+	    	stack: undefined
+	    };
 	    self.worst = 0;
 	    self.me = {id: 1, name: 'Human'};
 	    self.hoverId = 0;
@@ -86,114 +89,151 @@
 	    	}
     	};
 
-    	var displayErrorPage = function(err) {
-    		if(typeof err === 'string') {
-	    		var match = err.match(/<html>([\s\S]*?)<\/html>/i);
-	    		if(match && match[1]) {
-	    			var existing = Array.prototype.slice.call(document.getElementsByTagName('iframe'));
-	    			for(var i = 0; i < existing.length; i++) {
-	    				existing[i].remove();
-	    			}
-
-	    			var iframe = document.createElement('iframe');
-	    			iframe.style.width = '100%';
-	    			document.getElementsByTagName('body')[0].appendChild(iframe);
-					var doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
-					doc.document.open();
-					doc.document.write(err);
-					doc.document.close();
-					iframe.style.height = (iframe.contentWindow.document.body.scrollHeight + 10) + 'px';
-					return;
-				} else {
-					console.log('no match');
-				}
-			} else {
-				console.log("type of error is '" + typeof err);
+    	var handleApiError = function(res, whatFailed) {
+			var existing = Array.prototype.slice.call(document.getElementsByTagName('iframe'));
+			for(var i = 0; i < existing.length; i++) {
+				existing[i].remove();
 			}
-			throw err;
+			res = res || {};
+    		self.error.code = res.status;
+    		switch(typeof res.data) {
+    			case 'string': {
+		    		var match = res.data.match(/<html>([\s\S]*?)<\/html>/i);
+		    		if(match && match[1]) {
+		    			var iframe = document.createElement('iframe');
+		    			iframe.style.width = '100%';
+		    			document.getElementsByTagName('body')[0].appendChild(iframe);
+						var doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+						doc.document.open();
+						doc.document.write(res.data);
+						doc.document.close();
+						iframe.style.height = (iframe.contentWindow.document.body.scrollHeight + 10) + 'px';
+
+						self.error.msg = whatFailed;
+					} else {
+						self.error.msg = (whatFailed ? whatFailed + ' ' : '') + res.data;
+					}
+				} break;
+				case 'object': {
+					if(res.data && res.data.error) {
+						self.error.msg = res.data.error.msg;
+						self.error.eMsg = res.data.error.eMsg;
+						self.error.stack = res.data.error.stack;
+						break;
+					}
+					// fall-through
+				}
+				default: {
+					self.error.msg = whatFailed;
+					console.error(whatFailed, res.data);
+				} break;
+			}
     	};
 
+    	self.clearError = function() {
+    		self.error.code = undefined;
+    		self.error.msg = undefined;
+    		self.error.eMsg = undefined;
+    		self.error.stack = undefined;
+    	}
+
 	    self.getTurns = function() {
-	    	return $http.get('/api/turns', {params:{id:self.task.id}}).success(processTurnsData).error(function(err){console.error('getTurns failed', err); throw err;});
+	    	self.clearError();
+	    	return $http.get('/api/turns', {params:{id:self.task.id}})
+		    	.then(function(res){
+		    		processStatusData(res.data);
+		    	}, function(res){
+		    		handleApiError(res, 'Failed to get turns');
+		    	});
 	    };
 
 	    self.getStatus = function() {
-	    	return $http.get('/api/status', {params:{id:self.task.id}}).success(processStatusData).error(function(err){console.error('getStatus failed', err); throw err;});
+	    	self.clearError();
+	    	return $http.get('/api/status', {params:{id:self.task.id}})
+		    	.then(function(res){
+		    		processStatusData(res.data);
+		    	}, function(res){
+		    		handleApiError(res, 'Failed to get status');
+		    	});
 	    };
 
 	    self.getTurnsAndStatus = function(taskId) {
+	    	self.clearError();
 	    	return $http.get('/api/turns-status', {params:{id:taskId}})
-	    		.success(function(data){
-	    			processTurnsData(data);
-	    			processStatusData(data);
-	    		}).error(function(err){
-	    			console.error('getTurnsAndStatus failed', err);
-	    			displayErrorPage(err);
+	    		.then(function(res){
+	    			processTurnsData(res.data);
+	    			processStatusData(res.data);
+	    		}, function(res){
+	    			handleApiError(res, 'Failed to turns/status');
 	    		});
 	    };
 
 	    self.getAll = function() {
+	    	self.clearError();
 	    	return $http.get('/api/tasks-turns-status', {params: {userid:self.me.id}})
-	    		.success(function(data){
-	    			processTasksData(data);
-	    			processTurnsData(data);
-	    			processStatusData(data);
-	    		}).error(function(err){
-	    			console.error('getAll failed', err);
-	    			displayErrorPage(err);
+	    		.then(function(res){
+	    			processTasksData(res.data);
+	    			processTurnsData(res.data);
+	    			processStatusData(res.data);
+	    		}, function(res){
+	    			handleApiError(res, 'Failed to tasks/turns/status');
 	    		});
 	    };
 
 	    self.getTasks = function() {
+	    	self.clearError();
 	    	return $http.get('/api/tasks', {params:{userid:self.me.id}})
-	    		.success(function(data){
-	    			processTasksData(data);
-	    		}).error(function(err){
-	    			console.error('getTasks failed', err);
-	    			displayErrorPage(err);
+	    		.then(function(res){
+	    			processTasksData(res.data);
+	    		}, function(res){
+	    			handleApiError(res, 'Failed to get tasks');
 	    		});
 	    };
 
 	    self.takeTurn = function(userId) {
-	    	return $http.post('/api/turn', {user_id: userId, task_id: self.task.id}).success(function(data){
-	    		if(data.error) {
-	    			self.turnError = data.error;
-	    		} else {
-	    			self.turnError = null;
-	    			console.log('take results', data);
-	    			processTurnsData(data);
-	    			processStatusData(data);
-	    		}
-	    	}).error(function(err){
-    			console.error('takeTurn failed', err);
-    			displayErrorPage(err);
-    		});
+	    	self.clearError();
+	    	return $http.post('/api/turn', {user_id: userId, task_id: self.task.id})
+	    		.then(function(res){
+	    			processTurnsData(res.data);
+	    			processStatusData(res.data);
+		    	}, function(res){
+		    		handleApiError(err, 'failed to take turn');
+	    		});
 	    };
 
 	    self.notify = function() {
-	    	return $http.post('/api/notify', {message: 'message from TT'}).success(function(data){
-	    		console.log('notify results', data);
-	    	}).error(function(err) {
-	    		console.error('notify failed');
-	    		displayErrorPage(err);
-	    	});
+	    	self.clearError();
+	    	return $http.post('/api/notify', {message: 'message from TT'})
+		    	.then(function(res){
+		    		console.log('notify results', res.data);
+		    	}, function(res) {
+		    		handleApiError(res, 'Failed to notify');
+		    	});
 	    };
 
 	    self.getUsers = function() {
-	    	return $http.get('/api/users').success(function(data){
-	    		console.log('users', data);
-	    	}).error(function(err){
-	    		console.error('get users failed');
-	    		displayErrorPage(err);
-	    	});
+	    	self.clearError();
+	    	return $http.get('/api/users')
+		    	.then(function(res){
+		    		console.log('users', res.data);
+		    	}, function(res){
+		    		handleApiError(res, 'failed to get users');
+		    	});
 	    }
+
+	    self.deleteTurn = function(turn) {
+	    	self.clearError();
+	    	return $http.delete('/api/turn', {params: {turn_id: turn.turnid, user_id: self.me.id, task_id: self.task.id}})
+		    	.then(function(res){
+	    			processTasksData(res.data);
+	    			processTurnsData(res.data);
+	    			processStatusData(res.data);
+		    	}, function(res){
+		    		handleApiError(res, 'failed to delete turn');
+		    	});
+	    };
 
 	    self.getAll();
 	}]);
-
-	// $(document).ready(function(){
-	// 	$('#testButton').click();
-	// });
-
 })();
 

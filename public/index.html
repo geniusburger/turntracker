@@ -24,11 +24,18 @@
     
     <script src="js/angular.min.js"></script>
     <div class="container">
+        <div class="alert alert-danger" ng-show="test.error.msg" ng-cloak>
+            <!-- <span class="pull-right glyphicon glyphicon-remove" ng-click="test.clearError()"></span> -->
+            <button type="button" class="close" ng-click="test.clearError()"><span aria-hidden="true">&times;</span></button>
+            <strong><span ng-show="test.error.code">{{test.error.code}} - </span>{{test.error.msg}}</strong>
+            <p ng-show="test.error.eMsg">{{test.error.eMsg}}</p>
+            <p ng-show="test.error.stack" class="pre">{{test.error.stack}}</p>
+        </div>
         <div class="row">
             <div class="control-column col-lg-3 col-md-4 col-sm-5 col-xs-12">
-                <h3>Turn Tracker</h3>
                 <button type="button" class="btn btn-warning" ng-click="test.notify()">Notify</button>
                 <button type="button" class="btn btn-info" ng-click="test.getUsers()">Users</button>
+                <h3>Turn Tracker</h3>
                 <div>
                     <div class="dropdown" ng-cloak>
                         <button class="btn btn-default dropdown-toggle" type="button" id="taskDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{test.task.name}} <span class="caret"></span></button>
@@ -56,9 +63,10 @@
             <div class="list-column col-lg-9 col-md-8 col-sm-7 col-xs-12">
                 <table class="table table-condensed table-hover">
                     <tbody ng-cloak>
-                        <tr ng-repeat="item in test.turns" ng-class="test.hoverId == item.id ? 'highlight' : ''">
+                        <tr ng-repeat="item in test.turns" ng-class="test.hoverId == item.userid ? 'active' : ''">
                             <td>{{item.date}}</td>
                             <td>{{item.name}}</td>
+                            <td><button type="button" class="close" ng-click="test.deleteTurn(item)"><span aria-hidden="true">&times;</span></button></td>
                         </tr>
                     </tbody>
                 </table>

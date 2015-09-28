@@ -4,8 +4,9 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var debug = require('debug')('turntracker:app');
+var log = require('debug')('turntracker:app');
 
+var ApiError = require('./routes/ApiError');
 var options = require('./options');
 var api = require('./routes/api');
 
@@ -13,10 +14,10 @@ var app = express();
 
 if(options.live)
 {
-  console.log('connecting live reload');
-  app.use(require('connect-livereload')({
-    port: 35729
-  }));
+    console.log('connecting live reload');
+    app.use(require('connect-livereload')({
+        port: 35729
+    }));
 }
 
 // view engine setup
@@ -34,9 +35,9 @@ app.use('/api', api);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // error handlers
@@ -44,24 +45,34 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      error: err
+    app.use(function(err, req, res, next) {
+        log("ERROR", err);
+        res.status(err.status || 500);
+        if(err instanceof ApiError) {
+            res.json(err.getDevResponse());
+        } else {
+            res.render('error', {
+                error: err
+            });
+        }
     });
-  });
 }
 
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    error: {
-      message: err.message,
-      status: err.status
+    log("ERROR", err);
+    res.status(err.status || 500);
+    if(err instanceof ApiError) {
+        res.json(err.getResponse());
+    } else {
+        res.render('error', {
+            error: {
+                message: err.message,
+                status: err.status
+            }
+        });
     }
-  });
 });
 
 module.exports = app;
