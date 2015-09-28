@@ -66,7 +66,8 @@ var getAll = function(userId, taskId) {
 		results.tasks = tasks;
 		if(taskId) {
 			for(var i = 0; i < tasks.length; i++) {
-				if(tasks[i].id === taskId) {
+				console.log(taskId, tasks[i].id);
+				if(tasks[i].id == taskId) {
 					results.taskid = parseInt(taskId);
 					return Promise.all([getTurns(taskId), getStatus(taskId)]);
 				}

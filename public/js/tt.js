@@ -159,7 +159,7 @@
 
 	    self.getTurnsAndStatus = function(taskId) {
 	    	self.clearError();
-	    	return $http.get('/api/turns-status', {params:{id:taskId}})
+	    	return $http.get('/api/turns-status', {params: {task_id: taskId, user_id: self.me.id}})
 	    		.then(function(res){
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
@@ -170,7 +170,7 @@
 
 	    self.getAll = function() {
 	    	self.clearError();
-	    	return $http.get('/api/tasks-turns-status', {params: {userid:self.me.id}})
+	    	return $http.get('/api/tasks-turns-status', {params: {userid: self.me.id}})
 	    		.then(function(res){
 	    			processTasksData(res.data);
 	    			processTurnsData(res.data);
@@ -225,7 +225,6 @@
 	    	self.clearError();
 	    	return $http.delete('/api/turn', {params: {turn_id: turn.turnid, user_id: self.me.id, task_id: self.task.id}})
 		    	.then(function(res){
-	    			processTasksData(res.data);
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 		    	}, function(res){

@@ -81,12 +81,15 @@ router.delete('/turn', function(req, res, next){
 });
 
 router.get('/turns-status', function(req, res, next) {
-	var userPromise = index.getUser(req.ip);
+	if(req.query.user_id) {
+		// todo, no need to lookup id, just need to get user details?
+	}
+	var userPromise =index.getUser(req.ip);
 	var listPromise = userPromise.then(function(){
-		return index.getTurns(req.query.id);
+		return index.getTurns(req.query.task_id);
 	});
-	Promise.all([userPromise, listPromise, index.getStatus(req.query.id)]).then(function(results){
-		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.id)});
+	Promise.all([userPromise, listPromise, index.getStatus(req.query.task_id)]).then(function(results){
+		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.task_id)});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to get turns/status'));
 	});

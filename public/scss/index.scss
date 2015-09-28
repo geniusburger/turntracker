@@ -15,7 +15,15 @@
 		transform: translate(-50%, 0);
 		margin: 10px;
 		z-index: 5;
+		&.top {
+			z-index: 6;
+		}
 	}
+}
+
+.list-group {
+	position: relative;
+	z-index: 0;
 }
 
 .list-column {
@@ -33,4 +41,8 @@
 
 .pre {
 	white-space: pre;
+}
+
+.test-buttons {
+	margin-bottom: 10px;
 }
