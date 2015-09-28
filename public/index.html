@@ -24,8 +24,7 @@
     
     <script src="js/angular.min.js"></script>
     <div class="container">
-        <div class="alert alert-danger" ng-show="test.error.msg" ng-cloak>
-            <!-- <span class="pull-right glyphicon glyphicon-remove" ng-click="test.clearError()"></span> -->
+        <div class="alert alert-danger top-error" ng-show="test.error.msg" ng-cloak>
             <button type="button" class="close" ng-click="test.clearError()"><span aria-hidden="true">&times;</span></button>
             <strong><span ng-show="test.error.code">{{test.error.code}} - </span>{{test.error.msg}}</strong>
             <p ng-show="test.error.eMsg">{{test.error.eMsg}}</p>

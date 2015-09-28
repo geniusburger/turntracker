@@ -13,7 +13,7 @@
 		right: auto;
 		text-align: center;
 		transform: translate(-50%, 0);
-		margin: 10px;
+		margin-bottom: 10px;
 		z-index: 5;
 		&.top {
 			z-index: 6;
@@ -45,4 +45,9 @@
 
 .test-buttons {
 	margin-bottom: 10px;
+}
+
+.top-error {
+	margin-top: 5px;
+	margin-bottom: 5px !important;
 }
