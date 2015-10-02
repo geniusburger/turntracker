@@ -1,16 +1,22 @@
 var extend = require('util')._extend;
 var mysql = require('mysql');
+var Promise = require('bluebird');
 var debug = require('debug')('turntracker:db');
 var config = require('../config');
 
-var db = mysql.createConnection( extend( config.database.test, {} ) );
+var pool = mysql.createPool( extend( config.database.test, {} ) );
 
-db.connect(function(err){
-	if(!err) {
-		console.log("Database is connected ... \n\n");
-	} else {
-		console.error("Error connecting database ... \n\n");  
-	}
-});
-
-module.exports = db;
+var getConnection = function() {
+	return new Promise(function(resolve, reject){
+		pool.getConnection(function(err, conn) {
+			if(err) {
+				reject(err);
+			} else {
+				resolve(conn);
+			}
+		});
+	}).disposer(function(connection){
+		connection.release();
+	});
+};
+exports.getConnection = getConnection;

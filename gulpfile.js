@@ -50,7 +50,7 @@ gulp.task('js', function() {
 		.pipe(gulp.dest('build/js'));
 });
 
-gulp.task('serve', ['default'], function() {
+gulp.task('serve', ['build'], function() {
 	var server = gls.new(['server/server.js', '--live']);
 	var promise = server.start();
     // handle the server process exiting
@@ -72,6 +72,6 @@ gulp.task('serve', ['default'], function() {
 	});
 });
 
-gulp.task('default', ['libs', 'html', 'images', 'css', 'js'], function() {
+gulp.task('build', ['libs', 'html', 'images', 'css', 'js'], function(){});
 
-});
+gulp.task('default', ['build'], function(){});
