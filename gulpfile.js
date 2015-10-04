@@ -66,7 +66,7 @@ gulp.task('serve', ['build'], function() {
 	gulp.watch(['build/**/*'], function (file) {
 		server.notify.apply(server, [file]);
 	});
-	gulp.watch('server/server.js', function() {
+	gulp.watch('server/**/*', function() {
 		console.log('restarting server');
 	    server.start.apply(server); //restart my server
 	});

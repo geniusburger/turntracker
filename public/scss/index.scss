@@ -21,9 +21,22 @@
 	}
 }
 
-.list-group {
-	position: relative;
-	z-index: 0;
+.list-group-item {
+	select {
+		color: black;
+	}
+}
+
+.close.close-inline {
+	float: none;
+	vertical-align: bottom;
+	&.glyph-inline {
+		font-size: 14px;
+		padding-bottom: 2px;
+		&.pad {
+			padding-bottom: 3px;
+		}
+	}
 }
 
 .list-column {

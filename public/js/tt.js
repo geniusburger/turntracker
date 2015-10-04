@@ -2,10 +2,10 @@
 
 	var app = angular.module('tt', []);
 
-	app.controller('testCtrl', ['$http', function($http) {
+	app.controller('AdminController', ['$http', function($http) {
 		var self = this;
 		self.tasks = [];
-		self.task = {};
+		self.currentTask = {};
 	    self.turns = [];
 	    self.users = [];
 	    self.userMap = {};
@@ -18,6 +18,16 @@
 	    self.worst = 0;
 	    self.me = {id: 1, name: 'Human'};
 	    self.hoverId = 0;
+	    self.reasons = [];
+	    self.methods = [];
+
+	    var enumArrayToObject = function(array) {
+	    	var obj = {};
+	    	array.forEach(function(e){
+	    		obj[e.id] = e;
+	    	});
+	    	return obj;
+	    };
 
 	    var processTasksData = function(data) {
 	    	if(data.error) {
@@ -27,12 +37,18 @@
 	    		self.tasks = data.tasks;
 	    		if(data.tasks.length && data.taskid) {
 	    			self.tasks.forEach(function(task){
-	    				if(task.id === data.taskid) {
-	    					self.task = task;
+	    				if(task.taskId === data.taskid) {
+	    					self.currentTask = task;
 	    				}
 	    			});
 	    		} else {
 	    			self.listError = 'no tasks available';
+	    		}
+	    		if(data.reasons && Array.isArray(data.reasons)) {
+	    			self.reasons = data.reasons;
+	    		}
+	    		if(data.methods && Array.isArray(data.methods)) {
+	    			self.methods = data.methods;
 	    		}
 	    	} else {
 	    		self.listError = 'Unknown tasks error';
@@ -59,8 +75,8 @@
     		}
     		if(data.taskid) {
     			self.tasks.forEach(function(task){
-    				if(task.id === data.taskid) {
-    					self.task = task;
+    				if(task.taskId === data.taskid) {
+    					self.currentTask = task;
     				}
     			});
     		}
@@ -139,7 +155,7 @@
 
 	    self.getTurns = function() {
 	    	self.clearError();
-	    	return $http.get('/api/turns', {params:{id:self.task.id}})
+	    	return $http.get('/api/turns', {params:{id:self.currentTask.taskId}})
 		    	.then(function(res){
 		    		processStatusData(res.data);
 		    	}, function(res){
@@ -149,7 +165,7 @@
 
 	    self.getStatus = function() {
 	    	self.clearError();
-	    	return $http.get('/api/status', {params:{id:self.task.id}})
+	    	return $http.get('/api/status', {params:{id:self.currentTask.taskId}})
 		    	.then(function(res){
 		    		processStatusData(res.data);
 		    	}, function(res){
@@ -192,7 +208,7 @@
 
 	    self.takeTurn = function(userId) {
 	    	self.clearError();
-	    	return $http.post('/api/turn', {user_id: userId, task_id: self.task.id})
+	    	return $http.post('/api/turn', {user_id: userId, task_id: self.currentTask.taskId})
 	    		.then(function(res){
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
@@ -223,7 +239,7 @@
 
 	    self.deleteTurn = function(turn) {
 	    	self.clearError();
-	    	return $http.delete('/api/turn', {params: {turn_id: turn.turnid, user_id: self.me.id, task_id: self.task.id}})
+	    	return $http.delete('/api/turn', {params: {turn_id: turn.turnid, user_id: self.me.id, task_id: self.currentTask.taskId}})
 		    	.then(function(res){
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
@@ -232,7 +248,70 @@
 		    	});
 	    };
 
+	    self.getSubscriptions = function() {
+	    	self.clearError();
+	    	return $http.get('/api/subscriptions', {params: {user_id: self.me.id}})
+	    		.then(function(res){
+	    			console.log(res.data);
+	    		}, function(res){
+	    			handleApiError(res, 'failed to get subscriptions');
+	    		});
+	    };
+
 	    self.getAll();
+	}]);
+
+	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {
+		var vm = this;
+
+		vm.task = {};
+		vm.newNote = {};
+		vm.pending = false;
+
+		vm.setTask = function(task) {
+			vm.task = task;
+			vm.newNote = {
+				notification: task.notification,
+				reason_id: task.reason_id,
+				method_id: task.method_id,
+				reminder: task.reminder
+			};
+		};
+
+		// update DB with current values
+		vm.update = function(){
+			if(vm.pending) {
+				vm.pending = false;
+				vm.task.notification = vm.newNote.notification;
+				vm.task.reason_id = vm.newNote.reason_id;
+				vm.task.method_id = vm.newNote.method_id;
+				vm.task.reminder = vm.newNote.reminder;
+				// todo - create/update/delete the DB row
+			}
+		};
+
+		// delete the notification row in the DB
+		vm.remove = function(){
+			vm.newNote.notification = 0;
+			// todo - delete the DB row
+		};
+
+		// start allowing the form to be edited to add a new notification (will already be enabled if it exists to allow for editing)
+		vm.add = function(){
+			vm.newNote.notification = 1;
+		};
+
+		vm.checkForPendingChanges = function() {
+			vm.pending =
+				vm.task.notification !== vm.newNote.notification ||
+				vm.task.reason_id !== vm.newNote.reason_id ||
+				vm.task.method_id !== vm.newNote.method_id ||
+				vm.task.reminder !== vm.newNote.reminder;
+		};
+
+		$scope.$watch(function(){return vm.newNote;}, function(){
+			vm.checkForPendingChanges();
+		}, true);
 	}]);
 })();
 

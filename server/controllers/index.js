@@ -11,7 +11,7 @@ var getTurns = function(conn, taskId) {
 	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id as userid, turns.id as turnid ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
 			'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
-			taskId, function(err, rows, fields){
+			[taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -22,12 +22,35 @@ var getTurns = function(conn, taskId) {
 };
 exports.getTurns = getTurns;
 
+var getSubscriptions = function(conn, userId) {
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'SELECT notifications.user_id, notifications.task_id, tasks.name AS taskName, notifications.method_id, methods.label AS methodLabel, methods.description AS methodDescription, notifications.reason_id, reasons.label AS reasonLabel, reasons.description AS reasonDescription, notifications.reminder, notifications.last_android_id, notifications.modified ' +
+			'FROM notifications INNER JOIN tasks on tasks.id = notifications.task_id INNER JOIN methods on methods.id = notifications.method_id INNER JOIN reasons ON reasons.id = notifications.reason_id ' +
+			'WHERE notifications.user_id = ?',
+			[userId], function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
+exports.getSubscriptions = getSubscriptions;
+
 var getTasks = function(conn, userId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-			'SELECT tasks.id,  tasks.name, tasks.periodic_hours, tasks.creator_user_id ' +
-			'FROM participants JOIN tasks ON participants.task_id = tasks.id ' +
-			'WHERE participants.user_id = ?', 
+			'SELECT tasks.id AS taskId, tasks.name AS taskName, tasks.periodic_hours, tasks.creator_user_id, notifications.reason_id, ' +
+    			'notifications.method_id, notifications.reminder, notifications.last_android_id, notifications.modified AS notificationModified, ' +
+    			'(notifications.method_id IS NOT NULL) as notification ' +
+			'FROM participants ' +
+				'JOIN tasks ON participants.task_id = tasks.id ' +
+    			'LEFT JOIN notifications ON tasks.id = notifications.task_id ' +
+    			'LEFT JOIN methods ON notifications.method_id = methods.id ' +
+    			'LEFT JOIN reasons ON notifications.reason_id = reasons.id ' +
+			'WHERE  participants.user_id = ?', 
 			[userId], function(err, rows, fields){
 				if(err) {
 					reject(err);
@@ -68,27 +91,42 @@ var getAll = function(conn, userId, taskId) {
 		if(taskId) {
 			for(var i = 0; i < tasks.length; i++) {
 				console.log(taskId, tasks[i].id);
-				if(tasks[i].id == taskId) {
+				if(tasks[i].taskId == taskId) {
 					results.taskid = parseInt(taskId);
-					return Promise.all([getTurns(conn, taskId), getStatus(conn, taskId)]);
+					return Promise.all([getTurns(conn, taskId), getStatus(conn, taskId), getEnums(conn, 'methods'), getEnums(conn, 'reasons')]);
 				}
 			}
 			log('tasks-turns-status invalid task id', taskId);
 		}
 		if(tasks.length) {
-			results.taskid = tasks[0].id;
-			return Promise.all([getTurns(conn, tasks[0].id),getStatus(conn, tasks[0].id)]);
+			results.taskid = tasks[0].taskId;
+			return Promise.all([getTurns(conn, tasks[0].taskId), getStatus(conn, tasks[0].taskId), getEnums(conn, 'methods'), getEnums(conn, 'reasons')]);
 		} else {
 			results.taskId = 0;
 			return [[],[]];
 		}
-	}).then(function(data){
-		results.turns = data[0];
-		results.users = data[1];
+	}).spread(function(turns, users, methods, reasons){
+		results.turns = turns;
+		results.users = users;
+		results.methods = methods;
+		results.reasons = reasons;
 		return results;
 	});
 };
 exports.getAll = getAll;
+
+var getEnums = function(conn, table) {
+	return new Promise(function(resolve, reject){
+		conn.query('SELECT id, label, description FROM ' + table + ' ORDER BY id ASC', function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				resolve(rows);
+			}
+		});
+	});
+};
+exports.getEnums = getEnums;
 
 var deleteTurn = function(conn, turnId) {
 	return new Promise(function(resolve, reject){

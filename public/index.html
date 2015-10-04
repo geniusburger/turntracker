@@ -20,7 +20,7 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
-  <body ng-controller="testCtrl as test">
+  <body ng-controller="AdminController as test">
     
     <script src="js/angular.min.js"></script>
     <div class="container">
@@ -31,19 +31,12 @@
             <p ng-show="test.error.stack" class="pre">{{test.error.stack}}</p>
         </div>
         <div class="row">
-            <div class="control-column col-lg-3 col-md-4 col-sm-5 col-xs-12">
+            <div class="control-column col-lg-5 col-md-6 col-sm-6 col-xs-12">
                 <h2 class="title">Turn Tracker</h2>
                 <div class="test-buttons">
                     <button type="button" class="btn btn-warning" ng-click="test.notify()">Notify</button>
                     <button type="button" class="btn btn-info" ng-click="test.getUsers()">Users</button>
-                </div>
-                <div>
-                    <div class="btn-group top" ng-cloak>
-                        <button class="btn btn-default dropdown-toggle" type="button" id="taskDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{test.task.name}} <span class="caret"></span></button>
-                        <ul class="dropdown-menu" aria-labelledby="taskDropdown">
-                            <li ng-repeat="task in test.tasks" ng-class="task.id == test.task.id ? 'active' : ''" ng-click="test.getTurnsAndStatus(task.id)"><a href="#">{{task.name}}</a></li>
-                        </ul>
-                    </div>
+                    <button type="button" class="btn btn-info" ng-click="test.getSubscriptions()">Subs</button>
                 </div>
                 <div>
                     <div class="btn-group" ng-cloak>
@@ -58,10 +51,33 @@
                     </div>
                 </div>
                 <ul class="list-group" ng-cloak>
+                    <li class="list-group-item" ng-repeat="task in test.tasks" ng-class="{'active': task === test.currentTask}" ng-controller="NotificationController as note" ng-init="note.setTask(task)">
+                        <span ng-click="test.getTurnsAndStatus(task.taskId)">{{task.taskName}}</span>
+                        <button type="button" class="close close-inline glyph-inline pad" ng-show="!note.newNote.notification" ng-click="note.add()"><span class="glyphicon glyphicon-plus"></span></button>
+                        <button type="button" class="close close-inline glyph-inline" ng-show="note.pending" ng-click="note.update()"><span class="glyphicon glyphicon-floppy-disk"></span></button>
+                        <form class="form-inline" novalidate>
+                            <div ng-if="note.newNote.notification">
+                                Send <select ng-options="item.id as item.label for item in test.methods" ng-model="note.newNote.method_id">
+                                    <option value="">-- method --</option>
+                                </select>
+                                after <select ng-options="item.id as item.label for item in test.reasons" ng-model="note.newNote.reason_id">
+                                    <option value="">-- reason --</option>
+                                </select>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" ng-model="note.newNote.reminder" ng-true-value="1" ng-false-value="0">Remind
+                                    </label>
+                                </div>
+                                <button type="button" class="close close-inline glyph-inline pad" ng-click="note.remove()"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        </form>
+                    </li>
+                </ul>
+                <ul class="list-group" ng-cloak>
                     <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-mouseenter="test.hoverId = user.id" ng-mouseleave="test.hoverId = 0">{{user.name}}<span class="badge">{{user.diff}}</span></li>
                 </ul>
             </div>
-            <div class="list-column col-lg-9 col-md-8 col-sm-7 col-xs-12">
+            <div class="list-column col-lg-7 col-md-6 col-sm-6 col-xs-12">
                 <table class="table table-condensed table-hover">
                     <thead>
                         <tr>

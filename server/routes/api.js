@@ -17,6 +17,16 @@ router.get('/tasks-turns-status', function(req, res, next){
 	});
 });
 
+router.get('/subscriptions', function(req, res, next){
+	using(db.getConnection(), function(conn){
+		return index.getSubscriptions(conn, req.query.user_id);
+	}).then(function(results){
+		res.json(results);
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to get subscriptions'));
+	});
+});
+
 router.get('/tasks', function(req, res, next){
 	using(db.getConnection(), function(conn) {
 		return index.getTasks(conn, req.query.userid);
@@ -29,9 +39,9 @@ router.get('/tasks', function(req, res, next){
 
 router.get('/turns', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		var userPromise = index.getUser(req.ip);
+		var userPromise = index.getUser(conn, req.ip);
 		var turnsPromise = userPromise.then(function(){
-			return index.getTurns(req.query.id);
+			return index.getTurns(conn, req.query.id);
 		});
 		return Promise.all([userPromise, turnsPromise]);
 	}).then(function(results){
@@ -43,7 +53,7 @@ router.get('/turns', function(req, res, next) {
 
 router.get('/users', function(req, res, next){
 	using(db.getConnection(), function(conn) {
-		return index.getUsers();
+		return index.getUsers(conn);
 	}).then(function(rows){
 		res.json({users: rows});
 	}).catch(function(err){
@@ -53,7 +63,7 @@ router.get('/users', function(req, res, next){
 
 router.get('/status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		return index.getStatus(req.query.id);
+		return index.getStatus(conn, req.query.id);
 	}).then(function(rows){
 		res.json({users: rows});
 	}).catch(function(err){
@@ -63,7 +73,7 @@ router.get('/status', function(req, res, next) {
 
 router.put('/android', function(req, res, next){
 	using(db.getConnection(), function(conn) {
-		return index.setAndroidToken(req.body.user_id, req.body.token);
+		return index.setAndroidToken(conn, req.body.user_id, req.body.token);
 	}).then(function(){
 		res.json({success: true});
 	}).catch(function(err){
@@ -74,7 +84,7 @@ router.put('/android', function(req, res, next){
 router.delete('/android', function(req, res, next){
 	/// @todo Should also delete subscriptions once they exist
 	using(db.getConnection(), function(conn) {
-		return index.setAndroidToken(req.query.user_id, null);
+		return index.setAndroidToken(conn, req.query.user_id, null);
 	}).then(function(){
 		res.json({success: true});
 	}).catch(function(err){
@@ -84,8 +94,8 @@ router.delete('/android', function(req, res, next){
 
 router.delete('/turn', function(req, res, next){
 	using(db.getConnection(), function(conn) {
-		return index.deleteTurn(req.query.turn_id).then(function onDeleteSuccess(){
-			return index.getAll(req.query.user_id, req.query.task_id);
+		return index.deleteTurn(conn, req.query.turn_id).then(function onDeleteSuccess(){
+			return index.getAll(conn, req.query.user_id, req.query.task_id);
 		}, function onDeleteError(err){
 			throw new ApiError(err, 'Failed to delete turn');
 		}).catch(function onGetAllError(err){
@@ -120,13 +130,13 @@ router.get('/turns-status', function(req, res, next) {
 
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		return (req.body.user_id ? index.saveAddress(req.body.user_id, req.ip) : index.getUser(req.ip)).then(function(user){
-			return index.takeTurn(req.body.task_id, typeof user === 'object' ? user.id : user);
+		return (req.body.user_id ? index.saveAddress(conn, req.body.user_id, req.ip) : index.getUser(conn, req.ip)).then(function(user){
+			return index.takeTurn(conn, req.body.task_id, typeof user === 'object' ? user.id : user);
 		}).then(function(){
-			return Promise.all([index.getTurns(req.body.task_id), index.getStatus(req.body.task_id)]);
+			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
 		}, function(){
 			log('ERROR failed to take turn', err);
-			return Promise.all([index.getTurns(req.body.task_id), index.getStatus(req.body.task_id)]);
+			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
 		});
 	}).then(function(results){
 		res.json({turns: results[0], users: results[1]});
