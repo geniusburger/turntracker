@@ -191,6 +191,7 @@ router.post('/turn', function(req, res, next) {
 						}, tokens).then(function(results){
 							console.log('others results', results);
 							// todo - check results for cononical IDs, success/failure, and message ID
+							// table 5 at https://developers.google.com/cloud-messaging/http-server-ref
 						});
 					}
 					if(newTurnNote) {
@@ -199,6 +200,7 @@ router.post('/turn', function(req, res, next) {
 						}, newTurnNote.androidtoken).then(function(results){
 							console.log('next results', results);
 							// todo - check results for cononical IDs, success/failure, and message ID
+							// table 5 at https://developers.google.com/cloud-messaging/http-server-ref
 						});
 					}
 					return Promise.all([othersPromise || Promise.resolve(), newTurnPromise || Promise.resolve()]);
