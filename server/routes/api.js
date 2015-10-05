@@ -82,13 +82,17 @@ router.put('/android', function(req, res, next){
 });
 
 router.delete('/android', function(req, res, next){
-	/// @todo Should also delete subscriptions once they exist
 	using(db.getConnection(), function(conn) {
-		return index.setAndroidToken(conn, req.query.user_id, null);
+		return index.setAndroidToken(conn, req.query.user_id, null)
+		.then(function onDeleteSuccess(){
+			return index.deleteAndroidSubscriptions(conn, req.query.user_id);
+		}, function onDeleteError(err){
+			throw new ApiError(err, 'Failaed to clear android token');
+		});
 	}).then(function(){
 		res.json({success: true});
 	}).catch(function(err){
-		next(new ApiError(err, 'Failed to delete android key'));
+		next(new ApiError(err, 'Failed to clear android notifications after deleting android key'));
 	});
 });
 

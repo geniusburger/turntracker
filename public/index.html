@@ -51,7 +51,7 @@
                     </div>
                 </div>
                 <ul class="list-group" ng-cloak>
-                    <li class="list-group-item" ng-repeat="task in test.tasks" ng-class="{'active': task === test.currentTask}" ng-controller="NotificationController as note" ng-init="note.setTask(task); note.setErrorHandlers(test.clearError, test.handleApiError); note.setUserId(test.me.id);">
+                    <li class="list-group-item" ng-repeat="task in test.tasks" ng-class="{'active': task === test.currentTask}" ng-controller="NotificationController as note" ng-init="note.setTask(task); note.setErrorHandlers(test.clearError, test.handleApiError); note.setUser(test.me);">
                         <span ng-click="test.getTurnsAndStatus(task.taskId)">{{task.taskName}}</span>
                         <button type="button" class="close close-inline glyph-inline pad" ng-show="!note.newNote.notification" ng-click="note.add()"><span class="glyphicon glyphicon-plus"></span></button>
                         <button type="button" class="close close-inline glyph-inline" ng-show="note.pending && note.valid" ng-click="note.update()"><span class="glyphicon glyphicon-floppy-disk"></span></button>
@@ -76,7 +76,7 @@
                     </li>
                 </ul>
                 <ul class="list-group" ng-cloak>
-                    <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-mouseenter="test.hoverId = user.id" ng-mouseleave="test.hoverId = 0">{{user.name}}<span class="badge">{{user.diff}}</span></li>
+                    <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-mouseenter="test.hoverId = user.id" ng-mouseleave="test.hoverId = 0">{{user.name}}<span class="badge">{{user.diff}}</span><span class="pull-right"><span ng-if="user.mobile" class="glyphicon glyphicon-phone mobile-status"></span></span></li>
                 </ul>
             </div>
             <div class="list-column col-lg-7 col-md-6 col-sm-6 col-xs-12">

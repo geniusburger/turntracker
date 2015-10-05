@@ -63,7 +63,6 @@ exports.updateSubscription = updateSubscription;
 var deleteSubscription = function(conn, userId, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query('DELETE FROM notifications WHERE user_id = ? AND task_id = ?', [userId, taskId], function(err, rows, fields){
-			console.log('delete results', err, rows);
 			if(err) {
 				reject(err);
 			} else if(rows.affectedRows === 0) {
@@ -75,6 +74,19 @@ var deleteSubscription = function(conn, userId, taskId) {
 	});
 };
 exports.deleteSubscription = deleteSubscription;
+
+var deleteAndroidSubscriptions = function(conn, userId) {
+	return new Promise(function(resolve, reject) {
+		conn.query('DELETE FROM notifications WHERE user_id = ? AND method_id = 1', [userId], function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
+	});
+};
+exports.deleteAndroidSubscriptions = deleteAndroidSubscriptions;
 
 var getTasks = function(conn, userId) {
 	return new Promise(function(resolve, reject){
@@ -102,7 +114,7 @@ exports.getTasks = getTasks;
 var getStatus = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns ' + 
+			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile ' + 
 			'FROM participants JOIN users on participants.user_id = users.id LEFT JOIN ( ' +
 				'SELECT turns.user_id, count(*) as turns, turns.inserted ' +
 				'FROM turns WHERE turns.task_id = ? ' +

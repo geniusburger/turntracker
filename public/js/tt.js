@@ -16,7 +16,7 @@
 	    	stack: undefined
 	    };
 	    self.worst = 0;
-	    self.me = {id: 1, name: 'Human'};
+	    self.me = {id: 1};
 	    self.hoverId = 0;
 	    self.reasons = [];
 	    self.methods = [];
@@ -93,6 +93,9 @@
 	    		}, 0);
 	    		self.userMap = {};
 	    		data.users.forEach(function(user){
+	    			if(user.id === self.me.id) {
+	    				self.me = user;
+	    			}
 	    			user.diff = max - user.turns;
 	    			self.userMap[user.id] = user.name;
 	    		});
@@ -268,7 +271,7 @@
 		vm.waiting = false;
 		vm.task = {};
 		vm.newNote = {};
-		vm.userId = 0;
+		vm.user = {};
 		vm.valid = true;
 		vm.invalidNote = '';
 		vm.clearError = function(){};
@@ -289,8 +292,8 @@
 			vm.handleApiError = handleApiError;
 		};
 
-		vm.setUserId = function(userId) {
-			vm.userId = userId;
+		vm.setUser = function(user) {
+			vm.user = user;
 		}
 
 		// update DB with current values
@@ -304,7 +307,7 @@
 
 				vm.clearError();
 				var httpMethod = $http.put;
-				var params = {userId: vm.userId, taskId: vm.task.taskId, note: vm.newNote};
+				var params = {userId: vm.user.id, taskId: vm.task.taskId, note: vm.newNote};
 				if(!vm.newNote.notification) {
 					httpMethod = $http.delete;
 					params = {params: params};
@@ -337,14 +340,18 @@
 				vm.task.method_id !== vm.newNote.method_id ||
 				vm.task.reminder !== vm.newNote.reminder;
 			if(vm.newNote.notification) {
+				var valid = false;
 				if(!vm.newNote.method_id) {
 					vm.invalidNote = 'Must choose a method';
+				} else if(!vm.user.mobile && vm.newNote.method_id === 1) {
+					vm.invalidNote = "User doesn't have mobile access configured";
+					// todo - maybe we should just disable the android option instead of allowing them to select it
 				} else if(!vm.newNote.reason_id) {
 					vm.invalidNote = 'Must choose a reason';
 				} else {
-					vm.valid = true;
+					valid = true;
 				}
-				vm.valid = false;
+				vm.valid = valid;
 			} else {
 				vm.valid = true;
 			}
