@@ -154,16 +154,60 @@ router.get('/turns-status', function(req, res, next) {
 
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
+		var turnTakerUserId;
 		return (req.body.user_id ? index.saveAddress(conn, req.body.user_id, req.ip) : index.getUser(conn, req.ip)).then(function(user){
-			return index.takeTurn(conn, req.body.task_id, typeof user === 'object' ? user.id : user);
+			turnTakerUserId = typeof user === 'object' ? user.id : user;
+			return index.takeTurn(conn, req.body.task_id, turnTakerUserId);
 		}).then(function(){
 			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
 		}, function(){
+			// todo this could also be an error from getting the user or saving the address
 			log('ERROR failed to take turn', err);
 			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
+		}).then(function(results){
+			// send notifications
+			var users = results[1];
+			var newTurnUser = users[0];
+			var turnTakerUserName = users.reduce(function(prev, user){
+				return user.id == turnTakerUserId ? user.name : prev;
+			}, '?');
+
+			var notesPromise = index.getAndroidSubscriptions(conn, req.body.task_id, newTurnUser.id)
+			.then(function(notes){
+				if(notes.length) {
+					var newTurnNote;
+					var tokens = notes.filter(function(note){
+						if(note.user_id === newTurnUser.id) {
+							newTurnNote = note;
+							return false;
+						}
+						return true;
+					}).map(function(note){
+						return note.androidtoken;
+					});
+					if(tokens.length) {
+						var othersPromise = index.sendAndroidMessage({
+							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ', next is ' + newTurnUser.name
+						}, tokens).then(function(results){
+							console.log('others results', results);
+						});
+					}
+					if(newTurnNote) {
+						var newTurnPromise = index.sendAndroidMessage({
+							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ", it's your turn next"
+						}, newTurnNote.androidtoken).then(function(results){
+							console.log('next results', results);
+						});
+					}
+					return Promise.all([othersPromise || Promise.resolve(), newTurnPromise || Promise.resolve()]);
+				}
+				return Promise.resolve();
+				// todo - update last token in DB and in GCM
+			});
+			return results.concat(notesPromise);
 		});
-	}).then(function(results){
-		res.json({turns: results[0], users: results[1]});
+	}).spread(function(turns, users){
+		res.json({turns: turns, users: users});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to take turn'));
 	});

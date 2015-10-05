@@ -278,12 +278,13 @@
 		vm.handleApiError = function(){};
 
 		vm.setTask = function(task) {
+			task.reminder = task.reminder ? 1 : 0;
 			vm.task = task;
 			vm.newNote = {
 				notification: task.notification,
 				reason_id: task.reason_id,
 				method_id: task.method_id,
-				reminder: task.reminder ? 1 : 0
+				reminder: task.reminder
 			};
 		};
 
@@ -334,11 +335,12 @@
 		};
 
 		vm.checkForPendingChanges = function() {
-			vm.pending =
-				vm.task.notification !== vm.newNote.notification ||
-				vm.task.reason_id !== vm.newNote.reason_id ||
-				vm.task.method_id !== vm.newNote.method_id ||
-				vm.task.reminder !== vm.newNote.reminder;
+			vm.pending = vm.task.notification !== vm.newNote.notification ||
+				(vm.newNote.notification && (
+					vm.task.reason_id !== vm.newNote.reason_id ||
+					vm.task.method_id !== vm.newNote.method_id ||
+					vm.task.reminder !== vm.newNote.reminder
+				));
 			if(vm.newNote.notification) {
 				var valid = false;
 				if(!vm.newNote.method_id) {

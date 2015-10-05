@@ -75,6 +75,23 @@ var deleteSubscription = function(conn, userId, taskId) {
 };
 exports.deleteSubscription = deleteSubscription;
 
+var getAndroidSubscriptions = function(conn, taskId, /* the user whose turn it is */ userId) {
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'SELECT notifications.user_id, users.androidtoken, last_android_id, reasons.label, tasks.name AS task ' +
+			'FROM notifications JOIN reasons on reasons.id = notifications.reason_id JOIN users on users.id = notifications.user_id JOIN tasks on tasks.id = notifications.task_id ' +
+			'WHERE task_id = ? AND method_id = 1 AND users.androidtoken IS NOT NULL AND ( reason_id = 1 OR user_id = ? )',
+			[taskId, userId], function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
+exports.getAndroidSubscriptions = getAndroidSubscriptions;
+
 var deleteAndroidSubscriptions = function(conn, userId) {
 	return new Promise(function(resolve, reject) {
 		conn.query('DELETE FROM notifications WHERE user_id = ? AND method_id = 1', [userId], function(err, rows, fields){
