@@ -39,6 +39,43 @@ var getSubscriptions = function(conn, userId) {
 };
 exports.getSubscriptions = getSubscriptions;
 
+var updateSubscription = function(conn, userId, taskId, reasonId, methodId, reminder) {
+	//INSERT INTO table (id, name, age) VALUES(1, "A", 19) ON DUPLICATE KEY UPDATE name=VALUES(name), age=VALUES(age)
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'INSERT INTO notifications (user_id, task_id, reason_id, method_id, reminder) ' +
+			'VALUES(?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE ' +
+			'reason_id=VALUES(reason_id), method_id=VALUES(method_id), reminder=VALUES(reminder)',
+			[userId, taskId, reasonId, methodId, reminder],
+			function(err, rows, fields){
+				if(err) {
+					reject(err);
+				} else if(rows.affectedRows === 0) {
+					reject(new Error('no rows affected'));
+				} else {
+					resolve();
+				}
+			});
+	});
+};
+exports.updateSubscription = updateSubscription;
+
+var deleteSubscription = function(conn, userId, taskId) {
+	return new Promise(function(resolve, reject){
+		conn.query('DELETE FROM notifications WHERE user_id = ? AND task_id = ?', [userId, taskId], function(err, rows, fields){
+			console.log('delete results', err, rows);
+			if(err) {
+				reject(err);
+			} else if(rows.affectedRows === 0) {
+					reject(new Error('no rows affected'));
+			} else {
+				resolve();
+			}
+		});
+	});
+};
+exports.deleteSubscription = deleteSubscription;
+
 var getTasks = function(conn, userId) {
 	return new Promise(function(resolve, reject){
 		conn.query(

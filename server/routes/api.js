@@ -111,6 +111,26 @@ router.delete('/turn', function(req, res, next){
 	});
 });
 
+router.put('/subscription', function(req, res, next) {
+	using(db.getConnection(), function(conn) {
+		return index.updateSubscription(conn, req.body.userId, req.body.taskId, req.body.note.reason_id, req.body.note.method_id, req.body.note.reminder);
+	}).then(function(results){
+		res.json({success: true});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to insert/update subscription'));
+	});
+});
+
+router.delete('/subscription', function(req, res, next) {
+	using(db.getConnection(), function(conn){
+		return index.deleteSubscription(conn, req.query.userId, req.query.taskId);
+	}).then(function(results){
+		res.json({success: true});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to delete subscription'));
+	});
+});
+
 router.get('/turns-status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		if(req.query.user_id) {

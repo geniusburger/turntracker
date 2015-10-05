@@ -105,7 +105,7 @@
 	    	}
     	};
 
-    	var handleApiError = function(res, whatFailed) {
+    	self.handleApiError = function(res, whatFailed) {
 			var existing = Array.prototype.slice.call(document.getElementsByTagName('iframe'));
 			for(var i = 0; i < existing.length; i++) {
 				existing[i].remove();
@@ -159,7 +159,7 @@
 		    	.then(function(res){
 		    		processStatusData(res.data);
 		    	}, function(res){
-		    		handleApiError(res, 'Failed to get turns');
+		    		self.handleApiError(res, 'Failed to get turns');
 		    	});
 	    };
 
@@ -169,7 +169,7 @@
 		    	.then(function(res){
 		    		processStatusData(res.data);
 		    	}, function(res){
-		    		handleApiError(res, 'Failed to get status');
+		    		self.handleApiError(res, 'Failed to get status');
 		    	});
 	    };
 
@@ -180,7 +180,7 @@
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 	    		}, function(res){
-	    			handleApiError(res, 'Failed to turns/status');
+	    			self.handleApiError(res, 'Failed to turns/status');
 	    		});
 	    };
 
@@ -192,7 +192,7 @@
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 	    		}, function(res){
-	    			handleApiError(res, 'Failed to tasks/turns/status');
+	    			self.handleApiError(res, 'Failed to tasks/turns/status');
 	    		});
 	    };
 
@@ -202,7 +202,7 @@
 	    		.then(function(res){
 	    			processTasksData(res.data);
 	    		}, function(res){
-	    			handleApiError(res, 'Failed to get tasks');
+	    			self.handleApiError(res, 'Failed to get tasks');
 	    		});
 	    };
 
@@ -213,7 +213,7 @@
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 		    	}, function(res){
-		    		handleApiError(err, 'failed to take turn');
+		    		self.handleApiError(res, 'failed to take turn');
 	    		});
 	    };
 
@@ -223,7 +223,7 @@
 		    	.then(function(res){
 		    		console.log('notify results', res.data);
 		    	}, function(res) {
-		    		handleApiError(res, 'Failed to notify');
+		    		self.handleApiError(res, 'Failed to notify');
 		    	});
 	    };
 
@@ -233,7 +233,7 @@
 		    	.then(function(res){
 		    		console.log('users', res.data);
 		    	}, function(res){
-		    		handleApiError(res, 'failed to get users');
+		    		self.handleApiError(res, 'failed to get users');
 		    	});
 	    }
 
@@ -244,7 +244,7 @@
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 		    	}, function(res){
-		    		handleApiError(res, 'failed to delete turn');
+		    		self.handleApiError(res, 'failed to delete turn');
 		    	});
 	    };
 
@@ -254,7 +254,7 @@
 	    		.then(function(res){
 	    			console.log(res.data);
 	    		}, function(res){
-	    			handleApiError(res, 'failed to get subscriptions');
+	    			self.handleApiError(res, 'failed to get subscriptions');
 	    		});
 	    };
 
@@ -264,9 +264,15 @@
 	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {
 		var vm = this;
 
+		vm.pending = false;
+		vm.waiting = false;
 		vm.task = {};
 		vm.newNote = {};
-		vm.pending = false;
+		vm.userId = 0;
+		vm.valid = true;
+		vm.invalidNote = '';
+		vm.clearError = function(){};
+		vm.handleApiError = function(){};
 
 		vm.setTask = function(task) {
 			vm.task = task;
@@ -274,26 +280,49 @@
 				notification: task.notification,
 				reason_id: task.reason_id,
 				method_id: task.method_id,
-				reminder: task.reminder
+				reminder: task.reminder ? 1 : 0
 			};
 		};
 
+		vm.setErrorHandlers = function(clearError, handleApiError) {
+			vm.clearError = clearError;
+			vm.handleApiError = handleApiError;
+		};
+
+		vm.setUserId = function(userId) {
+			vm.userId = userId;
+		}
+
 		// update DB with current values
 		vm.update = function(){
-			if(vm.pending) {
+			if(vm.pending && vm.valid) {
 				vm.pending = false;
 				vm.task.notification = vm.newNote.notification;
 				vm.task.reason_id = vm.newNote.reason_id;
 				vm.task.method_id = vm.newNote.method_id;
 				vm.task.reminder = vm.newNote.reminder;
-				// todo - create/update/delete the DB row
+
+				vm.clearError();
+				var httpMethod = $http.put;
+				var params = {userId: vm.userId, taskId: vm.task.taskId, note: vm.newNote};
+				if(!vm.newNote.notification) {
+					httpMethod = $http.delete;
+					params = {params: params};
+				}
+				vm.waiting = true;
+		    	return httpMethod('/api/subscription', params)
+		    		.then(function(res){
+		    			// success
+		    			vm.waiting = false;
+			    	}, function(res){
+			    		vm.handleApiError(res, 'failed to update notification');
+		    			vm.waiting = false;
+		    		});
 			}
 		};
 
-		// delete the notification row in the DB
 		vm.remove = function(){
 			vm.newNote.notification = 0;
-			// todo - delete the DB row
 		};
 
 		// start allowing the form to be edited to add a new notification (will already be enabled if it exists to allow for editing)
@@ -307,6 +336,21 @@
 				vm.task.reason_id !== vm.newNote.reason_id ||
 				vm.task.method_id !== vm.newNote.method_id ||
 				vm.task.reminder !== vm.newNote.reminder;
+			if(vm.newNote.notification) {
+				if(!vm.newNote.method_id) {
+					vm.invalidNote = 'Must choose a method';
+				} else if(!vm.newNote.reason_id) {
+					vm.invalidNote = 'Must choose a reason';
+				} else {
+					vm.valid = true;
+				}
+				vm.valid = false;
+			} else {
+				vm.valid = true;
+			}
+			vm.valid =
+				!vm.newNote.notification ||
+				(vm.newNote.method_id > 0 && vm.newNote.reason_id > 0)
 		};
 
 		$scope.$watch(function(){return vm.newNote;}, function(){

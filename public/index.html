@@ -51,10 +51,12 @@
                     </div>
                 </div>
                 <ul class="list-group" ng-cloak>
-                    <li class="list-group-item" ng-repeat="task in test.tasks" ng-class="{'active': task === test.currentTask}" ng-controller="NotificationController as note" ng-init="note.setTask(task)">
+                    <li class="list-group-item" ng-repeat="task in test.tasks" ng-class="{'active': task === test.currentTask}" ng-controller="NotificationController as note" ng-init="note.setTask(task); note.setErrorHandlers(test.clearError, test.handleApiError); note.setUserId(test.me.id);">
                         <span ng-click="test.getTurnsAndStatus(task.taskId)">{{task.taskName}}</span>
                         <button type="button" class="close close-inline glyph-inline pad" ng-show="!note.newNote.notification" ng-click="note.add()"><span class="glyphicon glyphicon-plus"></span></button>
-                        <button type="button" class="close close-inline glyph-inline" ng-show="note.pending" ng-click="note.update()"><span class="glyphicon glyphicon-floppy-disk"></span></button>
+                        <button type="button" class="close close-inline glyph-inline" ng-show="note.pending && note.valid" ng-click="note.update()"><span class="glyphicon glyphicon-floppy-disk"></span></button>
+                        <span class="error" ng-show="!note.valid">{{note.invalidNote}}</span>
+                        <span ng-show="note.waiting" class="faded"> updating...</span>
                         <form class="form-inline" novalidate>
                             <div ng-if="note.newNote.notification">
                                 Send <select ng-options="item.id as item.label for item in test.methods" ng-model="note.newNote.method_id">
