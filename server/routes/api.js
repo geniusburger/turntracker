@@ -169,7 +169,7 @@ router.post('/turn', function(req, res, next) {
 			var users = results[1];
 			var newTurnUser = users[0];
 			var turnTakerUserName = users.reduce(function(prev, user){
-				return user.id == turnTakerUserId ? user.name : prev;
+				return user.id === turnTakerUserId ? user.name : prev;
 			}, '?');
 
 			var notesPromise = index.getAndroidSubscriptions(conn, req.body.task_id, newTurnUser.id)
@@ -179,9 +179,9 @@ router.post('/turn', function(req, res, next) {
 					var tokens = notes.filter(function(note){
 						if(note.user_id === newTurnUser.id) {
 							newTurnNote = note;
-							return false;
+							return false; // send a different message to the person whose turn it now is
 						}
-						return true;
+						return note.user_id !== turnTakerUserId; // don't send a notification to the person that just took a turn
 					}).map(function(note){
 						return note.androidtoken;
 					});
@@ -190,6 +190,7 @@ router.post('/turn', function(req, res, next) {
 							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ', next is ' + newTurnUser.name
 						}, tokens).then(function(results){
 							console.log('others results', results);
+							// todo - check results for cononical IDs, success/failure, and message ID
 						});
 					}
 					if(newTurnNote) {
@@ -197,6 +198,7 @@ router.post('/turn', function(req, res, next) {
 							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ", it's your turn next"
 						}, newTurnNote.androidtoken).then(function(results){
 							console.log('next results', results);
+							// todo - check results for cononical IDs, success/failure, and message ID
 						});
 					}
 					return Promise.all([othersPromise || Promise.resolve(), newTurnPromise || Promise.resolve()]);
