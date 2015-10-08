@@ -306,6 +306,39 @@ var setAndroidToken = function(conn, userid, token) {
 };
 exports.setAndroidToken = setAndroidToken;
 
+var setAndroidTokens = function(conn, updates) {
+	// { userId: nextTurnUser.id, token: result.registration_id};
+	// UPDATE table_users
+ //    SET cod_user = (case when user_role = 'student' then '622057'
+ //                         when user_role = 'assistant' then '2913659'
+ //                         when user_role = 'admin' then '6160230'
+ //                    end),
+ //        date = '12082014'
+ //    WHERE user_role in ('student', 'assistant', 'admin') AND
+ //          cod_office = '17389551';
+ 	var query = 'UPDATE users SET androidtoken = ( CASE ';
+ 	var fields = [];
+ 	var ids = updates.map(function(up){
+ 		query += 'WHEN id = ? then ? ';
+ 		fields.push(up.userId, up.token);
+ 		return up.userId;
+ 	});
+ 	query += 'END ) WHERE id IN (' + ids.map(function(){return '?'}).join(', ') + ')';
+	fields = fields.concat(ids);
+	log('update token query', query, 'values', fields);
+	return new Promise(function(resolve, reject){
+		conn.query(query, fields, function(err, rows, fields){
+			if(err) {
+				log('ERROR failed to update android tokens');
+				reject(err);
+			} else {
+				log('updated android tokens');
+				resolve();
+			}
+		});
+	});
+};
+
 var sendAndroidMessage = function(dataObject, token) {
 	return new Promise(function(resolve, reject){
 		// Build the post string from an object
@@ -351,6 +384,8 @@ var sendAndroidMessage = function(dataObject, token) {
 			log('ERROR failed to send android message', err);
 			reject(err);
 		});
+	}).then(function(jsonString){
+		return JSON.parse(jsonString);
 	});
 };
 exports.sendAndroidMessage = sendAndroidMessage;

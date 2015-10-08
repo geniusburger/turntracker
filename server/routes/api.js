@@ -164,51 +164,73 @@ router.post('/turn', function(req, res, next) {
 			// todo this could also be an error from getting the user or saving the address
 			log('ERROR failed to take turn', err);
 			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
-		}).then(function(results){
+		}).spread(function(turns, users){
 			// send notifications
-			var users = results[1];
-			var newTurnUser = users[0];
+			var nextTurnUser = users[0];
 			var turnTakerUserName = users.reduce(function(prev, user){
 				return user.id === turnTakerUserId ? user.name : prev;
 			}, '?');
 
-			var notesPromise = index.getAndroidSubscriptions(conn, req.body.task_id, newTurnUser.id)
-			.then(function(notes){
-				if(notes.length) {
-					var newTurnNote;
-					var tokens = notes.filter(function(note){
-						if(note.user_id === newTurnUser.id) {
-							newTurnNote = note;
+			var notesPromise = index.getAndroidSubscriptions(conn, req.body.task_id, nextTurnUser.id)
+			.then(function(allNotes){
+				if(allNotes.length) {
+					var nextTurnNote;
+					var otherNotes = allNotes.filter(function(note){
+						if(note.user_id === nextTurnUser.id) {
+							nextTurnNote = note;
 							return false; // send a different message to the person whose turn it now is
 						}
 						return note.user_id !== turnTakerUserId; // don't send a notification to the person that just took a turn
-					}).map(function(note){
+					});
+					var otherTokens = otherNotes.map(function(note){
 						return note.androidtoken;
 					});
-					if(tokens.length) {
+					var extractRegistrationIds = function(gcmResults, registrationIds) {
+						gcmResults.forEach(function(gcmRes){
+							if(gcmRes.registration_id) {
+								registrationIds.push()
+							}
+						});
+					};
+					if(otherTokens.length) {
 						var othersPromise = index.sendAndroidMessage({
-							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ', next is ' + newTurnUser.name
-						}, tokens).then(function(results){
-							console.log('others results', results);
+							message: turnTakerUserName + ' just took a turn for ' + otherNotes[0].task + ', ' + nextTurnUser.name + ' is next'
+						}, otherTokens).then(function(gcmResponse){
+							log('sent ' + gcmResponse.success + ' out of ' + otherTokens.length + ' other notes', typeof gcmResponse, gcmResponse);
+							return gcmResponse.results.map(function(result, i){
+								return { userId: otherNotes[i].user_id, token: result.registration_id};
+							}).filter(function(update){
+								return update.token;
+							});
 							// todo - check results for cononical IDs, success/failure, and message ID
 							// table 5 at https://developers.google.com/cloud-messaging/http-server-ref
+							// what is the point of saving the msg IDs?
+							// should check for errors
 						});
 					}
-					if(newTurnNote) {
-						var newTurnPromise = index.sendAndroidMessage({
-							message: turnTakerUserName + ' just took a turn for ' + notes[0].task + ", it's your turn next"
-						}, newTurnNote.androidtoken).then(function(results){
-							console.log('next results', results);
-							// todo - check results for cononical IDs, success/failure, and message ID
-							// table 5 at https://developers.google.com/cloud-messaging/http-server-ref
+					if(nextTurnNote) {
+						var nextTurnPromise = index.sendAndroidMessage({
+							message: turnTakerUserName + ' just took a turn for ' + nextTurnNote.task + ', you are next'
+						}, nextTurnNote.androidtoken).then(function(gcmResponse){
+							log('sent ' + gcmResponse.success + ' out of 1 next notes');
+							return gcmResponse.results.map(function(result){
+								return { userId: nextTurnUser.id, token: result.registration_id};
+							}).filter(function(update){
+								return update.token;
+							});
 						});
 					}
-					return Promise.all([othersPromise || Promise.resolve(), newTurnPromise || Promise.resolve()]);
+					return Promise.all([othersPromise || [], nextTurnPromise || []])
+					.spread(function(otherUpdates, nextUpdates){
+						var updates = otherUpdates.concat(nextUpdates);
+						if(updates.length) {
+							log('updating ' + updates.length + ' tokens');
+							return index.setAndroidTokens(conn, updates);
+						}
+					});
 				}
-				return Promise.resolve();
-				// todo - update last token in DB and in GCM
 			});
-			return results.concat(notesPromise);
+			return Promise.all([turns, users, notesPromise]);
 		});
 	}).spread(function(turns, users){
 		res.json({turns: turns, users: users});
@@ -234,8 +256,6 @@ router.post('/notify', function(req, res, next) {
 		return index.sendAndroidMessage({
 			message: 'Android message from TT'
 		}, token);
-	}).then(function(jsonString){
-		return JSON.parse(jsonString);
 	}).then(function(jsonResults){
 		res.json(jsonResults);
 	}).catch(function(err){
