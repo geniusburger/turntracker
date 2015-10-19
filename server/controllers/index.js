@@ -291,6 +291,20 @@ var getAndroidUsers = function(conn) {
 };
 exports.getAndroidUsers = getAndroidUsers;
 
+var getUser = function(conn, username){
+	return new Promise(function(resolve, reject){
+		conn.query('SELECT id, username, displayname FROM users WHERE username = ?', [username], function(err, rows, fields){
+			if(err) {
+				log("ERROR failed to get user '" + username + "'", err);
+				reject(err);
+			} else {
+				resolve(rows);
+			}
+		});
+	});
+};
+exports.getUser = getUser;
+
 var setAndroidToken = function(conn, userid, token) {
 	return new Promise(function(resolve, reject){
 		conn.query('UPDATE users SET androidtoken = ? WHERE id = ?', [token, userid], function(err, rows, fields){

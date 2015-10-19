@@ -3,6 +3,8 @@ var uglify = require('gulp-uglify');
 var sass = require('gulp-sass');
 var gulpif = require('gulp-if');
 var gls = require('gulp-live-server');
+var sourcemaps = require('gulp-sourcemaps');
+var concat = require('gulp-concat');
 
 var merge = require('merge-stream');
 var minimist = require('minimist');
@@ -38,15 +40,20 @@ gulp.task('libs', function() {
 
 gulp.task('css', function() {
 	return gulp.src(src.css)
+		.pipe(sourcemaps.init())
 		.pipe(sass({
 			outputStyle: options.release ? 'compressed' : 'nested'
 		}))
+		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('build/css'));
 });
 
 gulp.task('js', function() {
 	return gulp.src(src.js)
+		.pipe(sourcemaps.init())
+		.pipe(concat('tt.js'))
 		.pipe(gulpif(options.release, uglify()))
+		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('build/js'));
 });
 

@@ -61,6 +61,16 @@ router.get('/users', function(req, res, next){
 	});
 });
 
+router.get('/user', function(req, res, next) {
+	using(db.getConnection(), function(conn){
+		return index.getUser(conn, req.query.username);
+	}).then(function(rows){
+		res.json({user: rows[0]});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to get users'));
+	});
+});
+
 router.get('/status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		return index.getStatus(conn, req.query.id);

@@ -238,7 +238,17 @@
 		    	}, function(res){
 		    		self.handleApiError(res, 'failed to get users');
 		    	});
-	    }
+	    };
+
+	    self.getUser = function(username) {
+	    	self.clearError();
+	    	return $http.get('/api/user', {params: {username: username}})
+		    	.then(function(res){
+		    		console.log('user', res.data);
+		    	}, function(res){
+		    		self.handleApiError(res, 'failed to get user');
+		    	});
+	    };
 
 	    self.deleteTurn = function(turn) {
 	    	self.clearError();
