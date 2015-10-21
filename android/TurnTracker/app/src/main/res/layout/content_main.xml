@@ -12,5 +12,6 @@
     <ListView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/taskListView" />
+        android:id="@+id/taskListView"
+        tools:listitem="@android:layout/simple_list_item_1" />
 </RelativeLayout>
