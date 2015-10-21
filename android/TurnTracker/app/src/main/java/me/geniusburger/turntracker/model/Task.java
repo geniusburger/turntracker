@@ -24,4 +24,9 @@ public class Task {
         id = json.getLong("taskId");
         name = json.getString("taskName");
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
