@@ -38,6 +38,7 @@ public class Api {
         try {
             url = new URL(getUrl(path, queryParams));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setUseCaches(false);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("GET");
 

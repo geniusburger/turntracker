@@ -172,14 +172,14 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected void onPostExecute(Task[] tasks) {
+            mTasks.clear();
             if(tasks == null) {
                 setEmptyText(R.string.tasks_failed);
             } else {
                 setEmptyText(R.string.tasks_empty);
-                mTasks.clear();
                 mTasks.addAll(Arrays.asList(tasks));
-                ((BaseAdapter)mAdapter).notifyDataSetChanged();
             }
+            ((BaseAdapter)mAdapter).notifyDataSetChanged();
             showProgress(false);
         }
 
