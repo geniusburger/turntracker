@@ -140,7 +140,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     public boolean cancelRefreshData() {
-        if(mGetTasksAsyncTask != null) {
+        if(mGetTasksAsyncTask != null && !mGetTasksAsyncTask.isCancelled()) {
             return mGetTasksAsyncTask.cancel(true);
         }
         return false;
@@ -186,6 +186,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         @Override
         protected void onCancelled() {
             mGetTasksAsyncTask = null;
+            setEmptyText(R.string.tasks_failed);
             showProgress(false);
         }
     }

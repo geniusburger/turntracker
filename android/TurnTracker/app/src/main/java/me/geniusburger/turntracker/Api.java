@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -22,7 +23,13 @@ import me.geniusburger.turntracker.model.User;
 
 public class Api {
 
+    public static final int RESULT_UNKNOWN = -1;
+    public static final int RESULT_TIMEOUT = -2;
+    public static final int RESULT_JSON = -3;
+
     private static final String TAG = "Api";
+    private static final int TIMEOUT_MS = 5000;
+
     private Preferences prefs;
 
     public Api(Context context) {
@@ -38,6 +45,8 @@ public class Api {
         try {
             url = new URL(getUrl(path, queryParams));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(TIMEOUT_MS);
+            conn.setReadTimeout(TIMEOUT_MS);
             conn.setUseCaches(false);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("GET");
@@ -52,10 +61,14 @@ public class Api {
             return new JsonResponse(conn.getResponseCode(), response.toString());
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "httpget failed to encode", e);
+            return new JsonResponse(RESULT_JSON);
+        } catch (SocketTimeoutException e) {
+            Log.e(TAG, String.format("httpget timeout for URL '%s'", url.toString()), e);
+            return new JsonResponse(RESULT_TIMEOUT);
         } catch (IOException e) {
-            Log.e(TAG, String.format("httpGet failed for URL '%s'", url == null ? "null" : url.toString()), e);
+            Log.e(TAG, String.format("httpGet failed for URL '%s'", null == url ? "null" : url.toString()), e);
+            return new JsonResponse(RESULT_UNKNOWN);
         }
-        return new JsonResponse(-1);
     }
 
     public User getUser(String username) {

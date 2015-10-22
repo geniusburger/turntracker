@@ -8,9 +8,14 @@ import android.view.View;
 public class UIUtil {
 
     public static void showProgress(Context context, final boolean show, final View formView, final View progressView) {
+        formView.setVisibility(show ? View.GONE : View.VISIBLE);
+        progressView.setVisibility(show ? View.VISIBLE : View.GONE);
+
+        if(context == null) {
+            return;
+        }
         int shortAnimTime = context.getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-        formView.setVisibility(show ? View.GONE : View.VISIBLE);
         formView.animate().setDuration(shortAnimTime).alpha(
                 show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
             @Override
@@ -19,7 +24,6 @@ public class UIUtil {
             }
         });
 
-        progressView.setVisibility(show ? View.VISIBLE : View.GONE);
         progressView.animate().setDuration(shortAnimTime).alpha(
                 show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
             @Override
