@@ -1,6 +1,5 @@
 package me.geniusburger.turntracker;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -19,23 +18,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import me.geniusburger.turntracker.model.Task;
+import me.geniusburger.turntracker.model.User;
 import me.geniusburger.turntracker.utilities.UIUtil;
 
 /**
  * A fragment representing a list of Items.
  * <p/>
- * Large screen devices (such as tablets) are supported by replacing the ListView
- * with a GridView.
+ * Large screen devices (such as tablets) are supported by replacing the ListView with a GridView.
  * <p/>
- * Activities containing this fragment MUST implement the {@link OnTaskSelectedListener}
- * interface.
  */
-public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class TurnFragment extends Fragment implements AbsListView.OnItemClickListener {
 
-    private List<Task> mTasks;
+    private static final String ARG_TASK_ID = "taskId";
+    private static final String ARG_TASK_NAME = "taskName";
 
-    private OnTaskSelectedListener mListener;
+    private long mTaskId;
+    private String mTaskName;
+	private List<User> mUsers;
+
+    //private OnFragmentInteractionListener mListener;
 
     /**
      * The fragment's ListView/GridView.
@@ -44,7 +45,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
     private View mProgressView;
 
     // Workers
-    GetTasksAsyncTask mGetTasksAsyncTask;
+    GetUsersAsyncTask mGetUsersAsyncTask;
 
     /**
      * The Adapter which will be used to populate the ListView/GridView with
@@ -52,9 +53,11 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      */
     private ListAdapter mAdapter;
 
-    public static TaskFragment newInstance() {
-        TaskFragment fragment = new TaskFragment();
+    public static TurnFragment newInstance(long taskId, String taskName) {
+        TurnFragment fragment = new TurnFragment();
         Bundle args = new Bundle();
+        args.putLong(ARG_TASK_ID, taskId);
+        args.putString(ARG_TASK_NAME, taskName);
         fragment.setArguments(args);
         return fragment;
     }
@@ -63,30 +66,35 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public TaskFragment() {
+    public TurnFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mTasks = new ArrayList<>();
+        if (getArguments() != null) {
+            mTaskId = getArguments().getLong(ARG_TASK_ID);
+            mTaskName = getArguments().getString(ARG_TASK_NAME);
+        }
+		
+		mUsers = new ArrayList<>();
         mAdapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,
-                android.R.id.text1, mTasks);
-        refreshData();
+				android.R.id.text1, mUsers);
+		refreshData();
     }
 
     @Override
     public void onResume() {
-        getActivity().setTitle(R.string.app_name);
+        getActivity().setTitle(mTaskName);
         super.onResume();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_task, container, false);
+        View view = inflater.inflate(R.layout.fragment_turn, container, false);
 
         mProgressView = view.findViewById(R.id.progress);
 
@@ -99,7 +107,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         mListView.setOnItemClickListener(this);
 
         // show progress if the task is already running
-        if(mGetTasksAsyncTask != null && mGetTasksAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if(mGetUsersAsyncTask != null && mGetUsersAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
             mListView.setVisibility(View.GONE);
             mProgressView.setVisibility(View.VISIBLE);
         }
@@ -107,21 +115,21 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         return view;
     }
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            mListener = (OnTaskSelectedListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnTaskSelectedListener");
-        }
-    }
+//    @Override
+//    public void onAttach(Activity activity) {
+//        super.onAttach(activity);
+//        try {
+//            mListener = (OnFragmentInteractionListener) activity;
+//        } catch (ClassCastException e) {
+//            throw new ClassCastException(activity.toString()
+//                    + " must implement OnFragmentInteractionListener");
+//        }
+//    }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
+        //mListener = null;
     }
 
     @Override
@@ -132,24 +140,21 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (null != mListener) {
-            // Notify the active callbacks interface (the activity, if the
-            // fragment is attached to one) that an item has been selected.
-            mListener.onTaskSelected(mTasks.get(position));
-        }
+//        if (null != mListener) {
+//            // Notify the active callbacks interface (the activity, if the
+//            // fragment is attached to one) that an item has been selected.
+//            mListener.onFragmentInteraction(mUsers.get(position).id);
+//        }
     }
 
     public void refreshData() {
         cancelRefreshData();
-        mGetTasksAsyncTask = new GetTasksAsyncTask(getActivity());
-        mGetTasksAsyncTask.execute();
+        mGetUsersAsyncTask = new GetUsersAsyncTask(getActivity());
+        mGetUsersAsyncTask.execute();
     }
 
     public boolean cancelRefreshData() {
-        if(mGetTasksAsyncTask != null && !mGetTasksAsyncTask.isCancelled()) {
-            return mGetTasksAsyncTask.cancel(true);
-        }
-        return false;
+        return mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled() && mGetUsersAsyncTask.cancel(true);
     }
 
     private void showProgress(boolean show) {
@@ -158,11 +163,11 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         }
     }
 
-    public class GetTasksAsyncTask extends AsyncTask<Void, Void, Task[]> {
+    public class GetUsersAsyncTask extends AsyncTask<Void, Void, User[]> {
 
         private Context mContext;
 
-        public GetTasksAsyncTask(Context context) {
+        public GetUsersAsyncTask(Context context) {
             this.mContext = context;
         }
 
@@ -172,18 +177,18 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         }
 
         @Override
-        protected Task[] doInBackground(Void... params) {
-            return new Api(mContext).getTasks();
+        protected User[] doInBackground(Void... params) {
+            return new Api(mContext).getStatus(mTaskId);
         }
 
         @Override
-        protected void onPostExecute(Task[] tasks) {
-            mTasks.clear();
-            if(tasks == null) {
+        protected void onPostExecute(User[] users) {
+            mUsers.clear();
+            if(users == null) {
                 setEmptyText(R.string.tasks_failed);
             } else {
                 setEmptyText(R.string.tasks_empty);
-                mTasks.addAll(Arrays.asList(tasks));
+                mUsers.addAll(Arrays.asList(users));
             }
             ((BaseAdapter)mAdapter).notifyDataSetChanged();
             showProgress(false);
@@ -191,7 +196,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected void onCancelled() {
-            mGetTasksAsyncTask = null;
+            mGetUsersAsyncTask = null;
             setEmptyText(R.string.tasks_failed);
             showProgress(false);
         }
@@ -220,7 +225,9 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnTaskSelectedListener {
-        void onTaskSelected(Task task);
-    }
+//    public interface OnFragmentInteractionListener {
+//        // TODO: Update argument type and name
+//        public void onFragmentInteraction(String id);
+//    }
+
 }

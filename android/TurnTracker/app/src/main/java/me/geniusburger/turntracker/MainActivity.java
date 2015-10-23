@@ -1,5 +1,6 @@
 package me.geniusburger.turntracker;
 
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Fragments
     TaskFragment mTaskFragment;
+    TurnFragment mTurnFragment;
 
     // Preferences
     private Preferences prefs;
@@ -90,7 +92,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
+            if (getFragmentManager().getBackStackEntryCount() > 0){
+                getFragmentManager().popBackStack();
+            } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
                 super.onBackPressed();
             }
         }
@@ -106,6 +110,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_tasks) {
+            if(getFragmentManager().getBackStackEntryCount() > 0) {
+                getFragmentManager().popBackStack();
+            }
             mTaskFragment.refreshData();
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
@@ -120,6 +127,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onTaskSelected(Task task) {
-        Toast.makeText(this, "selected task " + task, Toast.LENGTH_SHORT).show();
+        // TODO need to do anything with the old fragment?
+        mTurnFragment = TurnFragment.newInstance(task.id, task.name);
+
+        // Replace whatever is in the fragment_container view with this fragment,
+        // and add the transaction to the back stack so the user can navigate back
+
+        getFragmentManager()
+                .beginTransaction()
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                .replace(R.id.fragment_container, mTurnFragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

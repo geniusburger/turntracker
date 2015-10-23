@@ -72,7 +72,7 @@ public class Api {
     }
 
     public User getUser(String username) {
-        Map<String, String> params = new HashMap<>();
+        Map<String, String> params = new HashMap<>(1);
         params.put("username", username);
         JsonResponse res = httpGet("user", params);
         if(200 == res.code) {
@@ -87,6 +87,38 @@ public class Api {
                 Log.e(TAG, "failed to get user, HTTP res " + res.code, res.e);
             } else {
                 Log.e(TAG, "failed to get user, HTTP res " + res.code);
+            }
+        }
+        return null;
+    }
+
+    public User[] getStatus(long taskId) {
+        Map<String, String> params = new HashMap<>(1);
+        params.put("id", String.valueOf(taskId));
+        JsonResponse res = httpGet("status", params);
+
+        if(200 == res.code) {
+            try {
+                JSONArray jsonUsers = res.json.getJSONArray("users");
+                int len = jsonUsers.length();
+                User[] users = new User[len];
+                int max = 0;
+                for(int i = 0; i < len; i++) {
+                    users[i] = new User(jsonUsers.getJSONObject(i));
+                    if(0 == i) {
+                        max = users[0].turns;
+                    }
+                    users[i].diffTurns = users[i].turns - max;
+                }
+                return users;
+            } catch (JSONException e) {
+                Log.e(TAG, "failed to extract status from JSON", e);
+            }
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to get status, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to get status, HTTP res " + res.code);
             }
         }
         return null;
