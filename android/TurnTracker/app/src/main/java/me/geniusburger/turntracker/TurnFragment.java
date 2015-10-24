@@ -147,7 +147,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
                 refreshData();
                 return true;
             default:
-                return false;
+                return super.onOptionsItemSelected(item);
         }
     }
 
