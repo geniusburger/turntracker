@@ -4,7 +4,11 @@ import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -46,6 +50,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     // Workers
     GetUsersAsyncTask mGetUsersAsyncTask;
+    TakeTurnAsyncTask mTakeTurnAsyncTask;
 
     /**
      * The Adapter which will be used to populate the ListView/GridView with
@@ -82,6 +87,9 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         mAdapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,
 				android.R.id.text1, mUsers);
+
+        setHasOptionsMenu(true);
+
 		refreshData();
     }
 
@@ -126,6 +134,23 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 //        }
 //    }
 
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.turn_fragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                refreshData();
+                return true;
+            default:
+                return false;
+        }
+    }
+
     @Override
     public void onDetach() {
         super.onDetach();
@@ -148,6 +173,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     public void refreshData() {
+        cancelTakeTurn();
         cancelRefreshData();
         mGetUsersAsyncTask = new GetUsersAsyncTask(getActivity());
         mGetUsersAsyncTask.execute();
@@ -157,9 +183,63 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         return mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled() && mGetUsersAsyncTask.cancel(true);
     }
 
+    public boolean cancelTakeTurn() {
+        return mTakeTurnAsyncTask != null && !mTakeTurnAsyncTask.isCancelled() && mTakeTurnAsyncTask.cancel(true);
+    }
+
+    public void takeTurn(View view) {
+        if(mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already trying to get status", Snackbar.LENGTH_LONG).show();
+        } else if(mTakeTurnAsyncTask != null && !mTakeTurnAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already trying to take turn", Snackbar.LENGTH_LONG).show();
+        } else {
+            mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view);
+            mTakeTurnAsyncTask.execute();
+        }
+    }
+
     private void showProgress(boolean show) {
         if(mListView != null && mProgressView != null) {
             UIUtil.showProgress(getActivity(), show, mListView, mProgressView);
+        }
+    }
+
+    public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Boolean> {
+
+        private View mView;
+        private Context mContext;
+
+        public TakeTurnAsyncTask(Context context, View view) {
+            mView = view;
+            mContext = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showProgress(true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return new Api(mContext).takeTurn(mTaskId, mUsers);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if(success) {
+                ((BaseAdapter)mAdapter).notifyDataSetChanged();
+                Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG).show();
+            } else {
+                Snackbar.make(mView, "Failed to take turn", Snackbar.LENGTH_LONG).show();
+            }
+            showProgress(false);
+            mTakeTurnAsyncTask = null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            mTakeTurnAsyncTask = null;
+            showProgress(false);
         }
     }
 
@@ -192,6 +272,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
             }
             ((BaseAdapter)mAdapter).notifyDataSetChanged();
             showProgress(false);
+            mGetUsersAsyncTask = null;
         }
 
         @Override

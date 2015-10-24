@@ -1,5 +1,6 @@
 package me.geniusburger.turntracker;
 
+import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +12,9 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -19,6 +23,11 @@ import android.widget.Toast;
 import me.geniusburger.turntracker.model.Task;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private static final String FRAGMENT_TASKS = "tasks";
+    private static final String FRAGMENT_TURNS = "turns";
 
     // UI
     TextView mUserNameTextView;
@@ -38,12 +47,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+
+                Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
+                String tag = currentFragment.getTag();
+                switch(tag) {
+                    case FRAGMENT_TASKS:
+                        Snackbar.make(view, "Task creation is...under construction", Snackbar.LENGTH_LONG).show();
+                        break;
+                    case FRAGMENT_TURNS:
+                        ((TurnFragment)currentFragment).takeTurn(view);
+                        break;
+                    default:
+                        Log.e(TAG, "Unhandled FAB fragment tag " + tag);
+                        Snackbar.make(view, "Not sure what to do...my bad", Snackbar.LENGTH_SHORT).show();
+                        break;
+                }
+
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", new View.OnClickListener() {
+//                            @Override
+//                            public void onClick(View v) {
+//                                Toast.makeText(MainActivity.this, "Added?", Toast.LENGTH_SHORT).show();
+//                            }
+//                        }).show();
             }
         });
 
@@ -66,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(intent);
         } else {
             mTaskFragment = TaskFragment.newInstance();
-            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment).commit();
+            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
         }
     }
 
@@ -81,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mDisplayNameTextView.setText(prefs.getUserDisplayName());
         if(mTaskFragment == null) {
             mTaskFragment = TaskFragment.newInstance();
-            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment).commit();
+            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
         }
         super.onResume();
     }
@@ -136,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                .replace(R.id.fragment_container, mTurnFragment)
+                .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
     }

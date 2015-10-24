@@ -27,6 +27,6 @@ public class User {
 
     @Override
     public String toString() {
-        return String.format("%d - %s", diffTurns, displayName);
+        return String.format("%d - %s %s", diffTurns, displayName, mobile ? "- mobile" : "");
     }
 }
