@@ -51,6 +51,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     // Workers
     GetUsersAsyncTask mGetUsersAsyncTask;
     TakeTurnAsyncTask mTakeTurnAsyncTask;
+    UndoTurnAsyncTask mUndoTurnAsyncTask;
 
     /**
      * The Adapter which will be used to populate the ListView/GridView with
@@ -160,7 +161,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     @Override
     public void onPause() {
         super.onPause();
-        cancelRefreshData();
+        cancelAllAsyncTasks();
     }
 
     @Override
@@ -172,9 +173,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 //        }
     }
 
+    public boolean cancelAllAsyncTasks() {
+        return cancelUndoTurn() || cancelTakeTurn() || cancelRefreshData();
+    }
+
     public void refreshData() {
-        cancelTakeTurn();
-        cancelRefreshData();
+        cancelAllAsyncTasks();
         mGetUsersAsyncTask = new GetUsersAsyncTask(getActivity());
         mGetUsersAsyncTask.execute();
     }
@@ -187,14 +191,34 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         return mTakeTurnAsyncTask != null && !mTakeTurnAsyncTask.isCancelled() && mTakeTurnAsyncTask.cancel(true);
     }
 
-    public void takeTurn(View view) {
+    public boolean cancelUndoTurn() {
+        return mUndoTurnAsyncTask != null && !mUndoTurnAsyncTask.isCancelled() && mUndoTurnAsyncTask.cancel(true);
+    }
+
+    private boolean checkBusy(View view) {
         if(mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled()) {
             Snackbar.make(view, "Already trying to get status", Snackbar.LENGTH_LONG).show();
         } else if(mTakeTurnAsyncTask != null && !mTakeTurnAsyncTask.isCancelled()) {
             Snackbar.make(view, "Already trying to take turn", Snackbar.LENGTH_LONG).show();
+        } else if(mUndoTurnAsyncTask != null && !mUndoTurnAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already trying to undo turn", Snackbar.LENGTH_LONG).show();
         } else {
+            return false;
+        }
+        return true;
+    }
+
+    public void takeTurn(View view) {
+        if(!checkBusy(view)) {
             mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view);
             mTakeTurnAsyncTask.execute();
+        }
+    }
+
+    private void undoTurn(View view, long turnId) {
+        if(!checkBusy(view)) {
+            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId);
+            mUndoTurnAsyncTask.execute();
         }
     }
 
@@ -204,7 +228,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
     }
 
-    public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Boolean> {
+    public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Long> {
 
         private View mView;
         private Context mContext;
@@ -220,15 +244,23 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
 
         @Override
-        protected Boolean doInBackground(Void... params) {
+        protected Long doInBackground(Void... params) {
             return new Api(mContext).takeTurn(mTaskId, mUsers);
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            if(success) {
-                ((BaseAdapter)mAdapter).notifyDataSetChanged();
-                Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG).show();
+        protected void onPostExecute(final Long turnId) {
+            ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            if(turnId > 0) {
+                final Snackbar bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG);
+                bar.setAction("Undo", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        bar.dismiss();
+                        undoTurn(mView, turnId);
+                    }
+                });
+                bar.show();
             } else {
                 Snackbar.make(mView, "Failed to take turn", Snackbar.LENGTH_LONG).show();
             }
@@ -243,7 +275,48 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
     }
 
-    public class GetUsersAsyncTask extends AsyncTask<Void, Void, User[]> {
+    public class UndoTurnAsyncTask extends AsyncTask<Void, Void, Boolean>{
+
+        private View mView;
+        private Context mContext;
+        private long mTurnId;
+
+        public UndoTurnAsyncTask(Context context, View view, long turnId) {
+            mView = view;
+            mContext = context;
+            mTurnId = turnId;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showProgress(true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return new Api(mContext).deleteTurn(mTurnId, mTaskId, mUsers);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            if(success) {
+                Snackbar.make(mView, "Turn Undone", Snackbar.LENGTH_LONG).show();
+            } else {
+                Snackbar.make(mView, "Failed to undo turn", Snackbar.LENGTH_LONG).show();
+            }
+            showProgress(false);
+            mUndoTurnAsyncTask = null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            mUndoTurnAsyncTask = null;
+            showProgress(false);
+        }
+    }
+
+    public class GetUsersAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
         private Context mContext;
 
@@ -257,20 +330,18 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
 
         @Override
-        protected User[] doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTaskId);
+        protected Boolean doInBackground(Void... params) {
+            return new Api(mContext).getStatus(mTaskId, mUsers);
         }
 
         @Override
-        protected void onPostExecute(User[] users) {
-            mUsers.clear();
-            if(users == null) {
-                setEmptyText(R.string.tasks_failed);
-            } else {
-                setEmptyText(R.string.tasks_empty);
-                mUsers.addAll(Arrays.asList(users));
-            }
+        protected void onPostExecute(Boolean success) {
             ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            if(success) {
+                setEmptyText(R.string.tasks_empty);
+            } else {
+                setEmptyText(R.string.tasks_failed);
+            }
             showProgress(false);
             mGetUsersAsyncTask = null;
         }

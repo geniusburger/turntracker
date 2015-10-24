@@ -270,7 +270,7 @@ var takeTurn = function(conn, taskId, userid) {
 				log('ERROR while performing turn query', err);
 				reject(err);
 			} else {
-				resolve();
+				resolve(rows.insertId);
 			}
 	    });
 	});

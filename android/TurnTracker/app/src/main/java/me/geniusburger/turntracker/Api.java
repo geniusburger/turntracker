@@ -94,6 +94,14 @@ public class Api {
         return jsonHttp("GET", path, null, queryParams);
     }
 
+    private JsonResponse httpDelete(String path) {
+        return httpDelete(path, null);
+    }
+
+    private JsonResponse httpDelete(String path, Map<String, String> queryParams) {
+        return jsonHttp("DELETE", path, null, queryParams);
+    }
+
     public User getUser(String username) {
         Map<String, String> params = new HashMap<>(1);
         params.put("username", username);
@@ -115,7 +123,46 @@ public class Api {
         return null;
     }
 
-    public boolean takeTurn(long taskId, List<User> users) {
+    private void processJsonUsers(JSONArray jsonUsers, List<User> users) throws JSONException {
+        int len = jsonUsers.length();
+        users.clear();
+        if(len > 0) {
+            for(int i = 0; i < len; i++) {
+                users.add(new User(jsonUsers.getJSONObject(i)));
+            }
+            int maxTurns = users.get(users.size() - 1).turns;
+            for(User user : users) {
+                user.consecutiveTurns = maxTurns - user.turns;
+            }
+        }
+    }
+
+    public boolean deleteTurn(long turnId, long taskId, List<User> users) {
+        try {
+            Map<String, String> params = new HashMap<>(3);
+            params.put("turn_id", String.valueOf(turnId));
+            params.put("user_id", String.valueOf(prefs.getUserId()));
+            params.put("task_id", String.valueOf(taskId));
+            JsonResponse res = httpDelete("turn", params);
+
+            if(200 == res.code) {
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to undo turn, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to undo turn, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build json",e );
+        }
+        return false;
+    }
+
+    // return 0 on error
+    public long takeTurn(long taskId, List<User> users) {
         try {
             JSONObject body = new JSONObject();
             body.put("user_id", prefs.getUserId());
@@ -123,20 +170,8 @@ public class Api {
             JsonResponse res = httpPost("turn", body);
 
             if(200 == res.code) {
-                JSONArray jsonUsers = res.json.getJSONArray("users");
-                int len = jsonUsers.length();
-                users.clear();
-                int max = 0;
-                User user;
-                for(int i = 0; i < len; i++) {
-                    user = new User(jsonUsers.getJSONObject(i));
-                    if(0 == i) {
-                        max = user.turns;
-                    }
-                    user.diffTurns = user.turns - max;
-                    users.add(user);
-                }
-                return true;
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                return res.json.getLong("turnId");
             } else {
                 if(res.e != null) {
                     Log.e(TAG, "failed to take turn, HTTP res " + res.code, res.e);
@@ -147,28 +182,18 @@ public class Api {
         } catch (JSONException e) {
             Log.e(TAG, "Failed to build json",e );
         }
-        return false;
+        return 0;
     }
 
-    public User[] getStatus(long taskId) {
+    public boolean getStatus(long taskId, List<User> users) {
         Map<String, String> params = new HashMap<>(1);
         params.put("id", String.valueOf(taskId));
         JsonResponse res = httpGet("status", params);
 
         if(200 == res.code) {
             try {
-                JSONArray jsonUsers = res.json.getJSONArray("users");
-                int len = jsonUsers.length();
-                User[] users = new User[len];
-                int max = 0;
-                for(int i = 0; i < len; i++) {
-                    users[i] = new User(jsonUsers.getJSONObject(i));
-                    if(0 == i) {
-                        max = users[0].turns;
-                    }
-                    users[i].diffTurns = users[i].turns - max;
-                }
-                return users;
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                return true;
             } catch (JSONException e) {
                 Log.e(TAG, "failed to extract status from JSON", e);
             }
@@ -179,7 +204,7 @@ public class Api {
                 Log.e(TAG, "failed to get status, HTTP res " + res.code);
             }
         }
-        return null;
+        return false;
     }
 
     public Task[] getTasks() {

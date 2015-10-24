@@ -168,13 +168,13 @@ router.post('/turn', function(req, res, next) {
 		return (req.body.user_id ? index.saveAddress(conn, req.body.user_id, req.ip) : index.getUser(conn, req.ip)).then(function(user){
 			turnTakerUserId = typeof user === 'object' ? user.id : user;
 			return index.takeTurn(conn, req.body.task_id, turnTakerUserId);
-		}).then(function(){
-			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
-		}, function(){
+		}).then(function(turnId){
+			return Promise.all([turnId, index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
+		}, function(err){
 			// todo this could also be an error from getting the user or saving the address
 			log('ERROR failed to take turn', err);
 			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
-		}).spread(function(turns, users){
+		}).spread(function(turnId, turns, users){
 			// send notifications
 			var nextTurnUser = users[0];
 			var turnTakerUserName = users.reduce(function(prev, user){
@@ -240,10 +240,10 @@ router.post('/turn', function(req, res, next) {
 					});
 				}
 			});
-			return Promise.all([turns, users, notesPromise]);
+			return Promise.all([turnId, turns, users, notesPromise]);
 		});
-	}).spread(function(turns, users){
-		res.json({turns: turns, users: users});
+	}).spread(function(turnId, turns, users){
+		res.json({turnId: turnId, turns: turns, users: users});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to take turn'));
 	});
