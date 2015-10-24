@@ -78,6 +78,12 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     @Override
+    public void onResume() {
+        getActivity().setTitle(R.string.app_name);
+        super.onResume();
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_task, container, false);
@@ -196,8 +202,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      * the list is empty. If you would like to change the text, call this method
      * to supply the text it should use.
      */
-    public void setEmptyText(int resId)
-    {
+    public void setEmptyText(int resId) {
         View emptyView = mListView.getEmptyView();
 
         if (emptyView instanceof TextView) {
