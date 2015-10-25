@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
+import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
 
 public class Api {
@@ -123,6 +124,14 @@ public class Api {
         return null;
     }
 
+    private void processJsonTurns(JSONArray jsonTurns, List<Turn> turns) throws JSONException {
+        int len = jsonTurns.length();
+        turns.clear();
+        for(int i = 0; i < len; i++) {
+            turns.add(new Turn(jsonTurns.getJSONObject(i)));
+        }
+    }
+
     private void processJsonUsers(JSONArray jsonUsers, List<User> users) throws JSONException {
         int len = jsonUsers.length();
         users.clear();
@@ -137,7 +146,7 @@ public class Api {
         }
     }
 
-    public boolean deleteTurn(long turnId, long taskId, List<User> users) {
+    public boolean deleteTurn(long turnId, long taskId, List<User> users, List<Turn> turns) {
         try {
             Map<String, String> params = new HashMap<>(3);
             params.put("turn_id", String.valueOf(turnId));
@@ -147,6 +156,7 @@ public class Api {
 
             if(200 == res.code) {
                 processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return true;
             } else {
                 if(res.e != null) {
@@ -162,7 +172,7 @@ public class Api {
     }
 
     // return 0 on error
-    public long takeTurn(long taskId, List<User> users) {
+    public long takeTurn(long taskId, List<User> users, List<Turn> turns) {
         try {
             JSONObject body = new JSONObject();
             body.put("user_id", prefs.getUserId());
@@ -171,6 +181,7 @@ public class Api {
 
             if(200 == res.code) {
                 processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return res.json.getLong("turnId");
             } else {
                 if(res.e != null) {
@@ -185,14 +196,15 @@ public class Api {
         return 0;
     }
 
-    public boolean getStatus(long taskId, List<User> users) {
+    public boolean getStatus(long taskId, List<User> users, List<Turn> turns) {
         Map<String, String> params = new HashMap<>(1);
-        params.put("id", String.valueOf(taskId));
-        JsonResponse res = httpGet("status", params);
+        params.put("task_id", String.valueOf(taskId));
+        JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {
             try {
                 processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return true;
             } catch (JSONException e) {
                 Log.e(TAG, "failed to extract status from JSON", e);

@@ -152,6 +152,12 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         return false;
     }
 
+    public void clear() {
+        cancelRefreshData();
+        mTasks.clear();
+        ((BaseAdapter)mAdapter).notifyDataSetChanged();
+    }
+
     private void showProgress(boolean show) {
         if(mListView != null && mProgressView != null) {
             UIUtil.showProgress(getActivity(), show, mListView, mProgressView);

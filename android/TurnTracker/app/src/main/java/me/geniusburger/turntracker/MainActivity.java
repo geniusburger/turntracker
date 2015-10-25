@@ -25,7 +25,7 @@ import me.geniusburger.turntracker.model.Task;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-
+    private static final int REQUEST_CODE_LOGIN = 1;
     private static final String FRAGMENT_TASKS = "tasks";
     private static final String FRAGMENT_TURNS = "turns";
 
@@ -66,14 +66,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         Snackbar.make(view, "Not sure what to do...my bad", Snackbar.LENGTH_SHORT).show();
                         break;
                 }
-
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", new View.OnClickListener() {
-//                            @Override
-//                            public void onClick(View v) {
-//                                Toast.makeText(MainActivity.this, "Added?", Toast.LENGTH_SHORT).show();
-//                            }
-//                        }).show();
             }
         });
 
@@ -92,8 +84,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         prefs = new Preferences(this);
         long userId = prefs.getUserId();
         if(userId <= 0) {
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
+            startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         } else {
             mTaskFragment = TaskFragment.newInstance();
             getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
@@ -102,17 +93,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case REQUEST_CODE_LOGIN:
+                mUserNameTextView.setText(prefs.getUserName());
+                mDisplayNameTextView.setText(prefs.getUserDisplayName());
+                if (mTaskFragment == null) {
+                    mTaskFragment = TaskFragment.newInstance();
+                    getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
+                } else {
+                    mTaskFragment.refreshData();
+                }
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     @Override
     protected void onResume() {
-        mUserNameTextView.setText(prefs.getUserName());
-        mDisplayNameTextView.setText(prefs.getUserDisplayName());
-        if(mTaskFragment == null) {
-            mTaskFragment = TaskFragment.newInstance();
-            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
-        }
         super.onResume();
     }
 
@@ -147,7 +145,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (id == R.id.nav_logout) {
-            startActivity(new Intent(this, LoginActivity.class));
+            if(getFragmentManager().getBackStackEntryCount() > 0) {
+                getFragmentManager().popBackStack();
+            }
+            mTaskFragment.clear();
+            prefs.clearUser();
+            startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -165,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         getFragmentManager()
                 .beginTransaction()
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                 .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();

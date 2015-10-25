@@ -19,9 +19,9 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
 import me.geniusburger.turntracker.utilities.UIUtil;
 
@@ -39,13 +39,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private long mTaskId;
     private String mTaskName;
 	private List<User> mUsers;
+    private List<Turn> mTurns;
 
     //private OnFragmentInteractionListener mListener;
 
-    /**
-     * The fragment's ListView/GridView.
-     */
-    private AbsListView mListView;
+    private View mLists;
+    private AbsListView mUserListView;
+    private AbsListView mTurnListView;
     private View mProgressView;
 
     // Workers
@@ -57,7 +57,8 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
      * The Adapter which will be used to populate the ListView/GridView with
      * Views.
      */
-    private ListAdapter mAdapter;
+    private ListAdapter mUserAdapter;
+    private ListAdapter mTurnAdapter;
 
     public static TurnFragment newInstance(long taskId, String taskName) {
         TurnFragment fragment = new TurnFragment();
@@ -85,9 +86,14 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
 		
 		mUsers = new ArrayList<>();
-        mAdapter = new ArrayAdapter<>(getActivity(),
+        mUserAdapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,
 				android.R.id.text1, mUsers);
+
+        mTurns = new ArrayList<>();
+        mTurnAdapter = new ArrayAdapter<>(getActivity(),
+                android.R.layout.simple_list_item_1,
+                android.R.id.text1, mTurns);
 
         setHasOptionsMenu(true);
 
@@ -107,17 +113,21 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         mProgressView = view.findViewById(R.id.progress);
 
-        // Set the adapter
-        mListView = (AbsListView) view.findViewById(android.R.id.list);
-        mListView.setAdapter(mAdapter);
-        mListView.setEmptyView(view.findViewById(android.R.id.empty));
+        mLists = view.findViewById(R.id.lists);
 
-        // Set OnItemClickListener so we can be notified on item clicks
-        mListView.setOnItemClickListener(this);
+        mUserListView = (AbsListView) view.findViewById(R.id.userlist);
+        mUserListView.setAdapter(mUserAdapter);
+        mUserListView.setEmptyView(view.findViewById(R.id.userempty));
+        //mUserListView.setOnItemClickListener(this);
+
+        mTurnListView = (AbsListView) view.findViewById(R.id.turnlist);
+        mTurnListView.setAdapter(mTurnAdapter);
+        mTurnListView.setEmptyView(view.findViewById(R.id.turnempty));
+        setEmptyText(mTurnListView, R.string.turns_empty);
 
         // show progress if the task is already running
         if(mGetUsersAsyncTask != null && mGetUsersAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
-            mListView.setVisibility(View.GONE);
+            mLists.setVisibility(View.GONE);
             mProgressView.setVisibility(View.VISIBLE);
         }
 
@@ -223,8 +233,8 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     private void showProgress(boolean show) {
-        if(mListView != null && mProgressView != null) {
-            UIUtil.showProgress(getActivity(), show, mListView, mProgressView);
+        if(mLists != null && mProgressView != null) {
+            UIUtil.showProgress(getActivity(), show, mLists, mProgressView);
         }
     }
 
@@ -245,12 +255,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Long doInBackground(Void... params) {
-            return new Api(mContext).takeTurn(mTaskId, mUsers);
+            return new Api(mContext).takeTurn(mTaskId, mUsers, mTurns);
         }
 
         @Override
         protected void onPostExecute(final Long turnId) {
-            ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
             if(turnId > 0) {
                 final Snackbar bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG);
                 bar.setAction("Undo", new View.OnClickListener() {
@@ -294,12 +305,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).deleteTurn(mTurnId, mTaskId, mUsers);
+            return new Api(mContext).deleteTurn(mTurnId, mTaskId, mUsers, mTurns);
         }
 
         @Override
         protected void onPostExecute(Boolean success) {
-            ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
             if(success) {
                 Snackbar.make(mView, "Turn Undone", Snackbar.LENGTH_LONG).show();
             } else {
@@ -331,16 +343,17 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTaskId, mUsers);
+            return new Api(mContext).getStatus(mTaskId, mUsers, mTurns);
         }
 
         @Override
         protected void onPostExecute(Boolean success) {
-            ((BaseAdapter)mAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
+            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
             if(success) {
-                setEmptyText(R.string.tasks_empty);
+                setEmptyText(mUserListView, R.string.tasks_empty);
             } else {
-                setEmptyText(R.string.tasks_failed);
+                setEmptyText(mUserListView, R.string.tasks_failed);
             }
             showProgress(false);
             mGetUsersAsyncTask = null;
@@ -349,18 +362,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         @Override
         protected void onCancelled() {
             mGetUsersAsyncTask = null;
-            setEmptyText(R.string.tasks_failed);
+            setEmptyText(mUserListView, R.string.tasks_failed);
             showProgress(false);
         }
     }
 
-    /**
-     * The default content for this Fragment has a TextView that is shown when
-     * the list is empty. If you would like to change the text, call this method
-     * to supply the text it should use.
-     */
-    public void setEmptyText(int resId) {
-        View emptyView = mListView.getEmptyView();
+    public void setEmptyText(AbsListView list, int resId) {
+        View emptyView = list.getEmptyView();
 
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(resId);

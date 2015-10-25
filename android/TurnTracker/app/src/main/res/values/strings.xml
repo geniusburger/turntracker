@@ -76,4 +76,5 @@
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="tasks_empty">You don\'t have any tasks.\n\nTap to refresh.</string>
     <string name="tasks_failed">Failed to get tasks.\n\nTap to refresh.</string>
+    <string name="turns_empty">No turns found.</string>
 </resources>

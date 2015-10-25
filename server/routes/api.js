@@ -147,16 +147,9 @@ router.delete('/subscription', function(req, res, next) {
 
 router.get('/turns-status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		if(req.query.user_id) {
-			// todo, no need to lookup id, just need to get user details?
-		}
-		var userPromise =index.getUser(conn, req.ip);
-		var listPromise = userPromise.then(function(){
-			return index.getTurns(conn, req.query.task_id);
-		});
-		return Promise.all([userPromise, listPromise, index.getStatus(conn, req.query.task_id)]);
-	}).then(function(results){
-		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.task_id)});
+		return Promise.all([index.getTurns(conn, req.query.task_id), index.getStatus(conn, req.query.task_id)]);
+	}).spread(function(turns, users){
+		res.json({turns: turns, users: users, taskid: parseInt(req.query.task_id)});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to get turns/status'));
 	});
