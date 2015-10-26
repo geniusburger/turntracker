@@ -1,6 +1,8 @@
 package me.geniusburger.turntracker;
 
 import android.content.Context;
+import android.system.ErrnoException;
+import android.system.OsConstants;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -12,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -31,6 +34,7 @@ public class Api {
     public static final int RESULT_JSON = -3;
     public static final int RESULT_SERVER = -4;
     public static final int RESULT_NOT_FOUND = -5;
+    public static final int RESULT_UNREACHABLE = -6;
 
     private static final String TAG = Api.class.getSimpleName();
     private static final int TIMEOUT_MS = 5000;
@@ -80,8 +84,16 @@ public class Api {
             int code = RESULT_NETWORK;
             try {
                 code = conn.getResponseCode();
-            } catch (IOException ioe) {
-                // nothing
+            } catch (IOException noCode) {
+                // try to get an errno exception
+                Throwable cause = e.getCause();
+                if(cause instanceof ErrnoException) {
+                    ErrnoException ee = (ErrnoException)cause;
+                    if(OsConstants.EHOSTUNREACH == ee.errno) {
+                        return new JsonResponse(RESULT_UNREACHABLE);
+                    }
+                    // let it show the network error
+                }
             }
             Log.e(TAG, String.format("jsonHttp failed for URL '%s', code %s", url, code), e);
             return new JsonResponse(code);

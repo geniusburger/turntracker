@@ -11,6 +11,7 @@
     <string name="error_internal">Internal error</string>
     <string name="error_timeout">Timeout error</string>
     <string name="error_server">Server error</string>
+    <string name="error_unreachable">Bad Server IP</string>
     <string name="error_field_required">This field is required</string>
     <string name="title_activity_main">Turn Tracker</string>
     <string name="title_activity_login">Login to Turn Tracker</string>

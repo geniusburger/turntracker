@@ -199,6 +199,8 @@ public class LoginActivity extends AppCompatActivity {
         protected void onPostExecute(final User user) {
             mAuthTask = null;
 
+            // TODO Come up with a better way of getting an error from this without reusing user.id
+
             if(user == null) {
                 showProgress(false);
                 mUsernameView.setError(getString(R.string.error_unknown));
@@ -214,6 +216,9 @@ public class LoginActivity extends AppCompatActivity {
             } else if(user.id == Api.RESULT_NETWORK) {
                 showProgress(false);
                 mUsernameView.setError(getString(R.string.error_network));
+            } else if(user.id == Api.RESULT_UNREACHABLE) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_unreachable));
             } else if(user.id == Api.RESULT_NOT_FOUND) {
                 showProgress(false);
                 mUsernameView.setError(getString(R.string.error_incorrect_username));
