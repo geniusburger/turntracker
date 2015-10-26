@@ -60,8 +60,8 @@ public class LoginActivity extends AppCompatActivity {
         findViewById(R.id.settings_button).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, LoginSettingsActivity.class);
-                intent.putExtra(SettingsActivity.EXTRA_SHOW_FRAGMENT, LoginSettingsActivity.GeneralPreferenceFragment.class.getName());
+                Intent intent = new Intent(LoginActivity.this, SettingsActivity.class);
+                intent.putExtra(SettingsActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GeneralPreferenceFragment.class.getName());
                 intent.putExtra(SettingsActivity.EXTRA_NO_HEADERS, true);
                 startActivity(intent);
             }

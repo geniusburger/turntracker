@@ -32,10 +32,6 @@
             android:label="@string/title_activity_settings"
             android:screenOrientation="portrait" >
         </activity>
-        <activity
-            android:name=".LoginSettingsActivity"
-            android:label="@string/title_activity_login_settings" >
-        </activity>
     </application>
 
 </manifest>
