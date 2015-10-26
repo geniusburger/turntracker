@@ -6,6 +6,11 @@
     <string name="action_sign_in">Login</string>
     <string name="action_sign_in_short">Login</string>
     <string name="error_incorrect_username">This username is incorrect</string>
+    <string name="error_network">Network error</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_internal">Internal error</string>
+    <string name="error_timeout">Timeout error</string>
+    <string name="error_server">Server error</string>
     <string name="error_field_required">This field is required</string>
     <string name="title_activity_main">Turn Tracker</string>
     <string name="title_activity_login">Login to Turn Tracker</string>
@@ -27,8 +32,8 @@
         based on your message history
     </string>
 
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
+    <string name="pref_title_server_ip">Server IP Address</string>
+    <string name="pref_default_server_ip">192.168.2.11</string>
 
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string-array name="pref_example_list_titles">
@@ -77,4 +82,8 @@
     <string name="tasks_empty">You don\'t have any tasks.\n\nTap to refresh.</string>
     <string name="tasks_failed">Failed to get tasks.\n\nTap to refresh.</string>
     <string name="turns_empty">No turns found.</string>
+    <string name="title_activity_login_settings">Login Settings</string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
 </resources>

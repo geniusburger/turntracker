@@ -26,9 +26,11 @@ import me.geniusburger.turntracker.model.User;
 
 public class Api {
 
-    public static final int RESULT_UNKNOWN = -1;
+    public static final int RESULT_NETWORK = -1;
     public static final int RESULT_TIMEOUT = -2;
     public static final int RESULT_JSON = -3;
+    public static final int RESULT_SERVER = -4;
+    public static final int RESULT_NOT_FOUND = -5;
 
     private static final String TAG = Api.class.getSimpleName();
     private static final int TIMEOUT_MS = 5000;
@@ -41,9 +43,10 @@ public class Api {
 
     private JsonResponse jsonHttp(String method, String path, JSONObject body, Map<String, String> queryParams) {
         URL url = null;
+        HttpURLConnection conn = null;
         try {
             url = new URL(getUrl(path, queryParams));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(TIMEOUT_MS);
             conn.setUseCaches(false);
@@ -74,8 +77,14 @@ public class Api {
             Log.e(TAG, String.format("jsonHttp timeout for URL '%s'", url.toString()), e);
             return new JsonResponse(RESULT_TIMEOUT);
         } catch (IOException e) {
-            Log.e(TAG, String.format("jsonHttp failed for URL '%s'", null == url ? "null" : url.toString()), e);
-            return new JsonResponse(RESULT_UNKNOWN);
+            int code = RESULT_NETWORK;
+            try {
+                code = conn.getResponseCode();
+            } catch (IOException ioe) {
+                // nothing
+            }
+            Log.e(TAG, String.format("jsonHttp failed for URL '%s', code %s", url, code), e);
+            return new JsonResponse(code);
         }
     }
 
@@ -107,20 +116,31 @@ public class Api {
         Map<String, String> params = new HashMap<>(1);
         params.put("username", username);
         JsonResponse res = httpGet("user", params);
+
         if(200 == res.code) {
             try {
                 JSONObject user = res.json.getJSONObject("user");
                 return new User(user.getLong("id"), user.getString("username"), user.getString("displayname"));
             } catch (JSONException e) {
-                Log.e(TAG, "failed to extract user from JSON", e);
-            }
-        } else {
-            if(res.e != null) {
-                Log.e(TAG, "failed to get user, HTTP res " + res.code, res.e);
-            } else {
-                Log.e(TAG, "failed to get user, HTTP res " + res.code);
+                Log.w(TAG, "user not found in JSON", e);
+                return new User(RESULT_NOT_FOUND);
             }
         }
+
+        if(res.e != null) {
+            Log.e(TAG, "failed to get user, HTTP res " + res.code, res.e);
+        } else {
+            Log.e(TAG, "failed to get user, HTTP res " + res.code);
+        }
+
+        if(500 == res.code) {
+            return new User(RESULT_SERVER);
+        }
+
+        if(res.code < 0) {
+            return new User(res.code);
+        }
+
         return null;
     }
 

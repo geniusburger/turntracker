@@ -54,12 +54,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                 Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
                 String tag = currentFragment.getTag();
-                switch(tag) {
+                switch (tag) {
                     case FRAGMENT_TASKS:
                         Snackbar.make(view, "Task creation is...under construction", Snackbar.LENGTH_LONG).show();
                         break;
                     case FRAGMENT_TURNS:
-                        ((TurnFragment)currentFragment).takeTurn(view);
+                        ((TurnFragment) currentFragment).takeTurn(view);
                         break;
                     default:
                         Log.e(TAG, "Unhandled FAB fragment tag " + tag);
@@ -75,11 +75,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        mUserNameTextView = (TextView) drawer.findViewById(R.id.userNameTextView);
-        mDisplayNameTextView = (TextView) drawer.findViewById(R.id.displayNameTextView);
-
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        View headerLayout = navigationView.inflateHeaderView(R.layout.nav_header_main);
+
+        mUserNameTextView = (TextView) headerLayout.findViewById(R.id.userNameTextView);
+        mDisplayNameTextView = (TextView) headerLayout.findViewById(R.id.displayNameTextView);
 
         prefs = new Preferences(this);
         long userId = prefs.getUserId();

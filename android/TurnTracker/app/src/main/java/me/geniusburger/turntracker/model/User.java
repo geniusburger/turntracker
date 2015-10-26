@@ -12,6 +12,10 @@ public class User {
     public boolean mobile;
     public int consecutiveTurns;
 
+    public User(long id) {
+        this.id = id;
+    }
+
     public User(long id, String username, String displayName) {
         this.id = id;
         this.username = username;

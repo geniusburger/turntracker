@@ -2,6 +2,7 @@ package me.geniusburger.turntracker;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import me.geniusburger.turntracker.model.User;
 
@@ -9,8 +10,8 @@ public class Preferences {
 
     private static final String SHARED_PREFERENCES_FILENAME = "tt";
 
-    private static final String KEY_SERVER_IP = "server.ip";
-    private static final String DEFAULT_SERVER_IP = "192.168.2.11";
+    public static final String KEY_SERVER_IP = "server.ip";
+    private final String DEFAULT_SERVER_IP;
 
     private static final String KEY_SERVER_PORT = "server.port";
     private static final int DEFAULT_SERVER_PORT = 3000;
@@ -25,7 +26,8 @@ public class Preferences {
     private SharedPreferences prefs;
 
     public Preferences(Context context) {
-        prefs = context.getSharedPreferences(SHARED_PREFERENCES_FILENAME, Context.MODE_PRIVATE);
+        prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        DEFAULT_SERVER_IP = context.getResources().getString(R.string.pref_default_server_ip);
     }
 
     public String getServerIP() {

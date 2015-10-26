@@ -2,6 +2,7 @@ package me.geniusburger.turntracker;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -53,6 +54,16 @@ public class LoginActivity extends AppCompatActivity {
                     return true;
                 }
                 return false;
+            }
+        });
+
+        findViewById(R.id.settings_button).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, LoginSettingsActivity.class);
+                intent.putExtra(SettingsActivity.EXTRA_SHOW_FRAGMENT, LoginSettingsActivity.GeneralPreferenceFragment.class.getName());
+                intent.putExtra(SettingsActivity.EXTRA_NO_HEADERS, true);
+                startActivity(intent);
             }
         });
 
@@ -114,36 +125,36 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
             mAuthTask = new UserLoginTask(username);
             mAuthTask.execute((Void) null);
         }
     }
 
     private void showProgress(final boolean show) {
-        UIUtil.showProgress(this, show, mLoginFormView, mProgressView);
-//        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-//        // for very easy animations. If available, use these APIs to fade-in
-//        // the progress spinner.
-//        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-//
-//        mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-//        mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-//                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-//            @Override
-//            public void onAnimationEnd(Animator animation) {
-//                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-//            }
-//        });
-//
-//        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-//        mProgressView.animate().setDuration(shortAnimTime).alpha(
-//                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-//            @Override
-//            public void onAnimationEnd(Animator animation) {
-//                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-//            }
-//        });
+        //UIUtil.showProgress(this, show, mLoginFormView, mProgressView);
+
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+        mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+        mLoginFormView.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
+
+        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+        mProgressView.animate().setDuration(shortAnimTime).alpha(
+                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
     }
 
     @Override
@@ -173,6 +184,11 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         @Override
+        protected void onPreExecute() {
+            showProgress(true);
+        }
+
+        @Override
         protected User doInBackground(Void... params) {
 
             Api api = new Api(LoginActivity.this);
@@ -182,14 +198,32 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final User user) {
             mAuthTask = null;
-            showProgress(false);
 
-            if (user != null) {
-                prefs.saveUser(user);
-                finish();
-            } else {
+            if(user == null) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_unknown));
+            } else if(user.id == Api.RESULT_SERVER) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_server));
+            } else if(user.id == Api.RESULT_JSON) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_internal));
+            } else if(user.id == Api.RESULT_TIMEOUT) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_timeout));
+            } else if(user.id == Api.RESULT_NETWORK) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_network));
+            } else if(user.id == Api.RESULT_NOT_FOUND) {
+                showProgress(false);
                 mUsernameView.setError(getString(R.string.error_incorrect_username));
                 mUsernameView.requestFocus();
+            } else if(user.id <= 0) {
+                showProgress(false);
+                mUsernameView.setError(getString(R.string.error_network));
+            } else {
+                prefs.saveUser(user);
+                finish();
             }
         }
 
