@@ -147,16 +147,9 @@ router.delete('/subscription', function(req, res, next) {
 
 router.get('/turns-status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		if(req.query.user_id) {
-			// todo, no need to lookup id, just need to get user details?
-		}
-		var userPromise =index.getUser(conn, req.ip);
-		var listPromise = userPromise.then(function(){
-			return index.getTurns(conn, req.query.task_id);
-		});
-		return Promise.all([userPromise, listPromise, index.getStatus(conn, req.query.task_id)]);
-	}).then(function(results){
-		res.json({user: results[0], turns: results[1], users: results[2], taskid: parseInt(req.query.task_id)});
+		return Promise.all([index.getTurns(conn, req.query.task_id), index.getStatus(conn, req.query.task_id)]);
+	}).spread(function(turns, users){
+		res.json({turns: turns, users: users, taskid: parseInt(req.query.task_id)});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to get turns/status'));
 	});
@@ -168,13 +161,13 @@ router.post('/turn', function(req, res, next) {
 		return (req.body.user_id ? index.saveAddress(conn, req.body.user_id, req.ip) : index.getUser(conn, req.ip)).then(function(user){
 			turnTakerUserId = typeof user === 'object' ? user.id : user;
 			return index.takeTurn(conn, req.body.task_id, turnTakerUserId);
-		}).then(function(){
-			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
-		}, function(){
+		}).then(function(turnId){
+			return Promise.all([turnId, index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
+		}, function(err){
 			// todo this could also be an error from getting the user or saving the address
 			log('ERROR failed to take turn', err);
 			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
-		}).spread(function(turns, users){
+		}).spread(function(turnId, turns, users){
 			// send notifications
 			var nextTurnUser = users[0];
 			var turnTakerUserName = users.reduce(function(prev, user){
@@ -240,10 +233,10 @@ router.post('/turn', function(req, res, next) {
 					});
 				}
 			});
-			return Promise.all([turns, users, notesPromise]);
+			return Promise.all([turnId, turns, users, notesPromise]);
 		});
-	}).spread(function(turns, users){
-		res.json({turns: turns, users: users});
+	}).spread(function(turnId, turns, users){
+		res.json({turnId: turnId, turns: turns, users: users});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to take turn'));
 	});

@@ -5,7 +5,11 @@ import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -31,17 +35,14 @@ import me.geniusburger.turntracker.utilities.UIUtil;
  * Activities containing this fragment MUST implement the {@link OnTaskSelectedListener}
  * interface.
  */
-public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
 
     private List<Task> mTasks;
 
     private OnTaskSelectedListener mListener;
 
-    /**
-     * The fragment's ListView/GridView.
-     */
+    private SwipeRefreshLayout mSwipeLayout;
     private AbsListView mListView;
-    private View mProgressView;
 
     // Workers
     GetTasksAsyncTask mGetTasksAsyncTask;
@@ -74,7 +75,26 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         mAdapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,
                 android.R.id.text1, mTasks);
+
+        setHasOptionsMenu(true);
+
         refreshData();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.task_fragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                refreshData();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -88,7 +108,8 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_task, container, false);
 
-        mProgressView = view.findViewById(R.id.progress);
+        mSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe);
+        mSwipeLayout.setOnRefreshListener(this);
 
         // Set the adapter
         mListView = (AbsListView) view.findViewById(android.R.id.list);
@@ -100,8 +121,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
 
         // show progress if the task is already running
         if(mGetTasksAsyncTask != null && mGetTasksAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
-            mListView.setVisibility(View.GONE);
-            mProgressView.setVisibility(View.VISIBLE);
+            showProgress(true);
         }
 
         return view;
@@ -152,10 +172,21 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         return false;
     }
 
+    public void clear() {
+        cancelRefreshData();
+        mTasks.clear();
+        ((BaseAdapter)mAdapter).notifyDataSetChanged();
+    }
+
     private void showProgress(boolean show) {
-        if(mListView != null && mProgressView != null) {
-            UIUtil.showProgress(getActivity(), show, mListView, mProgressView);
+        if(mSwipeLayout != null) {
+            mSwipeLayout.setRefreshing(show);
         }
+    }
+
+    @Override
+    public void onRefresh() {
+        refreshData();
     }
 
     public class GetTasksAsyncTask extends AsyncTask<Void, Void, Task[]> {

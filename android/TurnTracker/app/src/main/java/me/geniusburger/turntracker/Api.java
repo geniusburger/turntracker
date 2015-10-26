@@ -1,6 +1,8 @@
 package me.geniusburger.turntracker;
 
 import android.content.Context;
+import android.system.ErrnoException;
+import android.system.OsConstants;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -12,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -21,13 +24,17 @@ import java.util.List;
 import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
+import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
 
 public class Api {
 
-    public static final int RESULT_UNKNOWN = -1;
+    public static final int RESULT_NETWORK = -1;
     public static final int RESULT_TIMEOUT = -2;
     public static final int RESULT_JSON = -3;
+    public static final int RESULT_SERVER = -4;
+    public static final int RESULT_NOT_FOUND = -5;
+    public static final int RESULT_UNREACHABLE = -6;
 
     private static final String TAG = Api.class.getSimpleName();
     private static final int TIMEOUT_MS = 5000;
@@ -40,9 +47,10 @@ public class Api {
 
     private JsonResponse jsonHttp(String method, String path, JSONObject body, Map<String, String> queryParams) {
         URL url = null;
+        HttpURLConnection conn = null;
         try {
             url = new URL(getUrl(path, queryParams));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(TIMEOUT_MS);
             conn.setUseCaches(false);
@@ -73,8 +81,22 @@ public class Api {
             Log.e(TAG, String.format("jsonHttp timeout for URL '%s'", url.toString()), e);
             return new JsonResponse(RESULT_TIMEOUT);
         } catch (IOException e) {
-            Log.e(TAG, String.format("jsonHttp failed for URL '%s'", null == url ? "null" : url.toString()), e);
-            return new JsonResponse(RESULT_UNKNOWN);
+            int code = RESULT_NETWORK;
+            try {
+                code = conn.getResponseCode();
+            } catch (IOException noCode) {
+                // try to get an errno exception
+                Throwable cause = e.getCause();
+                if(cause instanceof ErrnoException) {
+                    ErrnoException ee = (ErrnoException)cause;
+                    if(OsConstants.EHOSTUNREACH == ee.errno) {
+                        return new JsonResponse(RESULT_UNREACHABLE);
+                    }
+                    // let it show the network error
+                }
+            }
+            Log.e(TAG, String.format("jsonHttp failed for URL '%s', code %s", url, code), e);
+            return new JsonResponse(code);
         }
     }
 
@@ -94,28 +116,95 @@ public class Api {
         return jsonHttp("GET", path, null, queryParams);
     }
 
+    private JsonResponse httpDelete(String path) {
+        return httpDelete(path, null);
+    }
+
+    private JsonResponse httpDelete(String path, Map<String, String> queryParams) {
+        return jsonHttp("DELETE", path, null, queryParams);
+    }
+
     public User getUser(String username) {
         Map<String, String> params = new HashMap<>(1);
         params.put("username", username);
         JsonResponse res = httpGet("user", params);
+
         if(200 == res.code) {
             try {
                 JSONObject user = res.json.getJSONObject("user");
                 return new User(user.getLong("id"), user.getString("username"), user.getString("displayname"));
             } catch (JSONException e) {
-                Log.e(TAG, "failed to extract user from JSON", e);
-            }
-        } else {
-            if(res.e != null) {
-                Log.e(TAG, "failed to get user, HTTP res " + res.code, res.e);
-            } else {
-                Log.e(TAG, "failed to get user, HTTP res " + res.code);
+                Log.w(TAG, "user not found in JSON", e);
+                return new User(RESULT_NOT_FOUND);
             }
         }
+
+        if(res.e != null) {
+            Log.e(TAG, "failed to get user, HTTP res " + res.code, res.e);
+        } else {
+            Log.e(TAG, "failed to get user, HTTP res " + res.code);
+        }
+
+        if(500 == res.code) {
+            return new User(RESULT_SERVER);
+        }
+
+        if(res.code < 0) {
+            return new User(res.code);
+        }
+
         return null;
     }
 
-    public boolean takeTurn(long taskId, List<User> users) {
+    private void processJsonTurns(JSONArray jsonTurns, List<Turn> turns) throws JSONException {
+        int len = jsonTurns.length();
+        turns.clear();
+        for(int i = 0; i < len; i++) {
+            turns.add(new Turn(jsonTurns.getJSONObject(i)));
+        }
+    }
+
+    private void processJsonUsers(JSONArray jsonUsers, List<User> users) throws JSONException {
+        int len = jsonUsers.length();
+        users.clear();
+        if(len > 0) {
+            for(int i = 0; i < len; i++) {
+                users.add(new User(jsonUsers.getJSONObject(i)));
+            }
+            int maxTurns = users.get(users.size() - 1).turns;
+            for(User user : users) {
+                user.consecutiveTurns = maxTurns - user.turns;
+            }
+        }
+    }
+
+    public boolean deleteTurn(long turnId, long taskId, List<User> users, List<Turn> turns) {
+        try {
+            Map<String, String> params = new HashMap<>(3);
+            params.put("turn_id", String.valueOf(turnId));
+            params.put("user_id", String.valueOf(prefs.getUserId()));
+            params.put("task_id", String.valueOf(taskId));
+            JsonResponse res = httpDelete("turn", params);
+
+            if(200 == res.code) {
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to undo turn, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to undo turn, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build json",e );
+        }
+        return false;
+    }
+
+    // return 0 on error
+    public long takeTurn(long taskId, List<User> users, List<Turn> turns) {
         try {
             JSONObject body = new JSONObject();
             body.put("user_id", prefs.getUserId());
@@ -123,20 +212,9 @@ public class Api {
             JsonResponse res = httpPost("turn", body);
 
             if(200 == res.code) {
-                JSONArray jsonUsers = res.json.getJSONArray("users");
-                int len = jsonUsers.length();
-                users.clear();
-                int max = 0;
-                User user;
-                for(int i = 0; i < len; i++) {
-                    user = new User(jsonUsers.getJSONObject(i));
-                    if(0 == i) {
-                        max = user.turns;
-                    }
-                    user.diffTurns = user.turns - max;
-                    users.add(user);
-                }
-                return true;
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
+                return res.json.getLong("turnId");
             } else {
                 if(res.e != null) {
                     Log.e(TAG, "failed to take turn, HTTP res " + res.code, res.e);
@@ -147,28 +225,19 @@ public class Api {
         } catch (JSONException e) {
             Log.e(TAG, "Failed to build json",e );
         }
-        return false;
+        return 0;
     }
 
-    public User[] getStatus(long taskId) {
+    public boolean getStatus(long taskId, List<User> users, List<Turn> turns) {
         Map<String, String> params = new HashMap<>(1);
-        params.put("id", String.valueOf(taskId));
-        JsonResponse res = httpGet("status", params);
+        params.put("task_id", String.valueOf(taskId));
+        JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {
             try {
-                JSONArray jsonUsers = res.json.getJSONArray("users");
-                int len = jsonUsers.length();
-                User[] users = new User[len];
-                int max = 0;
-                for(int i = 0; i < len; i++) {
-                    users[i] = new User(jsonUsers.getJSONObject(i));
-                    if(0 == i) {
-                        max = users[0].turns;
-                    }
-                    users[i].diffTurns = users[i].turns - max;
-                }
-                return users;
+                processJsonUsers(res.json.getJSONArray("users"), users);
+                processJsonTurns(res.json.getJSONArray("turns"), turns);
+                return true;
             } catch (JSONException e) {
                 Log.e(TAG, "failed to extract status from JSON", e);
             }
@@ -179,7 +248,7 @@ public class Api {
                 Log.e(TAG, "failed to get status, HTTP res " + res.code);
             }
         }
-        return null;
+        return false;
     }
 
     public Task[] getTasks() {

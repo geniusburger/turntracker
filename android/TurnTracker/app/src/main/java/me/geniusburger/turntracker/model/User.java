@@ -10,7 +10,11 @@ public class User {
     public String displayName;
     public int turns;
     public boolean mobile;
-    public int diffTurns;
+    public int consecutiveTurns;
+
+    public User(long id) {
+        this.id = id;
+    }
 
     public User(long id, String username, String displayName) {
         this.id = id;
@@ -27,6 +31,15 @@ public class User {
 
     @Override
     public String toString() {
-        return String.format("%d - %s %s", diffTurns, displayName, mobile ? "- mobile" : "");
+        StringBuilder sb = new StringBuilder(displayName);
+        if(consecutiveTurns > 0) {
+            sb.append(" (x");
+            sb.append(consecutiveTurns);
+            sb.append(")");
+        }
+        if(mobile) {
+            sb.append(" M");
+        }
+        return sb.toString();
     }
 }
