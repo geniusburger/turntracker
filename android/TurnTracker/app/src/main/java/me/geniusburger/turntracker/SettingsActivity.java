@@ -185,6 +185,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_general);
             bindPreferenceSummaryToValue(findPreference(Preferences.KEY_SERVER_IP));
+            bindPreferenceSummaryToValue(findPreference(Preferences.KEY_SERVER_PORT));
         }
     }
 

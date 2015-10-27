@@ -35,6 +35,8 @@
 
     <string name="pref_title_server_ip">Server IP Address</string>
     <string name="pref_default_server_ip">192.168.2.11</string>
+    <string name="pref_title_server_port">Server Port</string>
+    <string name="pref_default_server_port">3000</string>
 
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string-array name="pref_example_list_titles">
