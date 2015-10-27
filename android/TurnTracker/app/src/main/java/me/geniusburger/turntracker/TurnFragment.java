@@ -1,5 +1,6 @@
 package me.geniusburger.turntracker;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -35,13 +36,14 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";
+    private static final String ARG_AUTO_TURN = "autoTurn";
 
     private long mTaskId;
     private String mTaskName;
 	private List<User> mUsers;
     private List<Turn> mTurns;
-
-    //private OnFragmentInteractionListener mListener;
+    private boolean mAutoTurn = false;
+    private TurnFragmentInteractionListener mListener;
 
     private View mLists;
     private AbsListView mUserListView;
@@ -60,11 +62,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private ListAdapter mUserAdapter;
     private ListAdapter mTurnAdapter;
 
-    public static TurnFragment newInstance(long taskId, String taskName) {
+    public static TurnFragment newInstance(long taskId, String taskName, boolean autoTurn) {
         TurnFragment fragment = new TurnFragment();
         Bundle args = new Bundle();
         args.putLong(ARG_TASK_ID, taskId);
         args.putString(ARG_TASK_NAME, taskName);
+        args.putBoolean(ARG_AUTO_TURN, autoTurn);
         fragment.setArguments(args);
         return fragment;
     }
@@ -83,6 +86,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         if (getArguments() != null) {
             mTaskId = getArguments().getLong(ARG_TASK_ID);
             mTaskName = getArguments().getString(ARG_TASK_NAME);
+            mAutoTurn = getArguments().getBoolean(ARG_AUTO_TURN);
         }
 		
 		mUsers = new ArrayList<>();
@@ -97,7 +101,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         setHasOptionsMenu(true);
 
-		refreshData();
+        if(mAutoTurn && mListener != null) {
+            mAutoTurn = false;
+            takeTurn(mListener.getSnackBarView());
+        } else {
+            refreshData();
+        }
     }
 
     @Override
@@ -134,16 +143,16 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         return view;
     }
 
-//    @Override
-//    public void onAttach(Activity activity) {
-//        super.onAttach(activity);
-//        try {
-//            mListener = (OnFragmentInteractionListener) activity;
-//        } catch (ClassCastException e) {
-//            throw new ClassCastException(activity.toString()
-//                    + " must implement OnFragmentInteractionListener");
-//        }
-//    }
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (TurnFragmentInteractionListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + " must implement TurnFragmentInteractionListener");
+        }
+    }
 
 
     @Override
@@ -165,7 +174,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     @Override
     public void onDetach() {
         super.onDetach();
-        //mListener = null;
+        mListener = null;
     }
 
     @Override
@@ -375,19 +384,8 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-//    public interface OnFragmentInteractionListener {
-//        // TODO: Update argument type and name
-//        public void onFragmentInteraction(String id);
-//    }
+    public interface TurnFragmentInteractionListener {
+        View getSnackBarView();
+    }
 
 }

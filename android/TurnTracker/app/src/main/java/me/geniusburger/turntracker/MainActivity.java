@@ -3,7 +3,13 @@ package me.geniusburger.turntracker;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -20,9 +26,13 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.Set;
+
 import me.geniusburger.turntracker.model.Task;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_CODE_LOGIN = 1;
@@ -39,6 +49,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Preferences
     private Preferences prefs;
+
+    // Things to do
+    long autoTurnTaskId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,13 +95,75 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mUserNameTextView = (TextView) headerLayout.findViewById(R.id.userNameTextView);
         mDisplayNameTextView = (TextView) headerLayout.findViewById(R.id.displayNameTextView);
 
+        autoTurnTaskId = 0;
+        if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+            handleNfc();
+        }
+
         prefs = new Preferences(this);
         long userId = prefs.getUserId();
         if(userId <= 0) {
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         } else {
-            mTaskFragment = TaskFragment.newInstance();
+            mTaskFragment = TaskFragment.newInstance(autoTurnTaskId);
+            autoTurnTaskId = 0;
             getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
+        }
+
+//        String packageName = MainActivity.class.getPackage().getName();
+//        NdefRecord taskRecord = NdefRecord.createUri("http://geniusburger.me/task/123");
+//        NdefRecord aarRecord = NdefRecord.createApplicationRecord(packageName);
+//        NdefMessage msg = new NdefMessage( new NdefRecord[] { taskRecord, aarRecord });
+//        Log.d(TAG, "nfc length " + msg.getByteArrayLength());
+    }
+
+    private void handleNfc() {
+
+        //Tag tag = getIntent().getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        Parcelable[] rawMsgs = getIntent().getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+        Log.d(TAG, "msgs: " + rawMsgs.length);
+        NdefMessage msg = (NdefMessage) rawMsgs[0];
+        // record 0 contains the MIME type, record 1 is the AAR, if present
+        NdefRecord[] records = msg.getRecords();
+        Log.d(TAG, "records: " + records.length);
+        for(NdefRecord record : records) {
+            if(record.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
+                byte[] payload = record.getPayload();
+                String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+
+                // Get the Language Code
+                int languageCodeLength = payload[0] & 0063;
+
+                try {
+                    String languageCode = new String(payload, 1, languageCodeLength, "US-ASCII");
+                    if(!"en".equals(languageCode)) {
+                        Log.d(TAG, "unsupported language code " + languageCode);
+                        continue;
+                    }
+                    // e.g. "en"
+
+                    // Get the Text
+                    String queryString = new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding).trim();
+                    if(!queryString.startsWith("?")) {
+                        queryString = "?" + queryString;
+                    }
+                    Uri uri = Uri.parse(queryString);
+                    for(String key : uri.getQueryParameterNames()) {
+                        Log.d(TAG, key + " => " + uri.getQueryParameter(key));
+                        if("task".equals(key)) {
+                            autoTurnTaskId = Long.parseLong(uri.getQueryParameter(key));
+                        }
+                    }
+                    Log.d(TAG, languageCode + ": " + queryString);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+
+            } else if(record.getTnf() == NdefRecord.TNF_EXTERNAL_TYPE) {
+                Log.d(TAG, "ext: " + new String(record.getPayload()));
+            } else {
+                Log.d(TAG, "unhandled record");
+            }
         }
     }
 
@@ -96,10 +171,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch(requestCode) {
             case REQUEST_CODE_LOGIN:
-                mUserNameTextView.setText(prefs.getUserName());
-                mDisplayNameTextView.setText(prefs.getUserDisplayName());
                 if (mTaskFragment == null) {
-                    mTaskFragment = TaskFragment.newInstance();
+                    mTaskFragment = TaskFragment.newInstance(autoTurnTaskId);
+                    autoTurnTaskId = 0;
                     getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
                 } else {
                     mTaskFragment.refreshData();
@@ -113,6 +187,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onResume() {
         super.onResume();
+        mUserNameTextView.setText(prefs.getUserName());
+        mDisplayNameTextView.setText(prefs.getUserDisplayName());
     }
 
     @Override
@@ -139,14 +215,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_tasks) {
-            if(getFragmentManager().getBackStackEntryCount() > 0) {
+            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
                 getFragmentManager().popBackStack();
             }
             mTaskFragment.refreshData();
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (id == R.id.nav_logout) {
-            if(getFragmentManager().getBackStackEntryCount() > 0) {
+            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
                 getFragmentManager().popBackStack();
             }
             mTaskFragment.clear();
@@ -160,9 +236,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void onTaskSelected(Task task) {
+    public void onTaskSelected(Task task, boolean autoTurn) {
         // TODO need to do anything with the old fragment?
-        mTurnFragment = TurnFragment.newInstance(task.id, task.name);
+        mTurnFragment = TurnFragment.newInstance(task.id, task.name, autoTurn);
 
         // Replace whatever is in the fragment_container view with this fragment,
         // and add the transaction to the back stack so the user can navigate back
@@ -173,5 +249,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    @Override
+    public View getSnackBarView() {
+        return findViewById(R.id.fab);
     }
 }
