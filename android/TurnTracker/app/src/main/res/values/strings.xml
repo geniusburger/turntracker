@@ -25,6 +25,9 @@
 
     <!-- Strings related to Settings -->
 
+    <string name="user_list_label">Users</string>
+    <string name="turn_list_label">Turns</string>
+
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 

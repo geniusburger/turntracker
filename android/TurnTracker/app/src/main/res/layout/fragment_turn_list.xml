@@ -9,6 +9,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="@string/user_list_label"
+            android:id="@+id/textView" />
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -20,6 +27,13 @@
             <TextView android:id="@+id/userempty" android:layout_width="match_parent"
                 android:layout_height="match_parent" android:gravity="center" />
         </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="@string/turn_list_label"
+            android:id="@+id/textView2" />
 
         <FrameLayout
             android:layout_width="match_parent"
