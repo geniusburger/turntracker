@@ -1,14 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context="me.geniusburger.turntracker.TurnFragment">
+xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+android:layout_height="match_parent" tools:context="me.geniusburger.turntracker.TurnFragment">
 
-    <GridView android:id="@android:id/list" android:layout_width="match_parent"
-        android:layout_height="match_parent" android:numColumns="2"
-        tools:listitem="@android:layout/simple_list_item_1" />
+    <LinearLayout
+        android:id="@+id/lists"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <TextView android:id="@android:id/empty" android:layout_width="match_parent"
-        android:layout_height="match_parent" android:gravity="center" />
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+            <ListView android:id="@+id/userlist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@android:layout/simple_list_item_1" />
+            <TextView android:id="@+id/userempty" android:layout_width="match_parent"
+                android:layout_height="match_parent" android:gravity="center" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2">
+            <GridView android:id="@+id/turnlist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:numColumns="2"
+                tools:listitem="@android:layout/simple_list_item_1" />
+            <TextView android:id="@+id/turnempty" android:layout_width="match_parent"
+                android:layout_height="match_parent" android:gravity="center" />
+        </FrameLayout>
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -22,3 +47,4 @@
     </FrameLayout>
 
 </FrameLayout>
+
