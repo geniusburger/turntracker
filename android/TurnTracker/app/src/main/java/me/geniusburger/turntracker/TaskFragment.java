@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -37,6 +38,9 @@ import me.geniusburger.turntracker.utilities.UIUtil;
  */
 public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
 
+    private static final String ARG_AUTO_TURN_TASK_ID = "autoTurnTaskId";
+    private long autoTurnTaskId = 0;
+
     private List<Task> mTasks;
 
     private OnTaskSelectedListener mListener;
@@ -54,8 +58,13 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
     private ListAdapter mAdapter;
 
     public static TaskFragment newInstance() {
+        return newInstance(0);
+    }
+
+    public static TaskFragment newInstance(long autoTurnTaskId) {
         TaskFragment fragment = new TaskFragment();
         Bundle args = new Bundle();
+        args.putLong("autoTurnTaskId", autoTurnTaskId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -70,6 +79,10 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            autoTurnTaskId = getArguments().getLong(ARG_AUTO_TURN_TASK_ID);
+        }
 
         mTasks = new ArrayList<>();
         mAdapter = new ArrayAdapter<>(getActivity(),
@@ -155,7 +168,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            mListener.onTaskSelected(mTasks.get(position));
+            mListener.onTaskSelected(mTasks.get(position), false);
         }
     }
 
@@ -218,6 +231,20 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
             }
             ((BaseAdapter)mAdapter).notifyDataSetChanged();
             showProgress(false);
+
+            if(autoTurnTaskId > 0 && mListener != null) {
+                for(Task task : mTasks) {
+                    if(task.id == autoTurnTaskId) {
+                        mListener.onTaskSelected(task, true);
+                        autoTurnTaskId = 0;
+                        break;
+                    }
+                }
+                if(autoTurnTaskId > 0) {
+                    Snackbar.make(mListener.getSnackBarView(), "Can't find task ID " + autoTurnTaskId, Snackbar.LENGTH_LONG).show();
+                    autoTurnTaskId = 0;
+                }
+            }
         }
 
         @Override
@@ -252,6 +279,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnTaskSelectedListener {
-        void onTaskSelected(Task task);
+        void onTaskSelected(Task task, boolean autoTurn);
+        View getSnackBarView();
     }
 }
