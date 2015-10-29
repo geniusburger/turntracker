@@ -14,11 +14,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,7 +156,7 @@ public class Api {
         return null;
     }
 
-    private void processJsonTurns(JSONArray jsonTurns, List<Turn> turns) throws JSONException {
+    private void processJsonTurns(JSONArray jsonTurns, List<Turn> turns) throws JSONException, ParseException {
         int len = jsonTurns.length();
         turns.clear();
         for(int i = 0; i < len; i++) {
@@ -197,7 +197,7 @@ public class Api {
                     Log.e(TAG, "failed to undo turn, HTTP res " + res.code);
                 }
             }
-        } catch (JSONException e) {
+        } catch (JSONException | ParseException e) {
             Log.e(TAG, "Failed to build json",e );
         }
         return false;
@@ -222,8 +222,8 @@ public class Api {
                     Log.e(TAG, "failed to take turn, HTTP res " + res.code);
                 }
             }
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to build json",e );
+        } catch (JSONException | ParseException e) {
+            Log.e(TAG, "Failed to build json", e);
         }
         return 0;
     }
@@ -238,7 +238,7 @@ public class Api {
                 processJsonUsers(res.json.getJSONArray("users"), users);
                 processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return true;
-            } catch (JSONException e) {
+            } catch (JSONException | ParseException e) {
                 Log.e(TAG, "failed to extract status from JSON", e);
             }
         } else {
