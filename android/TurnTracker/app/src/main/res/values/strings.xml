@@ -92,4 +92,8 @@
 
     <string name="pref_title_display_name">Display name</string>
     <string name="pref_default_display_name">John Smith</string>
+    <string name="period_label">Period</string>
+    <string name="creator_label">Creator</string>
+    <string name="notifications_enabled_description">Notifications are enabled for this task</string>
+    <string name="notifications_disabled_description">Notifications are disabled for this task</string>
 </resources>

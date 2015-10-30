@@ -17,15 +17,16 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
-import me.geniusburger.turntracker.utilities.UIUtil;
 
 /**
  * A fragment representing a list of Items.
@@ -39,6 +40,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private static final String ARG_TASK_NAME = "taskName";
     private static final String ARG_AUTO_TURN = "autoTurn";
 
+    private Task mTask;
     private long mTaskId;
     private String mTaskName;
 	private List<User> mUsers;
@@ -46,14 +48,16 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private boolean mAutoTurn = false;
     private TurnFragmentInteractionListener mListener;
 
-    private View mLists;
     private AbsListView mUserListView;
     private AbsListView mTurnListView;
     private SwipeRefreshLayout mUserSwipeLayout;
     private SwipeRefreshLayout mTurnSwipeLayout;
+    private TextView mPeriodTextView;
+    private TextView mCreatorTextView;
+    private ImageView mNotificationImageView;
 
     // Workers
-    GetUsersAsyncTask mGetUsersAsyncTask;
+    GetStatusAsyncTask mGetStatusAsyncTask;
     TakeTurnAsyncTask mTakeTurnAsyncTask;
     UndoTurnAsyncTask mUndoTurnAsyncTask;
 
@@ -128,7 +132,16 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         mTurnSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.turnswipe);
         mTurnSwipeLayout.setOnRefreshListener(this);
 
-        mLists = view.findViewById(R.id.lists);
+        mCreatorTextView = (TextView) view.findViewById(R.id.creatorTextView);
+        mPeriodTextView = (TextView) view.findViewById(R.id.periodTextView);
+        if(mTask.periodicHours % 24 == 0) {
+            mPeriodTextView.setText(mTask.periodicHours / 24 + " days");
+        } else {
+            mPeriodTextView.setText(mTask.periodicHours + " hours");
+        }
+
+        mNotificationImageView = (ImageView) view.findViewById(R.id.notificationImageView);
+        mNotificationImageView.setImageResource(mTask.notification ? R.drawable.ic_notifications_24dp : R.drawable.ic_notifications_none_24dp);
 
         mUserListView = (AbsListView) view.findViewById(R.id.userlist);
         mUserListView.setAdapter(mUserAdapter);
@@ -148,7 +161,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         setEmptyText(mTurnListView, R.string.turns_empty);
 
         // show progress if the task is already running
-        if(mGetUsersAsyncTask != null && mGetUsersAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if(mGetStatusAsyncTask != null && mGetStatusAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
             showProgress(true);
         }
 
@@ -160,6 +173,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         super.onAttach(activity);
         try {
             mListener = (TurnFragmentInteractionListener) activity;
+            mTask = mListener.getCurrentTask();
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement TurnFragmentInteractionListener");
@@ -209,12 +223,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     public void refreshData() {
         cancelAllAsyncTasks();
-        mGetUsersAsyncTask = new GetUsersAsyncTask(getActivity());
-        mGetUsersAsyncTask.execute();
+        mGetStatusAsyncTask = new GetStatusAsyncTask(getActivity());
+        mGetStatusAsyncTask.execute();
     }
 
     public boolean cancelRefreshData() {
-        return mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled() && mGetUsersAsyncTask.cancel(true);
+        return mGetStatusAsyncTask != null && !mGetStatusAsyncTask.isCancelled() && mGetStatusAsyncTask.cancel(true);
     }
 
     public boolean cancelTakeTurn() {
@@ -226,12 +240,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     private boolean checkBusy(View view) {
-        if(mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled()) {
-            Snackbar.make(view, "Already trying to get status", Snackbar.LENGTH_LONG).show();
+        if(mGetStatusAsyncTask != null && !mGetStatusAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already getting status", Snackbar.LENGTH_LONG).show();
         } else if(mTakeTurnAsyncTask != null && !mTakeTurnAsyncTask.isCancelled()) {
-            Snackbar.make(view, "Already trying to take turn", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(view, "Already taking turn", Snackbar.LENGTH_LONG).show();
         } else if(mUndoTurnAsyncTask != null && !mUndoTurnAsyncTask.isCancelled()) {
-            Snackbar.make(view, "Already trying to undo turn", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(view, "Already undoing turn", Snackbar.LENGTH_LONG).show();
         } else {
             return false;
         }
@@ -356,11 +370,11 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         }
     }
 
-    public class GetUsersAsyncTask extends AsyncTask<Void, Void, Boolean> {
+    public class GetStatusAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
         private Context mContext;
 
-        public GetUsersAsyncTask(Context context) {
+        public GetStatusAsyncTask(Context context) {
             this.mContext = context;
         }
 
@@ -383,13 +397,19 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
             } else {
                 setEmptyText(mUserListView, R.string.tasks_failed);
             }
+            for(User user : mUsers) {
+                if(user.id == mTask.creatorUserID) {
+                    mCreatorTextView.setText(user.displayName);
+                    break;
+                }
+            }
             showProgress(false);
-            mGetUsersAsyncTask = null;
+            mGetStatusAsyncTask = null;
         }
 
         @Override
         protected void onCancelled() {
-            mGetUsersAsyncTask = null;
+            mGetStatusAsyncTask = null;
             setEmptyText(mUserListView, R.string.tasks_failed);
             showProgress(false);
         }
@@ -405,6 +425,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     public interface TurnFragmentInteractionListener {
         View getSnackBarView();
+        Task getCurrentTask();
     }
 
 }

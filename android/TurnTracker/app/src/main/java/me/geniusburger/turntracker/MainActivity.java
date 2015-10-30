@@ -50,8 +50,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // Preferences
     private Preferences prefs;
 
-    // Things to do
+    // Things
     long autoTurnTaskId = 0;
+    Task mCurrentTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -233,6 +234,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onTaskSelected(Task task, boolean autoTurn) {
+        mCurrentTask = task;
+
         // TODO need to do anything with the old fragment?
         mTurnFragment = TurnFragment.newInstance(task.id, task.name, autoTurn);
 
@@ -250,5 +253,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public View getSnackBarView() {
         return findViewById(R.id.fab);
+    }
+
+    @Override
+    public Task getCurrentTask() {
+        return mCurrentTask;
     }
 }

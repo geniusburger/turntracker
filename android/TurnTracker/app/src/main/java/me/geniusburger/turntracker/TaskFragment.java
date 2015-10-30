@@ -56,14 +56,10 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      */
     private ListAdapter mAdapter;
 
-    public static TaskFragment newInstance() {
-        return newInstance(0);
-    }
-
     public static TaskFragment newInstance(long autoTurnTaskId) {
         TaskFragment fragment = new TaskFragment();
         Bundle args = new Bundle();
-        args.putLong("autoTurnTaskId", autoTurnTaskId);
+        args.putLong(ARG_AUTO_TURN_TASK_ID, autoTurnTaskId);
         fragment.setArguments(args);
         return fragment;
     }
