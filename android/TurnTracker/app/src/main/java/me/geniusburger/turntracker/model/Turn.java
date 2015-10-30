@@ -35,6 +35,10 @@ public class Turn {
         turnId = json.getLong("turnid");
     }
 
+    public String getDateString() {
+        return outputFormat.format(date);
+    }
+
     @Override
     public String toString() {
         return name + " - " + outputFormat.format(date);

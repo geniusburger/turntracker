@@ -43,30 +43,19 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private Task mTask;
     private long mTaskId;
     private String mTaskName;
-	private List<User> mUsers;
-    private List<Turn> mTurns;
     private boolean mAutoTurn = false;
     private TurnFragmentInteractionListener mListener;
 
-    private AbsListView mUserListView;
-    private AbsListView mTurnListView;
-    private SwipeRefreshLayout mUserSwipeLayout;
-    private SwipeRefreshLayout mTurnSwipeLayout;
-    private TextView mPeriodTextView;
-    private TextView mCreatorTextView;
-    private ImageView mNotificationImageView;
+    private AbsListView mListView;
+    private SwipeRefreshLayout mSwipeLayout;
 
     // Workers
     GetStatusAsyncTask mGetStatusAsyncTask;
     TakeTurnAsyncTask mTakeTurnAsyncTask;
     UndoTurnAsyncTask mUndoTurnAsyncTask;
 
-    /**
-     * The Adapter which will be used to populate the ListView/GridView with
-     * Views.
-     */
-    private ListAdapter mUserAdapter;
-    private ListAdapter mTurnAdapter;
+    // Adapter
+    private StatusAdapter mStatusAdapter;
 
     public static TurnFragment newInstance(long taskId, String taskName, boolean autoTurn) {
         TurnFragment fragment = new TurnFragment();
@@ -94,16 +83,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
             mTaskName = getArguments().getString(ARG_TASK_NAME);
             mAutoTurn = getArguments().getBoolean(ARG_AUTO_TURN);
         }
-		
-		mUsers = new ArrayList<>();
-        mUserAdapter = new ArrayAdapter<>(getActivity(),
-                android.R.layout.simple_list_item_1,
-				android.R.id.text1, mUsers);
 
-        mTurns = new ArrayList<>();
-        mTurnAdapter = new ArrayAdapter<>(getActivity(),
-                android.R.layout.simple_list_item_1,
-                android.R.id.text1, mTurns);
+        mStatusAdapter = new StatusAdapter(
+                getContext(),
+                mTask,
+                getString(R.string.user_list_label),
+                getString(R.string.turn_list_label),
+                false);
 
         setHasOptionsMenu(true);
 
@@ -126,39 +112,20 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_turn, container, false);
 
-        mUserSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.userswipe);
-        mUserSwipeLayout.setOnRefreshListener(this);
+        mSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe);
+        mSwipeLayout.setOnRefreshListener(this);
 
-        mTurnSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.turnswipe);
-        mTurnSwipeLayout.setOnRefreshListener(this);
-
-        mCreatorTextView = (TextView) view.findViewById(R.id.creatorTextView);
-        mPeriodTextView = (TextView) view.findViewById(R.id.periodTextView);
-        if(mTask.periodicHours % 24 == 0) {
-            mPeriodTextView.setText(mTask.periodicHours / 24 + " days");
-        } else {
-            mPeriodTextView.setText(mTask.periodicHours + " hours");
-        }
-
-        mNotificationImageView = (ImageView) view.findViewById(R.id.notificationImageView);
-        mNotificationImageView.setImageResource(mTask.notification ? R.drawable.ic_notifications_24dp : R.drawable.ic_notifications_none_24dp);
-
-        mUserListView = (AbsListView) view.findViewById(R.id.userlist);
-        mUserListView.setAdapter(mUserAdapter);
-        View emptyView = view.findViewById(R.id.userempty);
+        mListView = (AbsListView) view.findViewById(android.R.id.list);
+        mListView.setAdapter(mStatusAdapter);
+        View emptyView = view.findViewById(android.R.id.empty);
         emptyView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 refreshData();
             }
         });
-        mUserListView.setEmptyView(emptyView);
+        mListView.setEmptyView(emptyView);
         //mUserListView.setOnItemClickListener(this);
-
-        mTurnListView = (AbsListView) view.findViewById(R.id.turnlist);
-        mTurnListView.setAdapter(mTurnAdapter);
-        mTurnListView.setEmptyView(view.findViewById(R.id.turnempty));
-        setEmptyText(mTurnListView, R.string.turns_empty);
 
         // show progress if the task is already running
         if(mGetStatusAsyncTask != null && mGetStatusAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -267,11 +234,8 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     private void showProgress(boolean show) {
-        if(mUserSwipeLayout != null) {
-            mUserSwipeLayout.setRefreshing(show);
-        }
-        if(mTurnSwipeLayout != null) {
-            mTurnSwipeLayout.setRefreshing(show);
+        if(mSwipeLayout != null) {
+            mSwipeLayout.setRefreshing(show);
         }
     }
 
@@ -297,13 +261,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Long doInBackground(Void... params) {
-            return new Api(mContext).takeTurn(mTaskId, mUsers, mTurns);
+            return new Api(mContext).takeTurn(mTaskId, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
         }
 
         @Override
         protected void onPostExecute(final Long turnId) {
-            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
-            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
+            mStatusAdapter.notifyDataSetChanged();
             if(turnId > 0) {
                 final Snackbar bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG);
                 bar.setAction("Undo", new View.OnClickListener() {
@@ -347,13 +310,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).deleteTurn(mTurnId, mTaskId, mUsers, mTurns);
+            return new Api(mContext).deleteTurn(mTurnId, mTaskId, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
         }
 
         @Override
         protected void onPostExecute(Boolean success) {
-            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
-            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
+            mStatusAdapter.notifyDataSetChanged();
             if(success) {
                 Snackbar.make(mView, "Turn Undone", Snackbar.LENGTH_LONG).show();
             } else {
@@ -385,23 +347,16 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTaskId, mUsers, mTurns);
+            return new Api(mContext).getStatus(mTaskId, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
         }
 
         @Override
         protected void onPostExecute(Boolean success) {
-            ((BaseAdapter) mUserAdapter).notifyDataSetChanged();
-            ((BaseAdapter) mTurnAdapter).notifyDataSetChanged();
+            mStatusAdapter.notifyDataSetChanged();
             if(success) {
-                setEmptyText(mUserListView, R.string.tasks_empty);
+                setEmptyText(R.string.status_empty);
             } else {
-                setEmptyText(mUserListView, R.string.tasks_failed);
-            }
-            for(User user : mUsers) {
-                if(user.id == mTask.creatorUserID) {
-                    mCreatorTextView.setText(user.displayName);
-                    break;
-                }
+                setEmptyText(R.string.status_failed);
             }
             showProgress(false);
             mGetStatusAsyncTask = null;
@@ -410,13 +365,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         @Override
         protected void onCancelled() {
             mGetStatusAsyncTask = null;
-            setEmptyText(mUserListView, R.string.tasks_failed);
+            setEmptyText(R.string.status_failed);
             showProgress(false);
         }
     }
 
-    public void setEmptyText(AbsListView list, int resId) {
-        View emptyView = list.getEmptyView();
+    public void setEmptyText(int resId) {
+        View emptyView = mListView.getEmptyView();
 
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(resId);
