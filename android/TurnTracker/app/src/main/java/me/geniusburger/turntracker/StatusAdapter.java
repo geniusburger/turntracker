@@ -21,31 +21,19 @@ public class StatusAdapter extends BaseAdapter {
     private static final int TYPE_SUB_HEADER = 1;
     private static final int TYPE_USER_ITEM = 2;
     private static final int TYPE_TURN_ITEM = 3;
+    private static final int TYPE_COUNT = 4;
 
     private List<User> mUsers = new ArrayList<>();
     private List<Turn> mTurns = new ArrayList<>();
     private Task mTask;
-    private String mSubHeader1;
-    private String mSubHeader2;
-    private boolean mAutoNotify;
     private Context mContext;
 
     private LayoutInflater mInflater;
 
-    public StatusAdapter(Context context, Task task, String subHeader1, String subHeader2, boolean autoNotify) {
+    public StatusAdapter(Context context, Task task) {
         mContext = context;
         mTask = task;
-        mSubHeader1 = subHeader1;
-        mSubHeader2 = subHeader2;
-        mAutoNotify = autoNotify;
         mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    }
-
-    public void addUser(final User user) {
-        mUsers.add(user);
-        if(mAutoNotify) {
-            notifyDataSetChanged();
-        }
     }
 
     public List<User> getUsers() {
@@ -54,13 +42,6 @@ public class StatusAdapter extends BaseAdapter {
 
     public void clearUsers() {
         mUsers.clear();
-    }
-
-    public void addTurn(final Turn turn) {
-        mTurns.add(turn);
-        if(mAutoNotify) {
-            notifyDataSetChanged();
-        }
     }
 
     public List<Turn> getTurns() {
@@ -86,12 +67,13 @@ public class StatusAdapter extends BaseAdapter {
 
     @Override
     public int getViewTypeCount() {
-        return 4;
+        return TYPE_COUNT;
     }
 
     @Override
     public int getCount() {
-        return 3 + mUsers.size() + mTurns.size();
+        int count = mUsers.size() + mTurns.size();
+        return count > 0 ? count + 3 : 0;
     }
 
     @Override
@@ -99,11 +81,11 @@ public class StatusAdapter extends BaseAdapter {
         if(position == 0) {
             return mTask;
         } else if(position == 1) {
-            return mSubHeader1;
+            return mContext.getString(R.string.user_list_label);
         } else if(position < mUsers.size() + 2) {
             return mUsers.get(position - 2);
         } else if(position == mUsers.size() + 2) {
-            return mSubHeader2;
+            return mContext.getString(R.string.turn_list_label);
         } else if(position < mUsers.size() + mTurns.size() + 3) {
             return mTurns.get(position - mUsers.size() - 3);
         } else {
@@ -165,7 +147,13 @@ public class StatusAdapter extends BaseAdapter {
 
         public void update(StatusAdapter adapter, Object data) {
             Task task = (Task)data;
-            periodTextView.setText(task.periodicHours % 24 == 0 ? task.periodicHours / 24 + " days" : task.periodicHours + " hours");
+            if(task.periodicHours == 0) {
+                periodTextView.setText("Unspecified");
+            } else if(task.periodicHours % 24 == 0) {
+                periodTextView.setText(task.periodicHours / 24 + " days");
+            } else {
+                periodTextView.setText(task.periodicHours + " hours");
+            }
             notificationImageView.setImageResource(task.notification ? R.drawable.ic_notifications_24dp : R.drawable.ic_notifications_none_24dp);
             String name = null;
             for(User user : adapter.mUsers) {

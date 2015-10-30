@@ -8,4 +8,8 @@
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="Heading"
         android:id="@+id/subHeaderTextView" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorAccent"/>
 </LinearLayout>

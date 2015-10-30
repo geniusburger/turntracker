@@ -15,18 +15,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import me.geniusburger.turntracker.model.Task;
-import me.geniusburger.turntracker.model.Turn;
-import me.geniusburger.turntracker.model.User;
 
 /**
  * A fragment representing a list of Items.
@@ -84,12 +75,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
             mAutoTurn = getArguments().getBoolean(ARG_AUTO_TURN);
         }
 
-        mStatusAdapter = new StatusAdapter(
-                getContext(),
-                mTask,
-                getString(R.string.user_list_label),
-                getString(R.string.turn_list_label),
-                false);
+        mStatusAdapter = new StatusAdapter(getContext(), mTask);
 
         setHasOptionsMenu(true);
 
@@ -125,7 +111,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
             }
         });
         mListView.setEmptyView(emptyView);
-        //mUserListView.setOnItemClickListener(this);
+        mListView.setOnItemClickListener(this);
 
         // show progress if the task is already running
         if(mGetStatusAsyncTask != null && mGetStatusAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -177,21 +163,17 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//        if (null != mListener) {
-//            // Notify the active callbacks interface (the activity, if the
-//            // fragment is attached to one) that an item has been selected.
-//            mListener.onFragmentInteraction(mUsers.get(position).id);
-//        }
-    }
-
-    public boolean cancelAllAsyncTasks() {
-        return cancelUndoTurn() || cancelTakeTurn() || cancelRefreshData();
+        // TODO handle click
     }
 
     public void refreshData() {
         cancelAllAsyncTasks();
         mGetStatusAsyncTask = new GetStatusAsyncTask(getActivity());
         mGetStatusAsyncTask.execute();
+    }
+
+    public boolean cancelAllAsyncTasks() {
+        return cancelUndoTurn() || cancelTakeTurn() || cancelRefreshData();
     }
 
     public boolean cancelRefreshData() {
@@ -352,12 +334,14 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected void onPostExecute(Boolean success) {
-            mStatusAdapter.notifyDataSetChanged();
             if(success) {
                 setEmptyText(R.string.status_empty);
             } else {
                 setEmptyText(R.string.status_failed);
+                mStatusAdapter.clearUsers();
+                mStatusAdapter.clearTurns();
             }
+            mStatusAdapter.notifyDataSetChanged();
             showProgress(false);
             mGetStatusAsyncTask = null;
         }
@@ -372,7 +356,6 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     public void setEmptyText(int resId) {
         View emptyView = mListView.getEmptyView();
-
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(resId);
         }
