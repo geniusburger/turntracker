@@ -25,7 +25,7 @@
 
     <!-- Strings related to Settings -->
 
-    <string name="user_list_label">Users</string>
+    <string name="user_list_label">Order</string>
     <string name="turn_list_label">Turns</string>
 
     <!-- Example General settings -->
