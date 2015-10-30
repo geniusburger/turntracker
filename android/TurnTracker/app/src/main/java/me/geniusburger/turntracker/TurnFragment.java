@@ -6,6 +6,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,7 +33,7 @@ import me.geniusburger.turntracker.utilities.UIUtil;
  * Large screen devices (such as tablets) are supported by replacing the ListView with a GridView.
  * <p/>
  */
-public class TurnFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class TurnFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
 
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";
@@ -48,7 +49,8 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private View mLists;
     private AbsListView mUserListView;
     private AbsListView mTurnListView;
-    private View mProgressView;
+    private SwipeRefreshLayout mUserSwipeLayout;
+    private SwipeRefreshLayout mTurnSwipeLayout;
 
     // Workers
     GetUsersAsyncTask mGetUsersAsyncTask;
@@ -120,13 +122,24 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_turn, container, false);
 
-        mProgressView = view.findViewById(R.id.progress);
+        mUserSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.userswipe);
+        mUserSwipeLayout.setOnRefreshListener(this);
+
+        mTurnSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.turnswipe);
+        mTurnSwipeLayout.setOnRefreshListener(this);
 
         mLists = view.findViewById(R.id.lists);
 
         mUserListView = (AbsListView) view.findViewById(R.id.userlist);
         mUserListView.setAdapter(mUserAdapter);
-        mUserListView.setEmptyView(view.findViewById(R.id.userempty));
+        View emptyView = view.findViewById(R.id.userempty);
+        emptyView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refreshData();
+            }
+        });
+        mUserListView.setEmptyView(emptyView);
         //mUserListView.setOnItemClickListener(this);
 
         mTurnListView = (AbsListView) view.findViewById(R.id.turnlist);
@@ -136,8 +149,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         // show progress if the task is already running
         if(mGetUsersAsyncTask != null && mGetUsersAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
-            mLists.setVisibility(View.GONE);
-            mProgressView.setVisibility(View.VISIBLE);
+            showProgress(true);
         }
 
         return view;
@@ -153,7 +165,6 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
                     + " must implement TurnFragmentInteractionListener");
         }
     }
-
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -242,9 +253,17 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     private void showProgress(boolean show) {
-        if(mLists != null && mProgressView != null) {
-            UIUtil.showProgress(getActivity(), show, mLists, mProgressView);
+        if(mUserSwipeLayout != null) {
+            mUserSwipeLayout.setRefreshing(show);
         }
+        if(mTurnSwipeLayout != null) {
+            mTurnSwipeLayout.setRefreshing(show);
+        }
+    }
+
+    @Override
+    public void onRefresh() {
+        refreshData();
     }
 
     public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Long> {

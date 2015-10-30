@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import me.geniusburger.turntracker.model.Task;
-import me.geniusburger.turntracker.utilities.UIUtil;
 
 /**
  * A fragment representing a list of Items.
@@ -127,7 +126,14 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
         // Set the adapter
         mListView = (AbsListView) view.findViewById(android.R.id.list);
         mListView.setAdapter(mAdapter);
-        mListView.setEmptyView(view.findViewById(android.R.id.empty));
+        View emptyView = view.findViewById(android.R.id.empty);
+        emptyView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refreshData();
+            }
+        });
+        mListView.setEmptyView(emptyView);
 
         // Set OnItemClickListener so we can be notified on item clicks
         mListView.setOnItemClickListener(this);
