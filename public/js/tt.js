@@ -101,7 +101,7 @@
 	    			user.diff = max - user.turns;
 	    			self.userMap[user.id] = user.name;
 	    		});
-				self.worst = data.users[0].diff;
+				self.worst = data.users.length ? data.users[0].diff : 0;
 	    		self.users = data.users;
 	    		self.statusError = null;
 	    	} else {

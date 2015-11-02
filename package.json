@@ -5,7 +5,11 @@
   "main": "server.js",
   "private": true,
   "scripts": {
-    "start": "gulp serve"
+    "preinstall": "npm install -g bower && npm install -g gulp",
+    "install": "bower install",
+    "postinstall": "gulp build",
+    "start": "node server/server.js",
+    "test": "gulp serve"
   },
   "author": "geniusburger",
   "license": "Apache License 2.0",
@@ -22,6 +26,7 @@
     "jade": "~1.11.0",
     "morgan": "~1.6.1",
     "mysql": "^2.8.0",
+    "qckwinsvc": "^1.0.0",
     "serve-favicon": "~2.3.0"
   },
   "devDependencies": {

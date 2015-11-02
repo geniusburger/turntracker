@@ -18,7 +18,7 @@ public class Turn {
         inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        outputFormat = new SimpleDateFormat("EEE MMM d, yyyy - h:mm a", Locale.US);
+        outputFormat = new SimpleDateFormat("EEE MMM d, yyyy   h:mm a", Locale.US);
         outputFormat.setTimeZone(TimeZone.getDefault());
     }
 
@@ -33,6 +33,10 @@ public class Turn {
         name = json.getString("name");
         userId = json.getLong("userid");
         turnId = json.getLong("turnid");
+    }
+
+    public String getDateString() {
+        return outputFormat.format(date);
     }
 
     @Override
