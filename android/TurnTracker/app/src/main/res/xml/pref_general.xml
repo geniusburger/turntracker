@@ -1,0 +1,21 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- NOTE: EditTextPreference accepts EditText attributes. -->
+    <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
+    <EditTextPreference
+        android:key="server.ip"
+        android:title="@string/pref_title_server_ip"
+        android:defaultValue="@string/pref_default_server_ip"
+        android:selectAllOnFocus="true"
+        android:inputType="phone"
+        android:singleLine="true" />
+
+    <EditTextPreference
+        android:key="server.port"
+        android:title="@string/pref_title_server_port"
+        android:defaultValue="@string/pref_default_server_port"
+        android:selectAllOnFocus="true"
+        android:inputType="number"
+        android:singleLine="true" />
+
+</PreferenceScreen>

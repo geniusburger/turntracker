@@ -2,12 +2,13 @@
 
 	var app = angular.module('tt', []);
 
-	app.controller('AdminController', ['$http', function($http) {
+	app.controller('AdminController', ['$scope', '$http', '$location', function($scope, $http, $location) {
 		var self = this;
 		self.tasks = [];
 		self.currentTask = {};
 	    self.turns = [];
 	    self.users = [];
+	    self.allUsers = [];
 	    self.userMap = {};
 	    self.error = {
 	    	code: undefined,
@@ -16,7 +17,8 @@
 	    	stack: undefined
 	    };
 	    self.worst = 0;
-	    self.me = {id: 1};
+	    self.viewingUserId = parseInt($location.search().u) || 1;
+	    self.me = {id: self.viewingUserId};
 	    self.hoverId = 0;
 	    self.reasons = [];
 	    self.methods = [];
@@ -99,7 +101,7 @@
 	    			user.diff = max - user.turns;
 	    			self.userMap[user.id] = user.name;
 	    		});
-				self.worst = data.users[0].diff;
+				self.worst = data.users.length ? data.users[0].diff : 0;
 	    		self.users = data.users;
 	    		self.statusError = null;
 	    	} else {
@@ -194,6 +196,8 @@
 	    			processTasksData(res.data);
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
+
+	    			self.getUsers();
 	    		}, function(res){
 	    			self.handleApiError(res, 'Failed to tasks/turns/status');
 	    		});
@@ -234,11 +238,21 @@
 	    	self.clearError();
 	    	return $http.get('/api/users')
 		    	.then(function(res){
-		    		console.log('users', res.data);
+		    		self.allUsers = res.data.users;
 		    	}, function(res){
 		    		self.handleApiError(res, 'failed to get users');
 		    	});
-	    }
+	    };
+
+	    self.getUser = function(username) {
+	    	self.clearError();
+	    	return $http.get('/api/user', {params: {username: username}})
+		    	.then(function(res){
+		    		console.log('user', res.data);
+		    	}, function(res){
+		    		self.handleApiError(res, 'failed to get user');
+		    	});
+	    };
 
 	    self.deleteTurn = function(turn) {
 	    	self.clearError();
@@ -260,6 +274,13 @@
 	    			self.handleApiError(res, 'failed to get subscriptions');
 	    		});
 	    };
+
+	    $scope.$watch(function(){return self.viewingUserId;}, function(newUserId){
+	    	if(newUserId !== self.me.id) {
+				$location.search({u: newUserId});
+				window.location.reload();
+			}
+		}, true);
 
 	    self.getAll();
 	}]);

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="me.geniusburger.turntracker.TurnFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/notificationImageView"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:contentDescription="@string/notifications_enabled_description"
+            android:src="@drawable/ic_notifications_24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="@string/period_label"
+            android:id="@+id/periodLabel"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="@string/creator_label"
+            android:id="@+id/creatorLabel"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@color/colorText"
+            android:id="@+id/periodTextView"
+            android:layout_below="@+id/periodLabel"
+            android:layout_alignParentStart="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@color/colorText"
+            android:id="@+id/creatorTextView"
+            android:layout_below="@+id/creatorLabel"
+            android:layout_alignParentEnd="true" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/user_list_label"
+        android:id="@+id/textView" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/userswipe"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <ListView android:id="@+id/userlist"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:listitem="@android:layout/simple_list_item_1" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+        <TextView android:id="@+id/userempty" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:gravity="center" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/turn_list_label"
+        android:layout_marginTop="10dp"
+        android:id="@+id/textView2" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2">
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/turnswipe"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <GridView android:id="@+id/turnlist"
+                android:numColumns="2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:listitem="@android:layout/simple_list_item_1" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+        <TextView android:id="@+id/turnempty" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:gravity="center" />
+    </FrameLayout>
+</LinearLayout>
