@@ -5,7 +5,11 @@
   "main": "server.js",
   "private": true,
   "scripts": {
-    "start": "gulp serve"
+    "start": "node server/server.js",
+    "debug": "gulp serve",
+    "preinstall": "npm install -g qckwinsvc",
+    "install": "qckwinsvc --name \"Turn Tracker Server\" --description \"Runs the Turn Tracker NodeJS server.\" --script \"server/server.js\" --startImmediately",
+    "uninstall": "qckwinsvc --uninstall --name \"Turn Tracker Server\" --script \"server/server.js\""
   },
   "author": "geniusburger",
   "license": "Apache License 2.0",
@@ -22,6 +26,7 @@
     "jade": "~1.11.0",
     "morgan": "~1.6.1",
     "mysql": "^2.8.0",
+    "qckwinsvc": "^1.0.0",
     "serve-favicon": "~2.3.0"
   },
   "devDependencies": {
