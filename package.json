@@ -5,11 +5,11 @@
   "main": "server.js",
   "private": true,
   "scripts": {
+    "preinstall": "npm install -g bower && npm install -g gulp",
+    "install": "bower install",
+    "postinstall": "gulp build",
     "start": "node server/server.js",
-    "debug": "gulp serve",
-    "preinstall": "npm install -g qckwinsvc",
-    "install": "qckwinsvc --name \"Turn Tracker Server\" --description \"Runs the Turn Tracker NodeJS server.\" --script \"server/server.js\" --startImmediately",
-    "uninstall": "qckwinsvc --uninstall --name \"Turn Tracker Server\" --script \"server/server.js\""
+    "test": "gulp serve"
   },
   "author": "geniusburger",
   "license": "Apache License 2.0",
