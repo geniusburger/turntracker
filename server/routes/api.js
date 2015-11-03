@@ -155,6 +155,17 @@ router.get('/turns-status', function(req, res, next) {
 	});
 });
 
+router.post('/user', function(req, res, next){
+	using(db.getConnection(), function(conn){
+		log(req.body);
+		return index.createUser(conn, req.body.username, req.body.displayname);
+	}).then(function(userId){
+		res.json({success: true, user_id: userId});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to create user'));
+	});
+});
+
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		var turnTakerUserId;
@@ -166,7 +177,7 @@ router.post('/turn', function(req, res, next) {
 		}, function(err){
 			// todo this could also be an error from getting the user or saving the address
 			log('ERROR failed to take turn', err);
-			return Promise.all([index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
+			return Promise.all([0, index.getTurns(conn, req.body.task_id), index.getStatus(conn, req.body.task_id)]);
 		}).spread(function(turnId, turns, users){
 			// send notifications
 			var nextTurnUser = users[0];

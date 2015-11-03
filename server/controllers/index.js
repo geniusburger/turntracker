@@ -277,6 +277,32 @@ var takeTurn = function(conn, taskId, userid) {
 };
 exports.takeTurn = takeTurn;
 
+var minNameLength = 5;
+var maxNameLength = 50;
+var createUser = function(conn, username, displayname) {
+	return new Promise(function(resolve, reject){
+		username = username.trim();
+		displayname = displayname.trim();
+		if(username.length < minNameLength || username.length > maxNameLength) {
+			reject(new Error('username must be ' + minNameLength + ' to ' + maxNameLength + ' letters long'));
+		} else if(username.match(/\s/)) {
+			reject(new Error('username cannot contain white space'));
+		} else if(displayname.length < minNameLength || displayname.length > maxNameLength) {
+			reject(new Error('displayname must be ' + minNameLength + ' to ' + maxNameLength + ' letters long'));
+		} else {
+			conn.query('INSERT INTO users SET ?', {username: username, displayname: displayname}, function(err, rows, fields){
+				if(err) {
+					log('ERROR while performing create user query', err);
+					reject(err);
+				} else {
+					resolve(rows.insertId);
+				}
+			});
+		}
+	});
+};
+exports.createUser = createUser;
+
 var getAndroidUsers = function(conn) {
 	return new Promise(function(resolve, reject){
 		conn.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', function(err, rows, fields) {

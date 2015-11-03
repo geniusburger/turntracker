@@ -285,6 +285,42 @@
 	    self.getAll();
 	}]);
 
+	app.controller('CreateUserController', ['$http', '$location', function($http, $location){
+		var vm = this;
+
+		vm.busy = false;
+		vm.username = '';
+		vm.displayname = '';
+		vm.clearError = function(){};
+		vm.handleApiError = function(){};
+
+		vm.setErrorHandlers = function(clearError, handleApiError) {
+			vm.clearError = clearError;
+			vm.handleApiError = handleApiError;
+		};
+
+		vm.save = function() {
+			if(vm.busy) {
+				return;
+			}
+			vm.busy = true;
+			vm.clearError();
+	    	return $http.post('/api/user', {username: vm.username, displayname: vm.displayname})
+	    		.then(function(res){
+	    			console.log('res', res);
+	    			// success
+	    			vm.busy = false;
+	    			vm.username = '';
+	    			vm.displayname = '';
+					$location.search({u: res.data.user_id});
+					window.location.reload();
+		    	}, function(res){
+		    		vm.handleApiError(res, 'failed to save new user');
+	    			vm.busy = false;
+	    		});
+		};
+	}]);
+
 	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {
 		var vm = this;
 
