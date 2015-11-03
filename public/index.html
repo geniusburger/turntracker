@@ -90,7 +90,7 @@
                         <fieldset ng-disabled="user.busy">
                             <input type="text" class="form-control" ng-model="user.username" placeholder="username">
                             <input type="text" class="form-control" ng-model="user.displayname" placeholder="displayname">
-                            <button type="button" class="btn btn-default" ng-click="user.save()">Create</button>
+                            <button type="button" class="btn btn-primary" ng-click="user.save()">Create</button>
                         </fieldset>
                     </form>
                 </div>
@@ -99,10 +99,10 @@
                         <fieldset ng-disabled="user.busy">
                             <input type="text" class="form-control" ng-model="task.name" placeholder="name">
                             <input type="number" class="form-control" ng-model="task.hours" placeholder="0">
-                            <select multiple ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
+                            <select multiple ng-attr-size="{{task.users.length}}" ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
                                 <!-- <option value="">-- users --</option> -->
                             </select>
-                            <button type="button" class="btn btn-default" ng-click="task.save()">Create</button>
+                            <button type="button" class="btn btn-primary" ng-click="task.save()">Create</button>
                         </fieldset>
                     </form>
                 </div>
