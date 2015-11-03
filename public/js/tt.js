@@ -321,6 +321,53 @@
 		};
 	}]);
 
+	app.controller('CreateTaskController', ['$http', '$location', function($http, $location){
+		var vm = this;
+
+		vm.busy = false;
+		vm.name = '';
+		vm.hours = 0;
+		vm.clearError = function(){};
+		vm.handleApiError = function(){};
+		vm.users = [];
+		vm.selectedUsers = [];
+		vm.me = {};
+
+		vm.setErrorHandlers = function(clearError, handleApiError) {
+			vm.clearError = clearError;
+			vm.handleApiError = handleApiError;
+		};
+
+		vm.setUsers = function(me, users) {
+			vm.me = me;
+			vm.users = users.filter(function(user){
+				return user.id !== me.id;
+			});
+		};
+
+		vm.save = function() {
+			if(vm.busy) {
+				return;
+			}
+			vm.busy = true;
+			vm.clearError();
+	    	return $http.post('/api/task', {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.selectedUsers.concat(vm.me.id)})
+	    		.then(function(res){
+	    			console.log('res', res);
+	    			// success
+	    			vm.busy = false;
+	    			vm.name = '';
+	    			vm.hours = 0;
+	    			vm.selectedUsers = [];
+					$location.search({u: res.data.user_id});
+					window.location.reload();
+		    	}, function(res){
+		    		vm.handleApiError(res, 'failed to save new user');
+	    			vm.busy = false;
+	    		});
+		};
+	}]);
+
 	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {
 		var vm = this;
 

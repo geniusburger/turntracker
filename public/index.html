@@ -94,6 +94,18 @@
                         </fieldset>
                     </form>
                 </div>
+                <div ng-if="test.allUsers.length > 0" ng-controller="CreateTaskController as task" ng-init="task.setErrorHandlers(test.clearError, test.handleApiError); task.setUsers(test.me, test.allUsers);">
+                    <form class="form-inline" novalidate>
+                        <fieldset ng-disabled="user.busy">
+                            <input type="text" class="form-control" ng-model="task.name" placeholder="name">
+                            <input type="number" class="form-control" ng-model="task.hours" placeholder="0">
+                            <select multiple ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
+                                <!-- <option value="">-- users --</option> -->
+                            </select>
+                            <button type="button" class="btn btn-default" ng-click="task.save()">Create</button>
+                        </fieldset>
+                    </form>
+                </div>
             </div>
             <div class="list-column col-lg-7 col-md-6 col-sm-6 col-xs-12">
                 <table class="table table-condensed table-hover">
