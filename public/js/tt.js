@@ -182,6 +182,7 @@
 	    	self.clearError();
 	    	return $http.get('/api/turns-status', {params: {task_id: taskId, user_id: self.me.id}})
 	    		.then(function(res){
+	    			$location.search('t', taskId);
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
 	    		}, function(res){
@@ -189,14 +190,14 @@
 	    		});
 	    };
 
-	    self.getAll = function() {
+	    self.getAll = function(taskid) {
 	    	self.clearError();
-	    	return $http.get('/api/tasks-turns-status', {params: {userid: self.me.id}})
+	    	return $http.get('/api/tasks-turns-status', {params: {userid: self.me.id, taskid: taskid}})
 	    		.then(function(res){
+	    			$location.search('t', res.data.taskid);
 	    			processTasksData(res.data);
 	    			processTurnsData(res.data);
 	    			processStatusData(res.data);
-
 	    			self.getUsers();
 	    		}, function(res){
 	    			self.handleApiError(res, 'Failed to tasks/turns/status');
@@ -277,12 +278,12 @@
 
 	    $scope.$watch(function(){return self.viewingUserId;}, function(newUserId){
 	    	if(newUserId !== self.me.id) {
-				$location.search({u: newUserId});
+				$location.search('u', newUserId);
 				window.location.reload();
 			}
 		}, true);
 
-	    self.getAll();
+	    self.getAll($location.search().t);
 	}]);
 
 	app.controller('CreateUserController', ['$http', '$location', function($http, $location){
@@ -312,7 +313,7 @@
 	    			vm.busy = false;
 	    			vm.username = '';
 	    			vm.displayname = '';
-					$location.search({u: res.data.user_id});
+					$location.search('u', res.data.user_id);
 					window.location.reload();
 		    	}, function(res){
 		    		vm.handleApiError(res, 'failed to save new user');
@@ -359,7 +360,7 @@
 	    			vm.name = '';
 	    			vm.hours = 0;
 	    			vm.selectedUsers = [];
-					$location.search({u: res.data.user_id});
+					$location.search('u', res.data.user_id);
 					window.location.reload();
 		    	}, function(res){
 		    		vm.handleApiError(res, 'failed to save new user');
