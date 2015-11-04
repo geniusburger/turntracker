@@ -303,6 +303,44 @@ var createUser = function(conn, username, displayname) {
 };
 exports.createUser = createUser;
 
+var createTask = function(conn, name, hours, creator) {
+	return new Promise(function(resolve, reject){
+		name = name.trim();
+		if(name.length < 1) {
+			reject(new Error("name can't be empty"));
+		} else if(hours < 0) {
+			reject(new Error("hours can't be negative"));
+		} else {
+			conn.query('INSERT INTO tasks SET ?', {name: name, periodic_hours: hours, creator_user_id: creator}, function(err, rows, fields){
+				if(err) {
+					log('ERROR while performing create task query', err);
+					reject(err);
+				} else {
+					resolve(rows.insertId);
+				}
+			});
+		}
+	});
+};
+exports.createTask = createTask;
+
+var addParticipants = function(conn, taskId, userIds) {
+	return new Promise(function(resolve, reject){
+		var participants = userIds.map(function(user){
+			return [taskId, user];
+		});
+		conn.query('INSERT INTO participants (task_id, user_id) VALUES ?', [participants], function(err, rows, fields){
+			if(err) {
+				log('ERROR while performing add participants query', err);
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
+	});
+};
+exports.addParticipants = addParticipants;
+
 var getAndroidUsers = function(conn) {
 	return new Promise(function(resolve, reject){
 		conn.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', function(err, rows, fields) {

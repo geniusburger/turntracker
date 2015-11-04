@@ -98,9 +98,8 @@
                     <form class="form-inline" novalidate>
                         <fieldset ng-disabled="user.busy">
                             <input type="text" class="form-control" ng-model="task.name" placeholder="name">
-                            <input type="number" class="form-control" ng-model="task.hours" placeholder="0">
+                            <input type="number" min="0" step="1" class="form-control" ng-model="task.hours" placeholder="0">
                             <select multiple ng-attr-size="{{task.users.length}}" ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
-                                <!-- <option value="">-- users --</option> -->
                             </select>
                             <button type="button" class="btn btn-primary" ng-click="task.save()">Create</button>
                         </fieldset>

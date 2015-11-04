@@ -166,6 +166,40 @@ router.post('/user', function(req, res, next){
 	});
 });
 
+router.post('/task', function(req, res, next){
+	using(db.getConnection(), function(conn){
+
+		return new Promise(function(resolve, reject){
+			conn.beginTransaction(function(err) {
+	  			if (err) {
+	  				throw err;
+	  			}
+	  			return index.createTask(conn, req.body.name, req.body.hours, req.body.creator)
+	  			.then(function(taskId){
+	  				return Promise.all([taskId, index.addParticipants(conn, taskId, req.body.users)]);
+	  			}).spread(function(taskId){
+					return conn.commit(function(err) {
+						if (err) {
+							return conn.rollback(function() {
+								throw err;
+							});
+						}
+						resolve(taskId);
+					});
+	  			}).catch(function(err){
+	  				return conn.rollback(function() {
+						throw err;
+					});
+	  			});
+			});
+		});
+	}).then(function(taskId){
+		res.json({success: true, task_id: taskId});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to create user'));
+	});
+});
+
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		var turnTakerUserId;
