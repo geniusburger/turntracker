@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS `methods` (
 -- Dumping data for table `methods`
 --
 
-INSERT INTO `methods` (`id`, `label`, `description`, `modified`, `inserted`) VALUES
-(1, 'android notification', 'Android notification using GCM', '2015-10-03 22:12:26', '2015-09-28 07:34:25');
+INSERT INTO `methods` (`id`, `label`, `description`) VALUES
+(1, 'android notification', 'Android notification using GCM');
 
 -- --------------------------------------------------------
 
@@ -106,9 +106,9 @@ CREATE TABLE IF NOT EXISTS `reasons` (
 -- Dumping data for table `reasons`
 --
 
-INSERT INTO `reasons` (`id`, `label`, `description`, `modified`, `inserted`) VALUES
-(1, 'any turn', 'Any turn that is taken', '2015-10-03 22:13:59', '2015-09-28 07:36:13'),
-(2, 'it''s my turn', 'Only when it becomes my turn', '2015-10-03 22:12:08', '2015-09-28 07:36:13');
+INSERT INTO `reasons` (`id`, `label`, `description`) VALUES
+(1, 'any turn', 'Any turn that is taken'),
+(2, 'it''s my turn', 'Only when it becomes my turn');
 
 -- --------------------------------------------------------
 
