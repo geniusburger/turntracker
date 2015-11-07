@@ -157,7 +157,6 @@ router.get('/turns-status', function(req, res, next) {
 
 router.post('/user', function(req, res, next){
 	using(db.getConnection(), function(conn){
-		log(req.body);
 		return index.createUser(conn, req.body.username, req.body.displayname);
 	}).then(function(userId){
 		res.json({success: true, user_id: userId});

@@ -10,3 +10,6 @@ node_modules/
 
 # Debug log from npm
 npm-debug.log
+
+# qckwinsvc (node-windows) Files
+server/daemon/

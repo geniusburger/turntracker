@@ -9,7 +9,9 @@
     "install": "bower install",
     "postinstall": "gulp build",
     "start": "node server/server.js",
-    "test": "gulp serve"
+    "test": "gulp serve",
+    "install-win-svc": "npm install -g qckwinsvc & qckwinsvc --name \"TurnTrackerServer\" --description \"Runs the Turn Tracker NodeJS server.\" --script \"%CD%\\server\\server.js\" --startImmediately",
+    "uninstall-win-svc": "qckwinsvc --uninstall --name \"TurnTrackerServer\" --script \"%CD%\\server\\server.js\""
   },
   "author": "geniusburger",
   "license": "Apache License 2.0",
