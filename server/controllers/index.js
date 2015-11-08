@@ -8,9 +8,9 @@ var config = require('../config');
 var getTurns = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-	    	'SELECT users.displayname AS name, turns.inserted AS date, users.id as userid, turns.id as turnid ' +
+	    	'SELECT users.displayname AS name, turns.taken AS date, users.id as userid, turns.id as turnid ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
-			'WHERE tasks.id = ? ORDER BY turns.inserted DESC',
+			'WHERE tasks.id = ? ORDER BY turns.taken DESC',
 			[taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
@@ -133,12 +133,12 @@ var getStatus = function(conn, taskId) {
 		conn.query(
 			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile ' + 
 			'FROM participants JOIN users on participants.user_id = users.id LEFT JOIN ( ' +
-				'SELECT turns.user_id, count(*) as turns, turns.inserted ' +
+				'SELECT turns.user_id, count(*) as turns, turns.taken ' +
 				'FROM turns WHERE turns.task_id = ? ' +
-				'GROUP BY turns.user_id ORDER BY turns.inserted ASC ' +
+				'GROUP BY turns.user_id ORDER BY turns.taken ASC ' +
 			') counts on participants.user_id = counts.user_id ' +
 			'WHERE  participants.task_id = ? ' +
-			'ORDER by turns ASC, counts.inserted ASC',
+			'ORDER by turns ASC, counts.taken ASC',
 			[taskId,taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
@@ -263,9 +263,14 @@ var getUsers = function(conn) {
 };
 exports.getUsers = getUsers;
 
-var takeTurn = function(conn, taskId, userid) {
+var takeTurn = function(conn, taskId, userid, dateTaken) {
 	return new Promise(function(resolve, reject){
-	    conn.query( 'INSERT INTO turns SET ?', {user_id: userid, task_id: taskId}, function(err, rows, fields) {
+
+		var fields = {user_id: userid, task_id: taskId};
+		if(dateTaken) {
+			fields.taken = new Date(dateTaken);
+		}
+	    conn.query( 'INSERT INTO turns SET ?', fields, function(err, rows, fields) {
 			if (err) {
 				log('ERROR while performing turn query', err);
 				reject(err);
