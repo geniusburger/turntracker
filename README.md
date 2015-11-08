@@ -14,7 +14,8 @@ A nodejs web app to track whose turn it is to do some task.
     Run the following commands in a MySQL terminal:
     0. `CREATE USER 'node'@'localhost' IDENTIFIED BY '<your password here>';`
     0. `GRANT SELECT, INSERT, DELETE, UPDATE ON turn_tracker.* TO 'node'@'localhost';`
-    0. Enter your credentials in _server/config.js_.
+    0. Copy _server/config.template.js_ to _server/config.js_
+    0. Enter your credentials in _server/config.js_
 
 ### Run
 Ensure MySQL is running and you've already followed the setup steps.

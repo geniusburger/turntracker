@@ -13,3 +13,6 @@ npm-debug.log
 
 # qckwinsvc (node-windows) Files
 server/daemon/
+
+# Custom configuration files
+server/config.js
