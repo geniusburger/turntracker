@@ -17,6 +17,7 @@ if(mysql.ini && mysql.ini.length > 0) {
 if(mysql.user && mysql.user.length > 0) {
 	baseCmd += ' -u' + mysql.user;
 }
+baseCmd += ' -p';
 if(mysql.pass && mysql.pass.length > 0) {
 	baseCmd += ' -p' + mysql.pass;
 }
