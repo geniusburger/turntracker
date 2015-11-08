@@ -7,9 +7,8 @@ exports.database = {
 		database: 'dbname'
 	},
 	mysql: {
-		dir: 'C:\\xampp\\mysql\\bin',
-		exe: 'mysql.exe',
-		ini: 'my.ini',
+		exe: 'C:\\xampp\\mysql\\bin\\mysql.exe',
+		ini: 'C:\\xampp\\mysql\\bin\\my.ini',
 		user: 'username',
 		pass: 'password'
 	}

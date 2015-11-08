@@ -1,5 +1,4 @@
 
-var path = require('path');
 var config = require('../config');
 var mysql = config.database.mysql;
 var Promise = require('bluebird');
@@ -11,9 +10,9 @@ var scripts = [
 	'turn_tracker_setup.sql'
 ];
 
-var baseCmd = '"' + path.join(mysql.dir, mysql.exe) + '"';
+var baseCmd = '"' + mysql.exe + '"';
 if(mysql.ini && mysql.ini.length > 0) {
-	baseCmd += ' --defaults-file="' + path.join(mysql.dir, mysql.ini) + '"';
+	baseCmd += ' --defaults-file="' + mysql.ini + '"';
 }
 if(mysql.user && mysql.user.length > 0) {
 	baseCmd += ' -u' + mysql.user;
