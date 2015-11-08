@@ -7,7 +7,7 @@
   "scripts": {
     "preinstall": "npm install -g bower && npm install -g gulp",
     "install": "bower install",
-    "postinstall": "gulp build",
+    "postinstall": "gulp build & node server/sql/turn_tracker_setup.js",
     "start": "node server/server.js",
     "test": "gulp serve",
     "install-win-svc": "npm install -g qckwinsvc & qckwinsvc --name \"TurnTrackerServer\" --description \"Runs the Turn Tracker NodeJS server.\" --script \"%CD%\\server\\server.js\" --startImmediately",

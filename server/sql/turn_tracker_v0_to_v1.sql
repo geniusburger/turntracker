@@ -9,9 +9,19 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
-START TRANSACTION;
 SET time_zone = "+00:00";
 
+CREATE DATABASE IF NOT EXISTS `turn_tracker` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+USE `turn_tracker`;
+
+DELIMITER $$
+
+# Define the procedure
+DROP PROCEDURE IF EXISTS upgradeTurnTrackerV0to1 $$
+CREATE PROCEDURE upgradeTurnTrackerV0to1()
+BEGIN
+
+START TRANSACTION;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -21,8 +31,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `turn_tracker`
 --
-CREATE DATABASE IF NOT EXISTS `turn_tracker` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;
-USE `turn_tracker`;
 
 -- --------------------------------------------------------
 
@@ -275,8 +283,12 @@ ALTER TABLE `tasks`
 ALTER TABLE `turns`
   ADD CONSTRAINT `turns_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `turns_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`);
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+END $$
+DELIMITER ;

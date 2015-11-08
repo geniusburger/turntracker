@@ -33,13 +33,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/css', express.static(path.join(__dirname, '..', 'build/css')));
 
 db.getVersion().then(function(version){
     // check version
     if(version !== REQUIRED_DB_VERSION) {
         var msg = 'Database version should be ' + REQUIRED_DB_VERSION + ' instead of ' + version;
         log(msg);
+        app.use('/css', express.static(path.join(__dirname, '..', 'build/css')));
         app.use(function(req, res, next){
             next(new Error(msg));
         });
@@ -58,6 +58,7 @@ db.getVersion().then(function(version){
 }).catch(function(err){
     // cant get version
     log("ERROR get DB version", err);
+    app.use('/css', express.static(path.join(__dirname, '..', 'build/css')));
     app.use(function(req, res, next){
         next(new Error("Failed to get database version"));
     });
