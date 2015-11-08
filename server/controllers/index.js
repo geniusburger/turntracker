@@ -267,7 +267,7 @@ var takeTurn = function(conn, taskId, userid, dateTaken) {
 	return new Promise(function(resolve, reject){
 
 		var fields = {user_id: userid, task_id: taskId};
-		if(dateTaken) {
+		if(typeof dateTaken === 'number') {
 			fields.taken = new Date(dateTaken);
 		}
 	    conn.query( 'INSERT INTO turns SET ?', fields, function(err, rows, fields) {

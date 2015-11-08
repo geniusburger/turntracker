@@ -19,6 +19,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.ParseException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -204,11 +205,14 @@ public class Api {
     }
 
     // return 0 on error
-    public long takeTurn(long taskId, List<User> users, List<Turn> turns) {
+    public long takeTurn(long taskId, Calendar date, List<User> users, List<Turn> turns) {
         try {
             JSONObject body = new JSONObject();
             body.put("user_id", prefs.getUserId());
             body.put("task_id", taskId);
+            if(date != null) {
+                body.put("date", date.getTimeInMillis());
+            }
             JsonResponse res = httpPost("turn", body);
 
             if(200 == res.code) {

@@ -1,8 +1,11 @@
 package me.geniusburger.turntracker;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.Fragment;
+import android.app.TimePickerDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -13,9 +16,17 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.LayoutAnimationController;
+import android.view.animation.TranslateAnimation;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.DatePicker;
 import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
+import java.util.Calendar;
 
 import me.geniusburger.turntracker.model.Task;
 
@@ -31,6 +42,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private static final String ARG_TASK_NAME = "taskName";
     private static final String ARG_AUTO_TURN = "autoTurn";
 
+    private Calendar mTurnDate;
     private Task mTask;
     private long mTaskId;
     private String mTaskName;
@@ -103,6 +115,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         mListView = (AbsListView) view.findViewById(android.R.id.list);
         mListView.setAdapter(mStatusAdapter);
+        Animation entry = new TranslateAnimation(
+                TranslateAnimation.RELATIVE_TO_SELF, 0f,
+                TranslateAnimation.RELATIVE_TO_SELF, 0f,
+                TranslateAnimation.RELATIVE_TO_PARENT, 1f,
+                TranslateAnimation.RELATIVE_TO_SELF, 0f);
+        entry.setDuration(300);
+        mListView.setLayoutAnimation(new LayoutAnimationController(entry, 0.1f));
         View emptyView = view.findViewById(android.R.id.empty);
         emptyView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -143,6 +162,39 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         switch (item.getItemId()) {
             case R.id.action_refresh:
                 refreshData();
+                return true;
+            case R.id.action_pick_turn_date:
+                mTurnDate = Calendar.getInstance();
+                DatePickerDialog datePicker = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        mTurnDate.set(Calendar.YEAR, year);
+                        mTurnDate.set(Calendar.MONTH, monthOfYear);
+                        mTurnDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                        TimePickerDialog timePicker = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
+                            @Override
+                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                                mTurnDate.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                                mTurnDate.set(Calendar.MINUTE, minute);
+                                takeTurn();
+                            }
+                        }, mTurnDate.get(Calendar.HOUR_OF_DAY), mTurnDate.get(Calendar.MINUTE), false);
+                        timePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                mTurnDate = null;
+                            }
+                        });
+                        timePicker.show();
+                    }
+                }, mTurnDate.get(Calendar.YEAR), mTurnDate.get(Calendar.MONTH), mTurnDate.get(Calendar.DAY_OF_MONTH));
+                datePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        mTurnDate = null;
+                    }
+                });
+                datePicker.show();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -201,9 +253,17 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         return true;
     }
 
+    public void takeTurn() {
+        if(mListener != null) {
+            takeTurn(mListener.getSnackBarView());
+        } else {
+            Toast.makeText(getContext(), "Couldn't access snackbar", Toast.LENGTH_LONG).show();
+        }
+    }
+
     public void takeTurn(View view) {
         if(!checkBusy(view)) {
-            mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view);
+            mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
             mTakeTurnAsyncTask.execute();
         }
     }
@@ -230,10 +290,12 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         private View mView;
         private Context mContext;
+        private Calendar mDate;
 
-        public TakeTurnAsyncTask(Context context, View view) {
+        public TakeTurnAsyncTask(Context context, View view, Calendar date) {
             mView = view;
             mContext = context;
+            mDate = date;
         }
 
         @Override
@@ -243,7 +305,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
         @Override
         protected Long doInBackground(Void... params) {
-            return new Api(mContext).takeTurn(mTaskId, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
+            return new Api(mContext).takeTurn(mTaskId, mDate, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
         }
 
         @Override
