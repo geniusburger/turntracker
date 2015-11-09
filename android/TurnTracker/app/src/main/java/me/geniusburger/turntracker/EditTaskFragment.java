@@ -131,7 +131,7 @@ public class EditTaskFragment extends Fragment implements SwipeRefreshLayout.OnR
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.turn_fragment, menu);
+        inflater.inflate(R.menu.edit_task_fragment, menu);
     }
 
     @Override

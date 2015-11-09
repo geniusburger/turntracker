@@ -3,13 +3,13 @@ package me.geniusburger.turntracker;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -18,7 +18,6 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MenuItem;
 
 import java.util.List;
@@ -37,6 +36,7 @@ import java.util.List;
 public class SettingsActivity extends AppCompatPreferenceActivity {
 
     private static final String TAG = SettingsActivity.class.getSimpleName();
+    public static final String EXTRA_NETWORK = "network_extra";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -170,22 +170,23 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      */
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
-                || GeneralPreferenceFragment.class.getName().equals(fragmentName)
+                || NetworkPreferenceFragment.class.getName().equals(fragmentName)
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
     }
 
-    /**
-     * This fragment shows general preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class GeneralPreferenceFragment extends PreferenceFragment {
+    public static class NetworkPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_general);
+            addPreferencesFromResource(R.xml.pref_network);
             bindPreferenceSummaryToValue(findPreference(Preferences.KEY_SERVER_IP));
             bindPreferenceSummaryToValue(findPreference(Preferences.KEY_SERVER_PORT));
+
+            if(!getActivity().getIntent().getBooleanExtra(EXTRA_NETWORK, false)) {
+                findPreference(Preferences.KEY_SERVER_IP).setEnabled(false);
+                findPreference(Preferences.KEY_SERVER_PORT).setEnabled(false);
+            }
         }
     }
 

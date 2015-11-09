@@ -44,7 +44,7 @@
     <string name="title_activity_login_settings">Login Settings</string>
 
     <!-- General settings -->
-    <string name="pref_header_general">General</string>
+    <string name="pref_header_network">Network</string>
     <string name="pref_title_server_ip">Server IP Address</string>
     <string name="pref_default_server_ip">192.168.2.11</string>
     <string name="pref_title_server_port">Server Port</string>

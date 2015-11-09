@@ -16,7 +16,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import me.geniusburger.turntracker.model.User;
-import me.geniusburger.turntracker.utilities.UIUtil;
 
 /**
  * A login screen that offers login via email/password.
@@ -61,8 +60,9 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(LoginActivity.this, SettingsActivity.class);
-                intent.putExtra(SettingsActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GeneralPreferenceFragment.class.getName());
+                intent.putExtra(SettingsActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.NetworkPreferenceFragment.class.getName());
                 intent.putExtra(SettingsActivity.EXTRA_NO_HEADERS, true);
+                intent.putExtra(SettingsActivity.EXTRA_NETWORK, true);
                 startActivity(intent);
             }
         });
