@@ -64,7 +64,9 @@
     			throw data.error;
     		} else if(data.turns) {
     			data.turns.forEach(function(turn){
+    				turn.diff = turn.date !== turn.inserted;
     				turn.date = new Date(turn.date).toLocaleString();
+    				turn.inserted = new Date(turn.inserted).toLocaleString();
     			});
     			self.turns = data.turns;
     			self.listError = null;
@@ -322,7 +324,7 @@
 		};
 	}]);
 
-	app.controller('CreateTaskController', ['$http', '$location', function($http, $location){
+	app.controller('CreateTaskController', ['$scope', '$http', '$location', function($scope, $http, $location){
 		var vm = this;
 
 		vm.busy = false;
@@ -331,6 +333,7 @@
 		vm.clearError = function(){};
 		vm.handleApiError = function(){};
 		vm.users = [];
+		vm.userMap = {};
 		vm.selectedUsers = [];
 		vm.me = {};
 
@@ -341,7 +344,10 @@
 
 		vm.setUsers = function(me, users) {
 			vm.me = me;
+			vm.taskUserIds = [vm.me.id];
+			vm.taskUsers = [vm.me];
 			vm.users = users.filter(function(user){
+				vm.userMap[user.id] = user;
 				return user.id !== me.id;
 			});
 		};
@@ -352,7 +358,7 @@
 			}
 			vm.busy = true;
 			vm.clearError();
-	    	return $http.post('/api/task', {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.selectedUsers.concat(vm.me.id)})
+	    	return $http.post('/api/task', {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.taskUserIds.concat(vm.me.id)})
 	    		.then(function(res){
 	    			console.log('res', res);
 	    			// success
@@ -367,6 +373,13 @@
 	    			vm.busy = false;
 	    		});
 		};
+
+		// $scope.$watch(function(){return vm.selectedUsers;}, function(newSelectedUsers){
+		// 	vm.taskUserIds = [vm.me.id].concat(newSelectedUsers);
+		// 	vm.taskUsers = vm.users.filter(function(user){
+		// 		return vm.taskUserIds.contains(user.id);
+		// 	});
+		// }, true);
 	}]);
 
 	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {

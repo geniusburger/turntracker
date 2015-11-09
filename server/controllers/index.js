@@ -8,7 +8,7 @@ var config = require('../config');
 var getTurns = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-	    	'SELECT users.displayname AS name, turns.taken AS date, users.id as userid, turns.id as turnid ' +
+	    	'SELECT users.displayname AS name, turns.taken AS date, turns.inserted, users.id as userid, turns.id as turnid ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
 			'WHERE tasks.id = ? ORDER BY turns.taken DESC',
 			[taskId], function(err, rows, fields){

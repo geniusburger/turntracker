@@ -263,8 +263,13 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     public void takeTurn(View view) {
         if(!checkBusy(view)) {
-            mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
-            mTakeTurnAsyncTask.execute();
+            if(mTurnDate != null && Calendar.getInstance().compareTo(mTurnDate) < 0) {
+                Toast.makeText(getContext(), "Can't take a turn in the future", Toast.LENGTH_LONG).show();
+                mTurnDate = null;
+            } else {
+                mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
+                mTakeTurnAsyncTask.execute();
+            }
         }
     }
 

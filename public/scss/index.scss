@@ -4,6 +4,17 @@
 	cursor: pointer;
 }
 
+.panel {
+	background-color: transparent;
+	.panel-heading {
+		font-weight: bold;
+	}
+}
+
+.viewing-as {
+	margin-bottom: 10px;
+}
+
 .control-column {
 	.title, .dropdown {
 		text-align: center;
@@ -54,10 +65,6 @@
 
 .pre {
 	white-space: pre-wrap;
-}
-
-.test-buttons {
-	margin-bottom: 10px;
 }
 
 .top-error {
