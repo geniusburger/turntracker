@@ -38,8 +38,6 @@
                     <select ng-options="user.id as user.name for user in test.allUsers" ng-model="test.viewingUserId">
                         <option value="">-- user --</option>
                     </select>
-                </div>
-                <div>
                     <div class="btn-group" ng-cloak>
                         <button type="button" class="btn btn-default" ng-click="test.takeTurn(test.me.id)">Take Turn for {{test.me.name}}</button>
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -58,6 +56,7 @@
                         <button type="button" class="close close-inline glyph-inline" ng-show="note.pending && note.valid" ng-click="note.update()"><span class="glyphicon glyphicon-floppy-disk"></span></button>
                         <span class="error" ng-show="!note.valid">{{note.invalidNote}}</span>
                         <span ng-show="note.waiting" class="faded"> updating...</span>
+                        <button type="button" class="close close-inline glyph-inline pull-right" ng-click""><span class="glyphicon glyphicon-pencil"></span></button>
                         <form class="form-inline" novalidate>
                             <div ng-if="note.newNote.notification">
                                 Send <select ng-options="item.id as item.label for item in test.methods" ng-model="note.newNote.method_id">
@@ -80,55 +79,67 @@
                     <li class="list-group-item" ng-repeat="user in test.users" ng-class="{'list-group-item-info': user.diff==test.worst, active: $first}" ng-mouseenter="test.hoverId = user.id" ng-mouseleave="test.hoverId = 0">{{user.name}}<span class="badge">{{user.diff}}</span><span class="pull-right"><span ng-if="user.mobile" class="glyphicon glyphicon-phone mobile-status"></span></span></li>
                 </ul>
                 <div class="panel panel-primary" ng-controller="CreateUserController as user" ng-init="user.setErrorHandlers(test.clearError, test.handleApiError);">
-                    <div class="panel-heading">Create User</div>
-                    <div class="panel-body">
-                        <form novalidate>
-                            <fieldset ng-disabled="user.busy">
-                                <div class="form-group">
-                                    <label for="NewUserUsername">Username</label>
-                                    <input id="NewUserUsername" type="text" class="form-control" ng-model="user.username" placeholder="username">
-                                </div>
-                                <div class="form-group">
-                                    <label for="NewUserDisplayName">Display Name</label>
-                                    <input id="NewUserDisplayName" type="text" class="form-control" ng-model="user.displayname" placeholder="displayname">
-                                </div>
-                                <button type="button" class="btn btn-primary" ng-click="user.save()">Create User</button>
-                            </fieldset>
-                        </form>
+                    <div class="panel-heading">
+                        <a data-toggle="collapse" href="#NewUserPanel"><h4 class="panel-title">Create User</h4></a>
+                    </div>
+                    <div id="NewUserPanel" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <form novalidate>
+                                <fieldset ng-disabled="user.busy">
+                                    <div class="form-group">
+                                        <label for="NewUserUsername">Username</label>
+                                        <input id="NewUserUsername" type="text" class="form-control" ng-model="user.username" placeholder="username">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="NewUserDisplayName">Display Name</label>
+                                        <input id="NewUserDisplayName" type="text" class="form-control" ng-model="user.displayname" placeholder="displayname">
+                                    </div>
+                                    <button type="button" class="btn btn-primary" ng-click="user.save()">Create User</button>
+                                </fieldset>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 <div class="panel panel-primary" ng-if="test.allUsers.length > 0" ng-controller="CreateTaskController as task" ng-init="task.setErrorHandlers(test.clearError, test.handleApiError); task.setUsers(test.me, test.allUsers);">
-                    <div class="panel-heading">Create Task</div>
-                    <div class="panel-body">
-                        <form novalidate>
-                            <fieldset ng-disabled="user.busy">
-                                <div class="form-group">
-                                    <label for="NewTaskName">Name</label>
-                                    <input id="NewTaskName" type="text" class="form-control" ng-model="task.name" placeholder="name">
-                                </div>
-                                <div class="form-group">
-                                    <label for="NewTaskHours">Periodic Hours</label>
-                                    <input id="NewTaskHours" type="number" min="0" step="1" class="form-control" ng-model="task.hours" placeholder="0">
-                                    <span>Set to 0 for intermediate</span>
-                                </div>
-                                <div class="form-group">
-                                    <label for="NewTaskUsersSelect">Users</label>
-                                    <select id="NewTaskUsersSelect" class="form-control" multiple ng-attr-size="{{task.users.length}}" ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
-                                    </select>
-                                    <p><label>Selected:&nbsp;</label><span ng-repeat="id in task.selectedUsers">{{task.userMap[id].name}}, </span>{{task.me.name}}</p>
-                                </div>
-                                <button type="button" class="btn btn-primary" ng-click="task.save()">Create Task</button>
-                            </fieldset>
-                        </form>
+                    <div class="panel-heading">
+                        <a data-toggle="collapse" href="#NewTaskPanel"><h4 class="panel-title">Create Task</h4></a>
+                    </div>
+                    <div id="NewTaskPanel" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <form novalidate>
+                                <fieldset ng-disabled="user.busy">
+                                    <div class="form-group">
+                                        <label for="NewTaskName">Name</label>
+                                        <input id="NewTaskName" type="text" class="form-control" ng-model="task.name" placeholder="name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="NewTaskHours">Periodic Hours</label>
+                                        <input id="NewTaskHours" type="number" min="0" step="1" class="form-control" ng-model="task.hours" placeholder="0">
+                                        <span>Set to 0 for intermediate</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="NewTaskUsersSelect">Users</label>
+                                        <select id="NewTaskUsersSelect" class="form-control" multiple ng-attr-size="{{task.users.length}}" ng-options="user.id as user.name for user in task.users" ng-model="task.selectedUsers">
+                                        </select>
+                                        <p><label>Selected:&nbsp;</label><span ng-repeat="id in task.selectedUsers">{{task.userMap[id].name}}, </span>{{task.me.name}}</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" ng-click="task.save()">Create Task</button>
+                                </fieldset>
+                            </form>
+                        </div>
                     </div>
                 </div>     
                 <div class="panel panel-primary">
-                    <div class="panel-heading">Debug</div>
-                    <div class="panel-body">
-                        <button type="button" class="btn btn-warning" ng-click="test.notify()">Notify</button>
-                        <button type="button" class="btn btn-info" ng-click="test.getUsers()">Users</button>
-                        <button type="button" class="btn btn-info" ng-click="test.getSubscriptions()">Subs</button>
-                        <button type="button" class="btn btn-info" ng-click="test.getUser('user11')">User</button>
+                    <div class="panel-heading">
+                        <a data-toggle="collapse" href="#DebugPanel"><h4 class="panel-title">Debug</h4></a>
+                    </div>
+                    <div id="DebugPanel" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <button type="button" class="btn btn-warning" ng-click="test.notify()">Notify</button>
+                            <button type="button" class="btn btn-info" ng-click="test.getUsers()">Users</button>
+                            <button type="button" class="btn btn-info" ng-click="test.getSubscriptions()">Subs</button>
+                            <button type="button" class="btn btn-info" ng-click="test.getUser('user11')">User</button>
+                        </div>
                     </div>
                 </div>
             </div>

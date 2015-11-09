@@ -360,7 +360,6 @@
 			vm.clearError();
 	    	return $http.post('/api/task', {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.taskUserIds.concat(vm.me.id)})
 	    		.then(function(res){
-	    			console.log('res', res);
 	    			// success
 	    			vm.busy = false;
 	    			vm.name = '';
@@ -373,13 +372,6 @@
 	    			vm.busy = false;
 	    		});
 		};
-
-		// $scope.$watch(function(){return vm.selectedUsers;}, function(newSelectedUsers){
-		// 	vm.taskUserIds = [vm.me.id].concat(newSelectedUsers);
-		// 	vm.taskUsers = vm.users.filter(function(user){
-		// 		return vm.taskUserIds.contains(user.id);
-		// 	});
-		// }, true);
 	}]);
 
 	app.controller('NotificationController', ['$scope', '$http', function($scope, $http) {

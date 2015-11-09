@@ -8,6 +8,12 @@
 	background-color: transparent;
 	.panel-heading {
 		font-weight: bold;
+		a:hover, a:active, a:visited, a:link {
+			text-decoration: none;
+		}
+		.panel-title {
+			color: white;
+		}
 	}
 }
 
@@ -20,15 +26,16 @@
 		text-align: center;
 	}
 	.btn-group {
-		left: 50%;
-		right: auto;
-		text-align: center;
-		transform: translate(-50%, 0);
-		margin-bottom: 10px;
-		z-index: 5;
-		&.top {
-			z-index: 6;
-		}
+		margin-left: 10px;
+		// left: 50%;
+		// right: auto;
+		// text-align: center;
+		// transform: translate(-50%, 0);
+		// margin-bottom: 10px;
+		// z-index: 5;
+		// &.top {
+		// 	z-index: 6;
+		// }
 	}
 }
 
