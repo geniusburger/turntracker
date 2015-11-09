@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
@@ -19,33 +18,30 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Set;
 
 import me.geniusburger.turntracker.model.Task;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, CreateOrEditTaskFragment.TaskListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_CODE_LOGIN = 1;
     private static final String FRAGMENT_TASKS = "tasks";
     private static final String FRAGMENT_TURNS = "turns";
+    private static final String FRAGMENT_EDIT = "edit";
 
     // UI
     TextView mUserNameTextView;
     TextView mDisplayNameTextView;
+    FloatingActionButton fab;
 
     // Fragments
     TaskFragment mTaskFragment;
-    TurnFragment mTurnFragment;
 
     // Preferences
     private Preferences prefs;
@@ -61,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -74,6 +70,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         break;
                     case FRAGMENT_TURNS:
                         ((TurnFragment) currentFragment).takeTurn(view);
+                        break;
+                    case FRAGMENT_EDIT:
+                        Snackbar.make(view, "Eventually save this...", Snackbar.LENGTH_SHORT).show();
+                        onBackPressed();
                         break;
                     default:
                         Log.e(TAG, "Unhandled FAB fragment tag " + tag);
@@ -199,6 +199,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             drawer.closeDrawer(GravityCompat.START);
         } else {
             if (getFragmentManager().getBackStackEntryCount() > 0){
+                CreateOrEditTaskFragment editFragment = (CreateOrEditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
+                if (editFragment != null && editFragment.isVisible()) {
+                    // coming back from edit, reset fab to add icon
+                    fab.setImageResource(R.drawable.ic_add_24dp);
+                }
                 getFragmentManager().popBackStack();
             } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
                 super.onBackPressed();
@@ -236,27 +241,51 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void onTaskSelected(Task task, boolean autoTurn) {
         mCurrentTask = task;
 
-        // TODO need to do anything with the old fragment?
-        mTurnFragment = TurnFragment.newInstance(task.id, task.name, autoTurn);
-
         // Replace whatever is in the fragment_container view with this fragment,
         // and add the transaction to the back stack so the user can navigate back
 
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
+                .replace(R.id.fragment_container, TurnFragment.newInstance(task.id, task.name, autoTurn), FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
     }
 
     @Override
+    public void onTaskLongSelected(Task task) {
+        getFragmentManager()
+                .beginTransaction()
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .replace(R.id.fragment_container, CreateOrEditTaskFragment.newInstance(true), FRAGMENT_EDIT)
+                .addToBackStack(null)
+                .commit();
+        fab.setImageResource(R.drawable.ic_done_24dp);
+    }
+
+    @Override
     public View getSnackBarView() {
-        return findViewById(R.id.fab);
+        return fab;
     }
 
     @Override
     public Task getCurrentTask() {
         return mCurrentTask;
+    }
+
+    @Override
+    public void editTask() {
+        getFragmentManager()
+                .beginTransaction()
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .replace(R.id.fragment_container, CreateOrEditTaskFragment.newInstance(true), FRAGMENT_EDIT)
+                .addToBackStack(null)
+                .commit();
+        fab.setImageResource(R.drawable.ic_done_24dp);
+    }
+
+    @Override
+    public void taskSaved(boolean saved) {
+        // TODO close fragment and refresh list if saved
     }
 }

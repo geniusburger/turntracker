@@ -48,6 +48,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     private String mTaskName;
     private boolean mAutoTurn = false;
     private TurnFragmentInteractionListener mListener;
+    private Snackbar bar;
 
     private AbsListView mListView;
     private SwipeRefreshLayout mSwipeLayout;
@@ -159,6 +160,9 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if(bar != null && bar.isShownOrQueued()) {
+            bar.dismiss();
+        }
         switch (item.getItemId()) {
             case R.id.action_refresh:
                 refreshData();
@@ -196,6 +200,11 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
                 });
                 datePicker.show();
                 return true;
+            case R.id.action_edit_task:
+                if(mListener != null) {
+                    mListener.editTask();
+                }
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -210,6 +219,9 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     @Override
     public void onPause() {
         super.onPause();
+        if(bar != null && bar.isShownOrQueued()) {
+            bar.dismiss();
+        }
         cancelAllAsyncTasks();
     }
 
@@ -219,6 +231,9 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     }
 
     public void refreshData() {
+        if(bar != null && bar.isShownOrQueued()) {
+            bar.dismiss();
+        }
         cancelAllAsyncTasks();
         mGetStatusAsyncTask = new GetStatusAsyncTask(getActivity());
         mGetStatusAsyncTask.execute();
@@ -317,7 +332,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
         protected void onPostExecute(final Long turnId) {
             mStatusAdapter.notifyDataSetChanged();
             if(turnId > 0) {
-                final Snackbar bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG);
+                bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_INDEFINITE);
                 bar.setAction("Undo", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -431,6 +446,7 @@ public class TurnFragment extends Fragment implements AbsListView.OnItemClickLis
     public interface TurnFragmentInteractionListener {
         View getSnackBarView();
         Task getCurrentTask();
+        void editTask();
     }
 
 }

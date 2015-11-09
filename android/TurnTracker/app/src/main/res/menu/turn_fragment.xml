@@ -2,7 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/action_refresh" android:title="@string/action_refresh"
-        android:orderInCategory="101" app:showAsAction="always" android:icon="@drawable/ic_refresh_24dp" />
+        android:orderInCategory="102" app:showAsAction="ifRoom" android:icon="@drawable/ic_refresh_24dp" />
     <item android:id="@+id/action_pick_turn_date" android:title="Turn Date"
-        android:orderInCategory="100" app:showAsAction="always" android:icon="@drawable/ic_calendar_24dp" />
+        android:orderInCategory="101" app:showAsAction="ifRoom" android:icon="@drawable/ic_calendar_24dp" />
+    <item android:id="@+id/action_edit_task" android:title="@string/edit_task_title"
+        android:orderInCategory="100" app:showAsAction="ifRoom" android:icon="@drawable/ic_edit_24dp" />
 </menu>

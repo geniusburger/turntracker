@@ -35,7 +35,7 @@ import me.geniusburger.turntracker.model.Task;
  * Activities containing this fragment MUST implement the {@link OnTaskSelectedListener}
  * interface.
  */
-public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
+public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
 
     private static final String ARG_AUTO_TURN_TASK_ID = "autoTurnTaskId";
     private long autoTurnTaskId = 0;
@@ -133,6 +133,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
 
         // Set OnItemClickListener so we can be notified on item clicks
         mListView.setOnItemClickListener(this);
+        mListView.setOnItemLongClickListener(this);
 
         // show progress if the task is already running
         if(mGetTasksAsyncTask != null && mGetTasksAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -172,6 +173,14 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
             // fragment is attached to one) that an item has been selected.
             mListener.onTaskSelected(mTasks.get(position), false);
         }
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        if(null != mListener) {
+            mListener.onTaskLongSelected(mTasks.get(position));
+        }
+        return true;
     }
 
     public void refreshData() {
@@ -282,6 +291,7 @@ public class TaskFragment extends Fragment implements AbsListView.OnItemClickLis
      */
     public interface OnTaskSelectedListener {
         void onTaskSelected(Task task, boolean autoTurn);
+        void onTaskLongSelected(Task task);
         View getSnackBarView();
     }
 }
