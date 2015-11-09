@@ -4,6 +4,10 @@
 	cursor: pointer;
 }
 
+.task-name {
+	font-weight: bold;
+}
+
 .panel {
 	background-color: transparent;
 	.panel-heading {
@@ -15,6 +19,14 @@
 			color: white;
 		}
 	}
+}
+
+a[data-target] {
+	cursor: pointer;
+}
+
+.panel-inline {
+	margin-bottom: 0px;
 }
 
 .viewing-as {

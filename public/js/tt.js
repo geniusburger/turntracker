@@ -324,7 +324,7 @@
 		};
 	}]);
 
-	app.controller('CreateTaskController', ['$scope', '$http', '$location', function($scope, $http, $location){
+	app.controller('CreateOrEditTaskController', ['$scope', '$http', '$location', function($scope, $http, $location){
 		var vm = this;
 
 		vm.busy = false;
@@ -336,6 +336,7 @@
 		vm.userMap = {};
 		vm.selectedUsers = [];
 		vm.me = {};
+		vm.task = null;
 
 		vm.setErrorHandlers = function(clearError, handleApiError) {
 			vm.clearError = clearError;
@@ -344,13 +345,18 @@
 
 		vm.setUsers = function(me, users) {
 			vm.me = me;
-			vm.taskUserIds = [vm.me.id];
-			vm.taskUsers = [vm.me];
 			vm.users = users.filter(function(user){
 				vm.userMap[user.id] = user;
 				return user.id !== me.id;
 			});
 		};
+
+		vm.setTask = function(task, users) {
+			vm.task = task;
+			vm.name = task.taskName;
+			vm.hours = task.periodic_hours;
+			vm.selectedUsers = users.map(function(user){ return user.id; });
+		}
 
 		vm.save = function() {
 			if(vm.busy) {
@@ -358,7 +364,11 @@
 			}
 			vm.busy = true;
 			vm.clearError();
-	    	return $http.post('/api/task', {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.taskUserIds.concat(vm.me.id)})
+			var params = {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.selectedUsers.concat(vm.me.id)};
+			if(vm.task) {
+				params.id = vm.task.taskId;
+			}
+	    	return $http.post('/api/task', params)
 	    		.then(function(res){
 	    			// success
 	    			vm.busy = false;
@@ -368,7 +378,7 @@
 					$location.search('u', res.data.user_id);
 					window.location.reload();
 		    	}, function(res){
-		    		vm.handleApiError(res, 'failed to save new user');
+		    		vm.handleApiError(res, vm.task ? 'failed to save updates to task' : 'failed to save new task');
 	    			vm.busy = false;
 	    		});
 		};

@@ -1,6 +1,7 @@
 var https = require('https');
 var Promise = require('bluebird');
 var log = require('debug')('turntracker:index');
+var mysql = require('mysql');
 
 var db = require('./db');
 var config = require('../config');
@@ -308,13 +309,22 @@ var createUser = function(conn, username, displayname) {
 };
 exports.createUser = createUser;
 
-var createTask = function(conn, name, hours, creator) {
+var createOrEditTask = function(conn, name, hours, creator, id) {
 	return new Promise(function(resolve, reject){
 		name = name.trim();
 		if(name.length < 1) {
 			reject(new Error("name can't be empty"));
 		} else if(hours < 0) {
 			reject(new Error("hours can't be negative"));
+		} else if(id){
+			conn.query('UPDATE tasks SET ? WHERE id = ?', [{name: name, periodic_hours: hours, creator_user_id: creator}, id], function(err, rows, fields){
+				if(err) {
+					log('ERROR while performing update task query', err);
+					reject(err);
+				} else {
+					resolve(id);
+				}
+			});
 		} else {
 			conn.query('INSERT INTO tasks SET ?', {name: name, periodic_hours: hours, creator_user_id: creator}, function(err, rows, fields){
 				if(err) {
@@ -327,24 +337,77 @@ var createTask = function(conn, name, hours, creator) {
 		}
 	});
 };
-exports.createTask = createTask;
+exports.createOrEditTask = createOrEditTask;
 
-var addParticipants = function(conn, taskId, userIds) {
+var deleteParticipants = function(conn, taskId, userIds) {
 	return new Promise(function(resolve, reject){
-		var participants = userIds.map(function(user){
-			return [taskId, user];
-		});
-		conn.query('INSERT INTO participants (task_id, user_id) VALUES ?', [participants], function(err, rows, fields){
+		if(userIds.length === 0) {
+			resolve();
+		} else {
+			var participants = userIds.map(function(user){
+				return [taskId, user];
+			});
+			//DELETE FROM table WHERE (col1,col2) IN ((1,2),(3,4),(5,6))
+			conn.query('DELETE FROM participants WHERE (task_id, user_id) IN ?', [[participants]], function(err, rows){
+				if(err) {
+					log('ERROR while clearing participants', err);
+					reject(err);
+				} else {
+					log("cleared participants", rows);
+					resolve();
+				}
+			});
+		}
+	});
+};
+
+var getParticipants = function(conn, taskId) {
+	return new Promise(function(resolve, reject){
+		conn.query('SELECT user_id FROM participants WHERE task_id = ?', [taskId], function(err, rows){
 			if(err) {
-				log('ERROR while performing add participants query', err);
+				log('ERROR while performing get participants query', err);
 				reject(err);
 			} else {
-				resolve();
+				resolve(rows.map(function(user){ return user.user_id; }));
 			}
 		});
 	});
 };
-exports.addParticipants = addParticipants;
+
+var addParticipants = function(conn, taskId, userIds) {
+	return new Promise(function(resolve, reject){
+		if(userIds.length === 0) {
+			resolve();
+		} else {
+			var participants = userIds.map(function(user){
+				return [taskId, user];
+			});
+			conn.query('INSERT INTO participants (task_id, user_id) VALUES ?', [participants], function(err, rows){
+				if(err) {
+					log('ERROR while performing add participants query', err);
+					reject(err);
+				} else {
+					resolve();
+				}
+			});
+		}
+	});
+};
+
+var setParticipants = function(conn, taskId, userIds) {
+	return getParticipants(conn, taskId).then(function(existingUserIds){
+		var toDelete = existingUserIds.filter(function(id){ return userIds.indexOf(id) < 0; });
+		var toAdd = userIds.filter(function(id){ return existingUserIds.indexOf(id) < 0; });
+		// log("userIds: ", userIds);
+		// log("existing: ", existingUserIds);
+		log("participants to delete: ", toDelete);
+		log("participants to add: ", toAdd);
+		return deleteParticipants(conn, taskId, toDelete).then(function(){
+			return addParticipants(conn, taskId, toAdd);
+		});
+	});
+};
+exports.setParticipants = setParticipants;
 
 var getAndroidUsers = function(conn) {
 	return new Promise(function(resolve, reject){

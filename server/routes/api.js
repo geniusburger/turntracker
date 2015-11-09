@@ -173,9 +173,9 @@ router.post('/task', function(req, res, next){
 	  			if (err) {
 	  				throw err;
 	  			}
-	  			return index.createTask(conn, req.body.name, req.body.hours, req.body.creator)
+	  			return index.createOrEditTask(conn, req.body.name, req.body.hours, req.body.creator, req.body.id)
 	  			.then(function(taskId){
-	  				return Promise.all([taskId, index.addParticipants(conn, taskId, req.body.users)]);
+	  				return Promise.all([taskId, index.setParticipants(conn, taskId, req.body.users)]);
 	  			}).spread(function(taskId){
 					return conn.commit(function(err) {
 						if (err) {
@@ -195,7 +195,7 @@ router.post('/task', function(req, res, next){
 	}).then(function(taskId){
 		res.json({success: true, task_id: taskId});
 	}).catch(function(err){
-		next(new ApiError(err, 'Failed to create user'));
+		next(new ApiError(err, req.body.id ? 'Failed to edit task' : 'Failed to create task'));
 	});
 });
 
