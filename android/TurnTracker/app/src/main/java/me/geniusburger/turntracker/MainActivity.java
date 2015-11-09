@@ -21,13 +21,14 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import me.geniusburger.turntracker.model.Task;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, CreateOrEditTaskFragment.TaskListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_CODE_LOGIN = 1;
@@ -72,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         ((TurnFragment) currentFragment).takeTurn(view);
                         break;
                     case FRAGMENT_EDIT:
-                        Snackbar.make(view, "Eventually save this...", Snackbar.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Eventually save this...", Toast.LENGTH_LONG).show();
                         onBackPressed();
                         break;
                     default:
@@ -199,10 +200,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             drawer.closeDrawer(GravityCompat.START);
         } else {
             if (getFragmentManager().getBackStackEntryCount() > 0){
-                CreateOrEditTaskFragment editFragment = (CreateOrEditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
+                EditTaskFragment editFragment = (EditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
                 if (editFragment != null && editFragment.isVisible()) {
                     // coming back from edit, reset fab to add icon
-                    fab.setImageResource(R.drawable.ic_add_24dp);
+                    setFabIcon(R.drawable.ic_add_24dp);
                 }
                 getFragmentManager().popBackStack();
             } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
@@ -254,13 +255,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onTaskLongSelected(Task task) {
+        mCurrentTask = task;
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, CreateOrEditTaskFragment.newInstance(true), FRAGMENT_EDIT)
+                .replace(R.id.fragment_container, EditTaskFragment.newInstance(true), FRAGMENT_EDIT)
                 .addToBackStack(null)
                 .commit();
-        fab.setImageResource(R.drawable.ic_done_24dp);
+        setFabIcon(R.drawable.ic_done_24dp);
+    }
+
+    /**
+     * Fade/shrink the FAB out, change the icon, and fade/grow the FAB back in
+     * @param resId The resource ID to set the FAB image to
+     */
+    private void setFabIcon(final int resId) {
+        fab.hide(new FloatingActionButton.OnVisibilityChangedListener() {
+            @Override
+            public void onHidden(FloatingActionButton fab) {
+                fab.setImageResource(resId);
+                fab.show();
+            }
+        });
     }
 
     @Override
@@ -278,10 +294,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, CreateOrEditTaskFragment.newInstance(true), FRAGMENT_EDIT)
+                .replace(R.id.fragment_container, EditTaskFragment.newInstance(true), FRAGMENT_EDIT)
                 .addToBackStack(null)
                 .commit();
-        fab.setImageResource(R.drawable.ic_done_24dp);
+        setFabIcon(R.drawable.ic_done_24dp);
     }
 
     @Override

@@ -3,23 +3,41 @@ package me.geniusburger.turntracker;
 import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import me.geniusburger.turntracker.model.Task;
+import me.geniusburger.turntracker.model.User;
 
-public class CreateOrEditTaskFragment extends Fragment {
+public class EditTaskFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private static final String ARG_EDIT = "edit";
 
     private Task mTask;
+    private List<User> mUsers;
     private boolean mEdit = false;
     private TaskListener mListener;
+    private SwipeRefreshLayout mSwipeLayout;
+    private ListView mListView;
+    private ListAdapter mAdapter;
 
     // Views
     EditText mNameEditText;
@@ -28,15 +46,15 @@ public class CreateOrEditTaskFragment extends Fragment {
     // Workers
     // async task
 
-    public static CreateOrEditTaskFragment newInstance(boolean edit) {
-        CreateOrEditTaskFragment fragment = new CreateOrEditTaskFragment();
+    public static EditTaskFragment newInstance(boolean edit) {
+        EditTaskFragment fragment = new EditTaskFragment();
         Bundle args = new Bundle();
         args.putBoolean(ARG_EDIT, edit);
         fragment.setArguments(args);
         return fragment;
     }
 
-    public CreateOrEditTaskFragment() {
+    public EditTaskFragment() {
     }
 
     @Override
@@ -55,6 +73,11 @@ public class CreateOrEditTaskFragment extends Fragment {
             }
         }
 
+        mUsers = new ArrayList<>();
+        mAdapter = new ArrayAdapter<>(getActivity(),
+                android.R.layout.simple_list_item_multiple_choice,
+                android.R.id.text1, mUsers);
+
         getUsers();
     }
 
@@ -67,10 +90,19 @@ public class CreateOrEditTaskFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_create_or_edit_task, container, false);
+        View view = inflater.inflate(R.layout.fragment_edit_task, container, false);
 
-        mNameEditText = (EditText) view.findViewById(R.id.nameEditText);
-        mPeriodEditText = (EditText) view.findViewById(R.id.periodEditText);
+        mSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe);
+        mSwipeLayout.setOnRefreshListener(this);
+
+        mListView = (ListView) view.findViewById(android.R.id.list);
+        mListView.setAdapter(mAdapter);
+
+        View header = inflater.inflate(R.layout.fragment_edit_task_header, mListView, false);
+        mListView.addHeaderView(header, null, false);
+        mListView.setHeaderDividersEnabled(true);
+        mNameEditText = (EditText) header.findViewById(R.id.nameEditText);
+        mPeriodEditText = (EditText) header.findViewById(R.id.periodEditText);
 
         if(mTask != null && mEdit) {
             mNameEditText.setText(mTask.name);
@@ -133,6 +165,10 @@ public class CreateOrEditTaskFragment extends Fragment {
 //        mGetStatusAsyncTask = new GetStatusAsyncTask(getActivity());
 //        mGetStatusAsyncTask.execute();
         // TODO get users in an async task
+        for(int i = 0; i < 20; i++) {
+            mUsers.add(new User(i, "username" + i, "Dummy User " + i));
+        }
+        ((BaseAdapter)mAdapter).notifyDataSetChanged();
     }
 
     public boolean cancelAllAsyncTasks() {
@@ -170,7 +206,24 @@ public class CreateOrEditTaskFragment extends Fragment {
     }
 
     private void showProgress(boolean show) {
-        // TODO show or hide progress
+        if(mSwipeLayout != null) {
+            mSwipeLayout.setRefreshing(show);
+
+            if(show) {
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        showProgress(false);
+                    }
+                }, 3000);
+            }
+        }
+    }
+
+    @Override
+    public void onRefresh() {
+        showProgress(true);
     }
 
     public interface TaskListener {

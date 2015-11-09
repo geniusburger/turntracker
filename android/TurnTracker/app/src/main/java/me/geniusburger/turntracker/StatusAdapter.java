@@ -81,7 +81,7 @@ public class StatusAdapter extends BaseAdapter {
         if(position == 0) {
             return mTask;
         } else if(position == 1) {
-            return mContext.getString(R.string.user_list_label);
+            return mContext.getString(R.string.user_order_list_label);
         } else if(position < mUsers.size() + 2) {
             return mUsers.get(position - 2);
         } else if(position == mUsers.size() + 2) {

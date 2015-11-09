@@ -63,7 +63,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="@string/user_list_label"
+        android:text="@string/user_order_list_label"
         android:id="@+id/textView" />
 
     <FrameLayout
