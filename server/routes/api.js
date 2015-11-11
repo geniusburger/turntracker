@@ -81,6 +81,16 @@ router.get('/status', function(req, res, next) {
 	});
 });
 
+router.get('/taskusers', function(req, res, next) {
+	using(db.getConnection(), function(conn) {
+		return index.getTaskUsers(conn, req.query.id);
+	}).then(function(rows) {
+		res.json({users: rows});
+	}).catch(function(err) {
+		next(new ApiError(err, 'Failed to get task users'));
+	});
+});
+
 router.put('/android', function(req, res, next){
 	using(db.getConnection(), function(conn) {
 		return index.setAndroidToken(conn, req.body.user_id, req.body.token);

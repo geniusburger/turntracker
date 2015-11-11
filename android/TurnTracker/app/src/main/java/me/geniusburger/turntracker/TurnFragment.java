@@ -36,7 +36,7 @@ import me.geniusburger.turntracker.model.Task;
  * Large screen devices (such as tablets) are supported by replacing the ListView with a GridView.
  * <p/>
  */
-public class TurnFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
+public class TurnFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
 
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";

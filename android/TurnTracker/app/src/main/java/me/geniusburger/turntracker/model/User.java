@@ -11,6 +11,7 @@ public class User {
     public int turns;
     public boolean mobile;
     public int consecutiveTurns;
+    public boolean selected;
 
     public User(long id) {
         this.id = id;
@@ -22,6 +23,12 @@ public class User {
         this.displayName = displayName;
     }
 
+    public User(long id, String displayName, boolean selected) {
+        this.id = id;
+        this.displayName = displayName;
+        this.selected = selected;
+    }
+
     public User(JSONObject json) throws JSONException {
         id = json.getLong("id");
         displayName = json.getString("name");
@@ -31,15 +38,16 @@ public class User {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(displayName);
-        if(consecutiveTurns > 0) {
-            sb.append(" (x");
-            sb.append(consecutiveTurns);
-            sb.append(")");
-        }
-        if(mobile) {
-            sb.append(" M");
-        }
-        return sb.toString();
+//        StringBuilder sb = new StringBuilder(displayName);
+//        if(consecutiveTurns > 0) {
+//            sb.append(" (x");
+//            sb.append(consecutiveTurns);
+//            sb.append(")");
+//        }
+//        if(mobile) {
+//            sb.append(" M");
+//        }
+//        return sb.toString();
+        return displayName;
     }
 }

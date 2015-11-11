@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         break;
                     case FRAGMENT_EDIT:
                         Toast.makeText(MainActivity.this, "Eventually save this...", Toast.LENGTH_LONG).show();
-                        onBackPressed();
+                        ((EditTaskFragment)currentFragment).saveTask();
                         break;
                     default:
                         Log.e(TAG, "Unhandled FAB fragment tag " + tag);
@@ -302,6 +302,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void taskSaved(boolean saved) {
-        // TODO close fragment and refresh list if saved
+        onBackPressed();
+        if(saved) {
+            Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
+            if(currentFragment instanceof RefreshableFragment) {
+                ((RefreshableFragment) currentFragment).onRefresh();
+            }
+        }
     }
 }

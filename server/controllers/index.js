@@ -140,7 +140,7 @@ var getStatus = function(conn, taskId) {
 			') counts on participants.user_id = counts.user_id ' +
 			'WHERE  participants.task_id = ? ' +
 			'ORDER by turns ASC, counts.taken ASC',
-			[taskId,taskId], function(err, rows, fields){
+			[taskId,taskId], function(err, rows){
 				if(err) {
 					reject(err);
 				} else {
@@ -150,6 +150,22 @@ var getStatus = function(conn, taskId) {
 	});
 };
 exports.getStatus = getStatus;
+
+var getTaskUsers = function(conn, taskId) {
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'SELECT users.id AS id, users.displayname AS name, (participants.task_id IS NOT NULL) AS selected  ' +
+			'FROM users LEFT JOIN participants on participants.user_id = users.id AND participants.task_id = ?',
+			[taskId], function(err, rows){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
+exports.getTaskUsers = getTaskUsers;
 
 var getAll = function(conn, userId, taskId) {
 	var results = {};

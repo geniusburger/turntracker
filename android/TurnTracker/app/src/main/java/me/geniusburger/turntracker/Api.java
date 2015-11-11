@@ -232,6 +232,36 @@ public class Api {
         return 0;
     }
 
+    public boolean getTaskUsers(long taskId, List<User> users) {
+        Map<String, String> params = new HashMap<>(1);
+        params.put("id", String.valueOf(taskId));
+        JsonResponse res = httpGet("taskusers", params);
+
+        if(200 == res.code) {
+            try {
+                JSONArray jsonUsers = res.json.getJSONArray("users");
+                int len = jsonUsers.length();
+                users.clear();
+                if(len > 0) {
+                    for(int i = 0; i < len; i++) {
+                        JSONObject user = jsonUsers.getJSONObject(i);
+                        users.add(new User(user.getLong("id"), user.getString("name"), user.getInt("selected") == 1));
+                    }
+                }
+                return true;
+            } catch (JSONException e) {
+                Log.e(TAG, "failed to extract task users from JSON", e);
+            }
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to get task users, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to get task users, HTTP res " + res.code);
+            }
+        }
+        return false;
+    }
+
     public boolean getStatus(long taskId, List<User> users, List<Turn> turns) {
         Map<String, String> params = new HashMap<>(1);
         params.put("task_id", String.valueOf(taskId));

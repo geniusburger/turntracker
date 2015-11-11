@@ -35,7 +35,7 @@ import me.geniusburger.turntracker.model.Task;
  * Activities containing this fragment MUST implement the {@link OnTaskSelectedListener}
  * interface.
  */
-public class TaskFragment extends Fragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
+public class TaskFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
 
     private static final String ARG_AUTO_TURN_TASK_ID = "autoTurnTaskId";
     private long autoTurnTaskId = 0;
