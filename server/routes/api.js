@@ -175,7 +175,7 @@ router.post('/user', function(req, res, next){
 	});
 });
 
-router.post('/task', function(req, res, next){
+var createOrEditTask = function(req, res, next){
 	using(db.getConnection(), function(conn){
 
 		return new Promise(function(resolve, reject){
@@ -207,7 +207,11 @@ router.post('/task', function(req, res, next){
 	}).catch(function(err){
 		next(new ApiError(err, req.body.id ? 'Failed to edit task' : 'Failed to create task'));
 	});
-});
+};
+
+// TODO should check if ID is passed for 'PUT task'
+router.put('/task', createOrEditTask);
+router.post('/task', createOrEditTask);
 
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {

@@ -109,6 +109,14 @@ public class Api {
         return jsonHttp("POST", path, body, queryParams);
     }
 
+    private JsonResponse httpPut(String path, JSONObject body) {
+        return httpPut(path, body, null);
+    }
+
+    private JsonResponse httpPut(String path, JSONObject body, Map<String, String> queryParams) {
+        return jsonHttp("PUT", path, body, queryParams);
+    }
+
     private JsonResponse httpGet(String path) {
         return httpGet(path, null);
     }
@@ -204,6 +212,41 @@ public class Api {
         return false;
     }
 
+    /**
+     * Save a new or updated task
+     * @param task The task the save or update.
+     * @return The task ID on success, 0 on failure.
+     */
+    public long saveTask(Task task, List<Long> users) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("id", task.id);
+            body.put("name", task.name);
+            body.put("hours", task.periodicHours);
+            body.put("creator", task.creatorUserID);
+            JSONArray userArray = new JSONArray();
+            for(Long userId : users) {
+                userArray.put(userId);
+            }
+            body.put("users", userArray);
+
+            JsonResponse res = httpPut("task", body);
+
+            if(200 == res.code) {
+                return res.json.getLong("task_id");
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to save turn, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to save turn, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build json", e);
+        }
+        return 0;
+    }
+
     // return 0 on error
     public long takeTurn(long taskId, Calendar date, List<User> users, List<Turn> turns) {
         try {
@@ -262,9 +305,9 @@ public class Api {
         return false;
     }
 
-    public boolean getStatus(long taskId, List<User> users, List<Turn> turns) {
+    public boolean getStatus(Task task, List<User> users, List<Turn> turns) {
         Map<String, String> params = new HashMap<>(1);
-        params.put("task_id", String.valueOf(taskId));
+        params.put("task_id", String.valueOf(task.id));
         JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {

@@ -25,6 +25,13 @@ public class Task {
         name = json.getString("taskName");
     }
 
+    public Task(long id, String name, int periodicHours, long creatorUserID) {
+        this.id = id;
+        this.name = name;
+        this.periodicHours = periodicHours;
+        this.creatorUserID = creatorUserID;
+    }
+
     @Override
     public String toString() {
         return name;

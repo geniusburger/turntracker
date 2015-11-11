@@ -34,6 +34,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     private SwipeRefreshLayout mSwipeLayout;
     private ListView mListView;
     private ListAdapter mAdapter;
+    private long mMyUserId;
 
     // Views
     EditText mNameEditText;
@@ -41,6 +42,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
     // Workers
     GetUsersAsyncTask mGetUsersAsyncTask;
+    SaveTaskAsyncTask mSaveTaskAsyncTask;
 
     public static EditTaskFragment newInstance(boolean edit) {
         EditTaskFragment fragment = new EditTaskFragment();
@@ -66,6 +68,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         if(mEdit) {
             if(mListener != null) {
                 mTask = mListener.getCurrentTask();
+                mMyUserId = mListener.getMyUserID();
             }
         }
 
@@ -163,7 +166,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     }
 
     public boolean cancelAllAsyncTasks() {
-        return cancelGetTaskUsers();
+        return cancelGetTaskUsers() || cancelSaveTask();
         // TODO cancel all tasks
     }
 
@@ -171,10 +174,16 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         return mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled() && mGetUsersAsyncTask.cancel(true);
     }
 
+    public boolean cancelSaveTask() {
+        return mSaveTaskAsyncTask != null && !mSaveTaskAsyncTask.isCancelled() && mSaveTaskAsyncTask.cancel(true);
+    }
+
     private boolean checkBusy() {
         // TODO check if any async tasks are running
         if(mGetUsersAsyncTask != null && !mGetUsersAsyncTask.isCancelled()) {
-            Toast.makeText(getContext(), "Already getting users", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Already getting users", Toast.LENGTH_SHORT).show();
+        } else if(mSaveTaskAsyncTask != null && !mSaveTaskAsyncTask.isCancelled()) {
+            Toast.makeText(getContext(), "Already saving task", Toast.LENGTH_SHORT).show();
         } else {
             return false;
         }
@@ -182,17 +191,56 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     }
 
     public void saveTask() {
-//        if(!checkBusy(view)) {
-//            mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
-//            mTakeTurnAsyncTask.execute();
-//        }
-        mListener.taskSaved(false);
-        // TODO save task by creating and starting an async task
+        if(!checkBusy()) {
+            mSaveTaskAsyncTask = new SaveTaskAsyncTask();
+            mSaveTaskAsyncTask.execute();
+        }
     }
 
     private void showProgress(boolean show) {
         if(mSwipeLayout != null) {
             mSwipeLayout.setRefreshing(show);
+        }
+    }
+
+    public class SaveTaskAsyncTask extends AsyncTask<Void, Void, Long> {
+
+        List<Long> mSelectedUserIds = new ArrayList<>();
+        Task mTaskUpdate = new Task(
+                mTask.id,
+                mNameEditText.getText().toString(),
+                Integer.parseInt(mPeriodEditText.getText().toString()),
+                mTask.creatorUserID);
+
+        @Override
+        protected void onPreExecute() {
+            // TODO stop showing progress here somehow
+            mSelectedUserIds.add(mMyUserId);
+            for(int i = 0; i < mUsers.size(); i++) {
+                User user = mUsers.get(i);
+                // check 'i+1' because the listview header is at position 0
+                if(mListView.isItemChecked(i+1)) {
+                    mSelectedUserIds.add(user.id);
+                }
+            }
+        }
+
+        @Override
+        protected Long doInBackground(Void... params) {
+            return new Api(getContext()).saveTask(mTaskUpdate, mSelectedUserIds);
+        }
+
+        @Override
+        protected void onPostExecute(Long taskId) {
+            // TODO stop showing progress here
+            if(taskId > 0) {
+                if(mListener != null) {
+                    mListener.taskSaved(true);
+                    Toast.makeText(getContext(), "Saved task", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(getContext(), "Failed to save task", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -214,8 +262,9 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
             ((BaseAdapter)mAdapter).notifyDataSetChanged();
             if(success) {
                 for(int i = 0; i < mUsers.size(); i++) {
+                    User user = mUsers.get(i);
                     // set the i+1 position to compensate for the header row, which is at position 0
-                    mListView.setItemChecked(i + 1, mUsers.get(i).selected);
+                    mListView.setItemChecked(i + 1, user.selected);
                 }
             } else {
                 Toast.makeText(getContext(), "Failed to get users", Toast.LENGTH_LONG).show();
@@ -239,5 +288,6 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     public interface TaskListener {
         Task getCurrentTask();
         void taskSaved(boolean saved);
+        long getMyUserID();
     }
 }

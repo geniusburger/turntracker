@@ -1,6 +1,7 @@
 package me.geniusburger.turntracker;
 
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.Uri;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Fragments
     TaskFragment mTaskFragment;
+    TurnFragment mTurnFragment;
 
     // Preferences
     private Preferences prefs;
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // Things
     long autoTurnTaskId = 0;
     Task mCurrentTask;
+    boolean autoRefresh = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +76,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         ((TurnFragment) currentFragment).takeTurn(view);
                         break;
                     case FRAGMENT_EDIT:
-                        Toast.makeText(MainActivity.this, "Eventually save this...", Toast.LENGTH_LONG).show();
-                        ((EditTaskFragment)currentFragment).saveTask();
+                        ((EditTaskFragment) currentFragment).saveTask();
                         break;
                     default:
                         Log.e(TAG, "Unhandled FAB fragment tag " + tag);
@@ -101,6 +103,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
             handleNfc();
         }
+
+        getFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
+            @Override
+            public void onBackStackChanged() {
+                if(autoRefresh) {
+                    if(mTaskFragment != null) {
+                        mTaskFragment.onRefresh();
+                    }
+                    // TODO figure out why this is throwing an exception
+//                    if(mTurnFragment != null) {
+//                        mTurnFragment.onRefresh();
+//                    }
+                    autoRefresh = false;
+                }
+            }
+        });
 
         prefs = new Preferences(this);
         long userId = prefs.getUserId();
@@ -245,6 +263,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Replace whatever is in the fragment_container view with this fragment,
         // and add the transaction to the back stack so the user can navigate back
 
+        mTurnFragment = TurnFragment.newInstance(task.id, task.name, autoTurn);
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
@@ -302,12 +321,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void taskSaved(boolean saved) {
-        onBackPressed();
         if(saved) {
-            Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
-            if(currentFragment instanceof RefreshableFragment) {
-                ((RefreshableFragment) currentFragment).onRefresh();
-            }
+            autoRefresh = true;
         }
+        onBackPressed();
+    }
+
+    @Override
+    public long getMyUserID() {
+        return prefs.getUserId();
     }
 }

@@ -235,7 +235,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             bar.dismiss();
         }
         cancelAllAsyncTasks();
-        mGetStatusAsyncTask = new GetStatusAsyncTask(getActivity());
+        mGetStatusAsyncTask = new GetStatusAsyncTask(getContext());
         mGetStatusAsyncTask.execute();
     }
 
@@ -411,7 +411,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTaskId, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
+            return new Api(mContext).getStatus(mTask, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
         }
 
         @Override

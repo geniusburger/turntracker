@@ -365,10 +365,12 @@
 			vm.busy = true;
 			vm.clearError();
 			var params = {name: vm.name, hours: vm.hours, creator: vm.me.id, users: vm.selectedUsers.concat(vm.me.id)};
+			var httpMethod = $http.post;
 			if(vm.task) {
 				params.id = vm.task.taskId;
+				httpMethod = $http.put;
 			}
-	    	return $http.post('/api/task', params)
+	    	return httpMethod('/api/task', params)
 	    		.then(function(res){
 	    			// success
 	    			vm.busy = false;
