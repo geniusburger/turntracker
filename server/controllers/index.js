@@ -132,13 +132,12 @@ exports.getTasks = getTasks;
 var getStatus = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile, tasks.name AS task_name ' + 
+			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile, ' + 
 			'FROM participants JOIN users on participants.user_id = users.id LEFT JOIN ( ' +
 				'SELECT turns.user_id, count(*) as turns, turns.taken ' +
 				'FROM turns WHERE turns.task_id = ? ' +
 				'GROUP BY turns.user_id ORDER BY turns.taken ASC ' +
 			') counts on participants.user_id = counts.user_id ' +
-			'JOIN tasks ON tasks.id = participants.task_id ' +
 			'WHERE  participants.task_id = ? ' +
 			'ORDER by turns ASC, counts.taken ASC',
 			[taskId,taskId], function(err, rows){
@@ -169,6 +168,7 @@ var getTaskUsers = function(conn, taskId) {
 exports.getTaskUsers = getTaskUsers;
 
 var getAll = function(conn, userId, taskId) {
+		// TODO, need to include task info
 	var results = {};
 	return getTasks(conn, userId).then(function(tasks){
 		results.tasks = tasks;
