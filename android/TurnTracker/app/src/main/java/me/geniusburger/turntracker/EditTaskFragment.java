@@ -60,15 +60,15 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            mEdit = getArguments().getBoolean(ARG_EDIT);
+            mEdit = getArguments().getBoolean(ARG_EDIT, false);
         }
 
         setHasOptionsMenu(true);
 
-        if(mEdit) {
-            if(mListener != null) {
+        if(mListener != null) {
+            mMyUserId = mListener.getMyUserID();
+            if(mEdit) {
                 mTask = mListener.getCurrentTask();
-                mMyUserId = mListener.getMyUserID();
             }
         }
 
@@ -207,19 +207,20 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
         List<Long> mSelectedUserIds = new ArrayList<>();
         Task mTaskUpdate = new Task(
-                mTask.id,
+                mEdit ? mTask.id : 0,
                 mNameEditText.getText().toString(),
                 Integer.parseInt(mPeriodEditText.getText().toString()),
-                mTask.creatorUserID);
+                mEdit ? mTask.creatorUserID : mMyUserId);
 
         @Override
         protected void onPreExecute() {
+            showProgress(true);
             // TODO stop showing progress here somehow
             mSelectedUserIds.add(mMyUserId);
             for(int i = 0; i < mUsers.size(); i++) {
                 User user = mUsers.get(i);
                 // check 'i+1' because the listview header is at position 0
-                if(mListView.isItemChecked(i+1)) {
+                if(mListView.isItemChecked(i+1) && !mSelectedUserIds.contains(user.id)) {
                     mSelectedUserIds.add(user.id);
                 }
             }
@@ -241,6 +242,14 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
             } else {
                 Toast.makeText(getContext(), "Failed to save task", Toast.LENGTH_LONG).show();
             }
+            showProgress(false);
+            mSaveTaskAsyncTask = null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            showProgress(false);
+            mSaveTaskAsyncTask = null;
         }
     }
 
@@ -253,7 +262,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(getContext()).getTaskUsers(mTask.id, mUsers);
+            return new Api(getContext()).getTaskUsers(mEdit ? mTask.id : 0, mUsers);
         }
 
         @Override

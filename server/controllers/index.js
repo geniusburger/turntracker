@@ -132,7 +132,7 @@ exports.getTasks = getTasks;
 var getStatus = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
-			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile, ' + 
+			'SELECT users.id AS id, users.displayname AS name, IFNULL(counts.turns, 0) AS turns, (users.androidtoken IS NOT NULL) AS mobile ' + 
 			'FROM participants JOIN users on participants.user_id = users.id LEFT JOIN ( ' +
 				'SELECT turns.user_id, count(*) as turns, turns.taken ' +
 				'FROM turns WHERE turns.task_id = ? ' +
@@ -345,7 +345,7 @@ var createOrEditTask = function(conn, name, hours, creator, id) {
 		} else {
 			conn.query('INSERT INTO tasks SET ?', {name: name, periodic_hours: hours, creator_user_id: creator}, function(err, rows, fields){
 				if(err) {
-					log('ERROR while performing create task query', err);
+					log('ERROR while performing create task query', err, fields);
 					reject(err);
 				} else {
 					resolve(rows.insertId);

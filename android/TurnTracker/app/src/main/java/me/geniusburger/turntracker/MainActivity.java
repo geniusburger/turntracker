@@ -70,7 +70,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 String tag = currentFragment.getTag();
                 switch (tag) {
                     case FRAGMENT_TASKS:
-                        Snackbar.make(view, "Task creation is...under construction", Snackbar.LENGTH_LONG).show();
+                        // create a new task
+                        mCurrentTask = null;
+                        getFragmentManager()
+                                .beginTransaction()
+                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                                .replace(R.id.fragment_container, EditTaskFragment.newInstance(false), FRAGMENT_EDIT)
+                                .addToBackStack(null)
+                                .commit();
+                        setFabIcon(R.drawable.ic_done_24dp);
                         break;
                     case FRAGMENT_TURNS:
                         ((TurnFragment) currentFragment).takeTurn(view);
