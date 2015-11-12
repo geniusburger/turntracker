@@ -1,14 +1,17 @@
 package me.geniusburger.turntracker;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Chronometer;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import me.geniusburger.turntracker.model.Task;
@@ -134,15 +137,19 @@ public class StatusAdapter extends BaseAdapter {
         public abstract void update(StatusAdapter adapter, Object data);
     }
 
-    public static class HeaderViewHolder extends ViewHolder {
+    public class HeaderViewHolder extends ViewHolder {
         public TextView periodTextView;
         public TextView creatorTextView;
         public ImageView notificationImageView;
+        public Chronometer elapsedChrono;
+        public Chronometer exceededChrono;
 
         public HeaderViewHolder(View convertView) {
             periodTextView = (TextView) convertView.findViewById(R.id.periodTextView);
             creatorTextView = (TextView) convertView.findViewById(R.id.creatorTextView);
             notificationImageView = (ImageView) convertView.findViewById(R.id.notificationImageView);
+            elapsedChrono = (Chronometer) convertView.findViewById(R.id.elapsedChronometer);
+            exceededChrono = (Chronometer) convertView.findViewById(R.id.exceededChronometer);
         }
 
         public void update(StatusAdapter adapter, Object data) {
@@ -162,10 +169,28 @@ public class StatusAdapter extends BaseAdapter {
                 }
             }
             creatorTextView.setText(name);
+            if(mTurns.isEmpty()) {
+                exceededChrono.setVisibility(View.INVISIBLE);
+                elapsedChrono.setVisibility(View.INVISIBLE);
+            } else {
+                long msSinceLastTurn = new Date().getTime() - mTurns.get(0).date.getTime();
+                if(mTask.periodicHours <= 0 || (msSinceLastTurn / 3600000) < mTask.periodicHours) {
+                    exceededChrono.setVisibility(View.INVISIBLE);
+                    elapsedChrono.setBase(SystemClock.elapsedRealtime() - msSinceLastTurn);
+                    elapsedChrono.start();
+                } else {
+                    elapsedChrono.stop();
+                    elapsedChrono.setBase(SystemClock.elapsedRealtime() - (3600000 * mTask.periodicHours));
+                    exceededChrono.setBase(SystemClock.elapsedRealtime() - (msSinceLastTurn - (3600000 * mTask.periodicHours)));
+                    exceededChrono.setVisibility(View.VISIBLE);
+                    exceededChrono.start();
+                }
+                elapsedChrono.setVisibility(View.VISIBLE);
+            }
         }
     }
 
-    public static class SubHeaderViewHolder extends ViewHolder {
+    public class SubHeaderViewHolder extends ViewHolder {
         public TextView subHeaderTextView;
 
         public SubHeaderViewHolder(View convertView) {
@@ -177,7 +202,7 @@ public class StatusAdapter extends BaseAdapter {
         }
     }
 
-    public static class UserItemViewHolder extends ViewHolder {
+    public class UserItemViewHolder extends ViewHolder {
         public View root;
         public TextView nameTextView;
         public TextView turnsTextView;
@@ -203,7 +228,7 @@ public class StatusAdapter extends BaseAdapter {
         }
     }
 
-    public static class TurnItemViewHolder extends ViewHolder {
+    public class TurnItemViewHolder extends ViewHolder {
         public TextView nameTextView;
         public TextView dateTextView;
 

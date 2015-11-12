@@ -21,6 +21,7 @@ import android.view.animation.LayoutAnimationController;
 import android.view.animation.TranslateAnimation;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.Chronometer;
 import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.TimePicker;
