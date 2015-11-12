@@ -5,17 +5,25 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Display Name"
-        android:id="@+id/nameTextView" />
-
-    <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:hint="Display Name"
+        android:id="@+id/nameTextView" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="2dp"
+        android:id="@+id/preDateIndicator"
+        android:src="@drawable/ic_info_outline_24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Tue Oct 27, 2015   3:16 PM"
+        android:hint="Tue Oct 27, 2015   3:16 PM"
         android:id="@+id/dateTextView"
         android:textAlignment="textEnd" />
 </LinearLayout>

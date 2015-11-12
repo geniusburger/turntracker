@@ -9,6 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.Chronometer;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -168,7 +169,9 @@ public class StatusAdapter extends BaseAdapter {
                     name = user.displayName;
                 }
             }
+
             creatorTextView.setText(name);
+
             if(mTurns.isEmpty()) {
                 exceededChrono.setVisibility(View.INVISIBLE);
                 elapsedChrono.setVisibility(View.INVISIBLE);
@@ -228,19 +231,31 @@ public class StatusAdapter extends BaseAdapter {
         }
     }
 
-    public class TurnItemViewHolder extends ViewHolder {
+    public class TurnItemViewHolder extends ViewHolder implements View.OnClickListener {
         public TextView nameTextView;
         public TextView dateTextView;
+        public ImageView preDateIndicator;
+        public Turn turn;
 
         public TurnItemViewHolder(View convertView) {
             nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
             dateTextView = (TextView) convertView.findViewById(R.id.dateTextView);
+            preDateIndicator = (ImageView) convertView.findViewById(R.id.preDateIndicator);
+            preDateIndicator.setOnClickListener(this);
         }
 
         public void update(StatusAdapter adapter, Object data) {
-            Turn turn = (Turn)data;
+            turn = (Turn)data;
             nameTextView.setText(turn.name);
             dateTextView.setText(turn.getDateString());
+            preDateIndicator.setVisibility(turn.preDated ? View.VISIBLE : View.INVISIBLE);
+        }
+
+        @Override
+        public void onClick(View v) {
+            if(turn != null) {
+                Toast.makeText(mContext, "Added " + turn.getAddedString(), Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

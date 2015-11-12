@@ -23,12 +23,16 @@ public class Turn {
     }
 
     public Date date;
+    public Date added;
     public String name;
     public long userId;
     public long turnId;
+    public boolean preDated;
 
     public Turn(JSONObject json) throws JSONException, ParseException {
         date = inputFormat.parse(json.getString("date"));
+        added = inputFormat.parse(json.getString("inserted"));
+        preDated = date.before(added);
 
         name = json.getString("name");
         userId = json.getLong("userid");
@@ -37,6 +41,9 @@ public class Turn {
 
     public String getDateString() {
         return outputFormat.format(date);
+    }
+    public String getAddedString() {
+        return outputFormat.format(added);
     }
 
     @Override
