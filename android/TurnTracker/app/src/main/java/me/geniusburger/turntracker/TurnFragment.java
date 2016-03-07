@@ -220,11 +220,11 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     @Override
     public void onPause() {
-        super.onPause();
         if(bar != null && bar.isShownOrQueued()) {
             bar.dismiss();
         }
         cancelAllAsyncTasks();
+        super.onPause();
     }
 
     @Override
