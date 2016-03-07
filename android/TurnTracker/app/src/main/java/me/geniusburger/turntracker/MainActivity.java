@@ -67,14 +67,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
-                String tag = currentFragment.getTag();
-
                 if(currentFragment instanceof RefreshableFragment) {
                     ((RefreshableFragment)currentFragment).onFabClick(view);
                 } else {
-                    Log.e(TAG, "Unhandled FAB fragment tag " + tag);
+                    Log.e(TAG, "Unhandled FAB fragment tag " + currentFragment.getTag());
                     Snackbar.make(view, "Not sure what to do...my bad", Snackbar.LENGTH_SHORT).show();
                 }
             }
