@@ -309,6 +309,11 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         refreshData();
     }
 
+    @Override
+    public void onFabClick(View view) {
+        takeTurn(view);
+    }
+
     public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Long> {
 
         private View mView;

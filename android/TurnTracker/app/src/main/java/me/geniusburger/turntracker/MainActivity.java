@@ -53,10 +53,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     long autoTurnTaskId = 0;
     Task mCurrentTask;
     boolean autoRefresh = false;
+    long fabResourceId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -65,31 +67,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 Fragment currentFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
-                String tag = currentFragment.getTag();
-                switch (tag) {
-                    case FRAGMENT_TASKS:
-                        // create a new task
-                        mCurrentTask = null;
-                        getFragmentManager()
-                                .beginTransaction()
-                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                                .replace(R.id.fragment_container, EditTaskFragment.newInstance(false), FRAGMENT_EDIT)
-                                .addToBackStack(null)
-                                .commit();
-                        setFabIcon(R.drawable.ic_done_24dp);
-                        break;
-                    case FRAGMENT_TURNS:
-                        ((TurnFragment) currentFragment).takeTurn(view);
-                        break;
-                    case FRAGMENT_EDIT:
-                        ((EditTaskFragment) currentFragment).saveTask();
-                        break;
-                    default:
-                        Log.e(TAG, "Unhandled FAB fragment tag " + tag);
-                        Snackbar.make(view, "Not sure what to do...my bad", Snackbar.LENGTH_SHORT).show();
-                        break;
+                if(currentFragment instanceof RefreshableFragment) {
+                    ((RefreshableFragment)currentFragment).onFabClick(view);
+                } else {
+                    Log.e(TAG, "Unhandled FAB fragment tag " + currentFragment.getTag());
+                    Snackbar.make(view, "Not sure what to do...my bad", Snackbar.LENGTH_SHORT).show();
                 }
             }
         });
@@ -229,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 EditTaskFragment editFragment = (EditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
                 if (editFragment != null && editFragment.isVisible()) {
                     // coming back from edit, reset fab to add icon
-                    setFabIcon(R.drawable.ic_add_24dp);
+                    // todo setFabIcon(R.drawable.ic_add_24dp);
                 }
                 getFragmentManager().popBackStack();
             } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
@@ -283,27 +266,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onTaskLongSelected(Task task) {
         mCurrentTask = task;
-        getFragmentManager()
-                .beginTransaction()
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, EditTaskFragment.newInstance(true), FRAGMENT_EDIT)
-                .addToBackStack(null)
-                .commit();
-        setFabIcon(R.drawable.ic_done_24dp);
+        editTask(true);
     }
 
     /**
      * Fade/shrink the FAB out, change the icon, and fade/grow the FAB back in
      * @param resId The resource ID to set the FAB image to
      */
-    private void setFabIcon(final int resId) {
-        fab.hide(new FloatingActionButton.OnVisibilityChangedListener() {
-            @Override
-            public void onHidden(FloatingActionButton fab) {
-                fab.setImageResource(resId);
-                fab.show();
-            }
-        });
+    public void setFabIcon(final int resId) {
+        if(resId == 0) {
+            fab.hide();
+        } else if( fabResourceId != resId) {
+            fab.hide(new FloatingActionButton.OnVisibilityChangedListener() {
+                @Override
+                public void onHidden(FloatingActionButton fab) {
+                    fab.setImageResource(resId);
+                    fab.show();
+                }
+            });
+        }
+        fabResourceId = resId;
     }
 
     @Override
@@ -317,14 +299,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
+    public void createTask() {
+        mCurrentTask = null;
+        editTask(false);
+    }
+
+    @Override
     public void editTask() {
+        editTask(true);
+    }
+
+    public void editTask(boolean edit) {
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, EditTaskFragment.newInstance(true), FRAGMENT_EDIT)
+                .replace(R.id.fragment_container, EditTaskFragment.newInstance(edit), FRAGMENT_EDIT)
                 .addToBackStack(null)
                 .commit();
-        setFabIcon(R.drawable.ic_done_24dp);
     }
 
     @Override
