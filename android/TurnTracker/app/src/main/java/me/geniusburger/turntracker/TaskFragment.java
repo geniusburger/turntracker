@@ -91,6 +91,7 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.clear();
         inflater.inflate(R.menu.task_fragment, menu);
     }
 

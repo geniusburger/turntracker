@@ -156,6 +156,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.clear();
         inflater.inflate(R.menu.turn_fragment, menu);
     }
 
@@ -284,6 +285,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 mTurnDate = null;
             } else {
                 mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
+                mTurnDate = null;
                 mTakeTurnAsyncTask.execute();
             }
         }

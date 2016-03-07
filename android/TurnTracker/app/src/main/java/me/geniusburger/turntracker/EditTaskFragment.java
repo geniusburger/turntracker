@@ -129,6 +129,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.clear();
         inflater.inflate(R.menu.edit_task_fragment, menu);
     }
 
