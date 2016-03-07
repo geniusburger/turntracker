@@ -109,6 +109,7 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
     @Override
     public void onResume() {
         getActivity().setTitle(R.string.app_name);
+        ((MainActivity)getActivity()).setFabIcon(R.drawable.ic_add_24dp);
         super.onResume();
     }
 
@@ -214,6 +215,11 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         refreshData();
     }
 
+    @Override
+    public void onFabClick(View view) {
+        mListener.createTask();
+    }
+
     public class GetTasksAsyncTask extends AsyncTask<Void, Void, Task[]> {
 
         private Context mContext;
@@ -294,5 +300,6 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         void onTaskSelected(Task task, boolean autoTurn);
         void onTaskLongSelected(Task task);
         View getSnackBarView();
+        void createTask();
     }
 }
