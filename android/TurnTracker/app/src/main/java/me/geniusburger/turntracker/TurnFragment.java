@@ -104,6 +104,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     @Override
     public void onResume() {
         getActivity().setTitle(mTaskName);
+        ((MainActivity)getActivity()).setFabIcon(R.drawable.ic_add_24dp);
         super.onResume();
     }
 
@@ -220,11 +221,11 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     @Override
     public void onPause() {
-        super.onPause();
         if(bar != null && bar.isShownOrQueued()) {
             bar.dismiss();
         }
         cancelAllAsyncTasks();
+        super.onPause();
     }
 
     @Override
