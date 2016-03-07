@@ -83,6 +83,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     @Override
     public void onResume() {
         getActivity().setTitle(mEdit ? R.string.edit_task_title : R.string.create_task_title);
+        ((MainActivity)getActivity()).setFabIcon(R.drawable.ic_done_24dp);
         super.onResume();
     }
 
@@ -293,6 +294,11 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     @Override
     public void onRefresh() {
         getUsers();
+    }
+
+    @Override
+    public void onFabClick(View view) {
+        saveTask();
     }
 
     public interface TaskListener {
