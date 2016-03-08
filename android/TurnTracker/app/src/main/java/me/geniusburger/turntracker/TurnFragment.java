@@ -285,6 +285,9 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 Toast.makeText(getContext(), "Can't take a turn in the future", Toast.LENGTH_LONG).show();
                 mTurnDate = null;
             } else {
+                if(mTurnDate == null) {
+                    mTurnDate = Calendar.getInstance();
+                }
                 mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
                 mTurnDate = null;
                 mTakeTurnAsyncTask.execute();
