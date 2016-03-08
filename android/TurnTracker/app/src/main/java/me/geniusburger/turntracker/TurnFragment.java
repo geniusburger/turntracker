@@ -30,6 +30,7 @@ import android.widget.Toast;
 import java.util.Calendar;
 
 import me.geniusburger.turntracker.model.Task;
+import me.geniusburger.turntracker.model.Turn;
 
 /**
  * A fragment representing a list of Items.
@@ -37,7 +38,7 @@ import me.geniusburger.turntracker.model.Task;
  * Large screen devices (such as tablets) are supported by replacing the ListView with a GridView.
  * <p/>
  */
-public class TurnFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener {
+public class TurnFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
 
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";
@@ -134,6 +135,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         });
         mListView.setEmptyView(emptyView);
         mListView.setOnItemClickListener(this);
+        mListView.setOnItemLongClickListener(this);
 
         // show progress if the task is already running
         if(mGetStatusAsyncTask != null && mGetStatusAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -297,7 +299,14 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     private void undoTurn(View view, long turnId) {
         if(!checkBusy(view)) {
-            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId);
+            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId, "undo", "undone");
+            mUndoTurnAsyncTask.execute();
+        }
+    }
+
+    private void deleteTurn(View view, long turnId) {
+        if(!checkBusy(view)) {
+            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId, "delete", "deleted");
             mUndoTurnAsyncTask.execute();
         }
     }
@@ -316,6 +325,26 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     @Override
     public void onFabClick(View view) {
         takeTurn(view);
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        final Object item = parent.getAdapter().getItem(position);
+        if(item instanceof Turn) {
+            if(bar != null && bar.isShownOrQueued()) {
+                bar.dismiss();
+            }
+            bar = Snackbar.make(mListener.getSnackBarView(), "Delete Turn?", Snackbar.LENGTH_LONG);
+            bar.setAction("Delete", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    bar.dismiss();
+                    deleteTurn(mListener.getSnackBarView(), ((Turn) item).turnId);
+                }
+            });
+            bar.show();
+        }
+        return false;
     }
 
     public class TakeTurnAsyncTask extends AsyncTask<Void, Void, Long> {
@@ -344,7 +373,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         protected void onPostExecute(final Long turnId) {
             mStatusAdapter.notifyDataSetChanged();
             if(turnId > 0) {
-                bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_INDEFINITE);
+                bar = Snackbar.make(mView, "Turn Taken", Snackbar.LENGTH_LONG);
                 bar.setAction("Undo", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -372,11 +401,15 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         private View mView;
         private Context mContext;
         private long mTurnId;
+        private String mPastTenseLabel;
+        private String mPresentTenseLabel;
 
-        public UndoTurnAsyncTask(Context context, View view, long turnId) {
+        public UndoTurnAsyncTask(Context context, View view, long turnId, String presentTenseLabel, String pastTenseLabel) {
             mView = view;
             mContext = context;
             mTurnId = turnId;
+            mPastTenseLabel = pastTenseLabel;
+            mPresentTenseLabel = presentTenseLabel;
         }
 
         @Override
@@ -393,9 +426,10 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         protected void onPostExecute(Boolean success) {
             mStatusAdapter.notifyDataSetChanged();
             if(success) {
-                Snackbar.make(mView, "Turn Undone", Snackbar.LENGTH_LONG).show();
+                String label = mPastTenseLabel.substring(0, 1).toUpperCase() + mPastTenseLabel.toLowerCase().substring(1);
+                Snackbar.make(mView, "Turn " + label, Snackbar.LENGTH_LONG).show();
             } else {
-                Snackbar.make(mView, "Failed to undo turn", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(mView, "Failed to " + mPresentTenseLabel.toLowerCase() + " turn", Snackbar.LENGTH_LONG).show();
             }
             showProgress(false);
             mUndoTurnAsyncTask = null;
