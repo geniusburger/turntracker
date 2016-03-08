@@ -11,6 +11,7 @@ import java.util.TimeZone;
 
 public class Turn {
 
+    private static final long MS_PRE_DATED_THRESHOLD = 3600000;
     private static SimpleDateFormat inputFormat;
     private static SimpleDateFormat outputFormat;
 
@@ -32,7 +33,7 @@ public class Turn {
     public Turn(JSONObject json) throws JSONException, ParseException {
         date = inputFormat.parse(json.getString("date"));
         added = inputFormat.parse(json.getString("inserted"));
-        preDated = date.before(added);
+        preDated = added.getTime() - date.getTime() > MS_PRE_DATED_THRESHOLD;
 
         name = json.getString("name");
         userId = json.getLong("userid");
