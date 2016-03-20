@@ -37,6 +37,20 @@ router.get('/tasks', function(req, res, next){
 	});
 });
 
+router.get('/tasks-enums', function(req, res, next){
+	using(db.getConnection(), function(conn) {
+		return Promise.all([index.getTasks(conn, req.query.userid), index.getEnums(conn, 'methods'), index.getEnums(conn, 'reasons')]);
+	}).spread(function(tasks, methods, reasons){
+		res.json({
+			tasks: tasks,
+			methods: methods,
+			reasons: reasons
+		});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to get tasks and enums'));
+	});
+});
+
 router.get('/turns', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		var userPromise = index.getUser(conn, req.ip);
