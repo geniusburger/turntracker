@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/enable_notifications_mine" android:title="@string/enable_notifications_mine"/>
+    <item android:id="@+id/enable_notifications_all" android:title="@string/enable_notifications_all"/>
+    <item android:id="@+id/disable_notifications" android:title="@string/disable_notifications"/>
+    <item android:id="@+id/enable_reminders" android:title="@string/enable_reminders"/>
+    <item android:id="@+id/disable_reminders" android:title="@string/disable_reminders"/>
+</menu>

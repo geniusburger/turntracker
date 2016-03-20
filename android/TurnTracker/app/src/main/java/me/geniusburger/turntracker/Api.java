@@ -19,6 +19,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -305,13 +306,15 @@ public class Api {
         return false;
     }
 
-    public boolean getStatus(Task task, List<User> users, List<Turn> turns) {
+    public boolean getStatus(Task task, List<User> users, List<Turn> turns, Map<Integer, String> reasons, Map<Integer, String> methods) {
         Map<String, String> params = new HashMap<>(1);
         params.put("task_id", String.valueOf(task.id));
         JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {
             try {
+                getEnumValues(res.json.getJSONArray("reasons"), reasons);
+                getEnumValues(res.json.getJSONArray("methods"), methods);
                 processJsonUsers(res.json.getJSONArray("users"), users);
                 processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return true;
@@ -326,6 +329,14 @@ public class Api {
             }
         }
         return false;
+    }
+
+    private void getEnumValues(JSONArray json, Map<Integer, String> values) throws JSONException {
+        int len = json.length();
+        for(int i = 0; i < len; i++) {
+            JSONObject e = json.getJSONObject(i);
+            values.put(e.getInt("id"), e.getString("description"));
+        }
     }
 
     public Task[] getTasks() {

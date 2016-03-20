@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,6 +29,8 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
@@ -90,7 +93,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             mAutoTurn = getArguments().getBoolean(ARG_AUTO_TURN);
         }
 
-        mStatusAdapter = new StatusAdapter(getContext(), mTask);
+        mStatusAdapter = new StatusAdapter(this, mTask);
 
         setHasOptionsMenu(true);
 
@@ -154,6 +157,47 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement TurnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        switch (v.getId()) {
+            case R.id.notificationImageView:
+                for (Map.Entry<Integer, String> pair : mStatusAdapter.getReasons().entrySet()) {
+                    menu.add(Menu.NONE, pair.getKey(), Menu.NONE, pair.getValue());
+                }
+                menu.add(Menu.NONE, 0, Menu.NONE, R.string.disable_notifications);
+                break;
+            case R.id.reminderImageView:
+                menu.add(Menu.NONE, -1, Menu.NONE, R.string.enable_reminders);
+                menu.add(Menu.NONE, -2, Menu.NONE, R.string.disable_reminders);
+                break;
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case -2:
+                Toast.makeText(getContext(), "disable reminders", Toast.LENGTH_SHORT).show();
+                return true;
+            case -1:
+                Toast.makeText(getContext(), "enable reminders", Toast.LENGTH_SHORT).show();
+                return true;
+            case 0:
+                Toast.makeText(getContext(),  R.string.disable_notifications, Toast.LENGTH_SHORT).show();
+                return true;
+            default:
+                String reason = mStatusAdapter.getReasons().get(id);
+                if(reason != null) {
+                    Toast.makeText(getContext(), reason, Toast.LENGTH_SHORT).show();
+                } else {
+                    return super.onContextItemSelected(item);
+                }
+                return true;
         }
     }
 
@@ -343,6 +387,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 }
             });
             bar.show();
+            return true;
         }
         return false;
     }
@@ -457,7 +502,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTask, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
+            return new Api(mContext).getStatus(mTask, mStatusAdapter.getUsers(), mStatusAdapter.getTurns(), mStatusAdapter.getReasons(), mStatusAdapter.getMethods());
         }
 
         @Override
