@@ -37,20 +37,6 @@ router.get('/tasks', function(req, res, next){
 	});
 });
 
-router.get('/tasks-enums', function(req, res, next){
-	using(db.getConnection(), function(conn) {
-		return Promise.all([index.getTasks(conn, req.query.userid), index.getEnums(conn, 'methods'), index.getEnums(conn, 'reasons')]);
-	}).spread(function(tasks, methods, reasons){
-		res.json({
-			tasks: tasks,
-			methods: methods,
-			reasons: reasons
-		});
-	}).catch(function(err){
-		next(new ApiError(err, 'Failed to get tasks and enums'));
-	});
-});
-
 router.get('/turns', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		var userPromise = index.getUser(conn, req.ip);
@@ -171,9 +157,19 @@ router.delete('/subscription', function(req, res, next) {
 
 router.get('/turns-status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		return Promise.all([index.getTurns(conn, req.query.task_id), index.getStatus(conn, req.query.task_id)]);
-	}).spread(function(turns, users){
-		res.json({turns: turns, users: users, taskid: parseInt(req.query.task_id)});
+		return Promise.all([
+			index.getTurns(conn, req.query.task_id),
+			index.getStatus(conn, req.query.task_id),
+			index.getEnums(conn, 'methods'),
+			index.getEnums(conn, 'reasons')]);
+	}).spread(function(turns, users, methods, reasons){
+		res.json({
+			turns: turns,
+			users: users,
+			taskid: parseInt(req.query.task_id),
+			methods: methods,
+			reasons: reasons
+		});
 	}).catch(function(err){
 		next(new ApiError(err, 'Failed to get turns/status'));
 	});
