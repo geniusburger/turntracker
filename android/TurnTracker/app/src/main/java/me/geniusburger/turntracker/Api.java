@@ -187,6 +187,44 @@ public class Api {
         }
     }
 
+    public boolean updateToken(String token) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("user_id", String.valueOf(prefs.getUserId()));
+            body.put("token", token);
+            JsonResponse res = httpPut("android", body);
+
+            if(200 == res.code) {
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to update android token, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to update android token, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build json", e);
+        }
+        return false;
+    }
+
+    public boolean deleteToken() {
+        Map<String, String> params = new HashMap<>(1);
+        params.put("user_id", String.valueOf(prefs.getUserId()));
+        JsonResponse res = httpDelete("android", params);
+        if(200 == res.code) {
+            return true;
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to delete android token, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to delete android token, HTTP res " + res.code);
+            }
+        }
+        return false;
+    }
+
     public boolean deleteTurn(long turnId, long taskId, List<User> users, List<Turn> turns) {
         try {
             Map<String, String> params = new HashMap<>(3);
@@ -247,6 +285,54 @@ public class Api {
         return 0;
     }
 
+    public boolean setSubscription(Task task) {
+        if(!task.notification) {
+            return deleteSubscription(task);
+        }
+        try {
+            JSONObject body = new JSONObject();
+            body.put("userId", prefs.getUserId());
+            body.put("taskId", task.id);
+            JSONObject note = new JSONObject();
+            note.put("reason_id", task.reasonID);
+            note.put("method_id", task.methodID);
+            note.put("reminder", task.reminder ? 1 : 0);
+            body.put("note", note);
+            JsonResponse res = httpPut("subscription", body);
+
+            if(200 == res.code) {
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to set subscription, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to set subscription, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build setSubscription json", e);
+        }
+        return false;
+    }
+
+    private boolean deleteSubscription(Task task) {
+        Map<String, String> params = new HashMap<>(2);
+        params.put("userId", String.valueOf(prefs.getUserId()));
+        params.put("taskId", String.valueOf(task.id));
+        JsonResponse res = httpDelete("subscription", params);
+
+        if(200 == res.code) {
+            return true;
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to delete subscription, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to delete subscription, HTTP res " + res.code);
+            }
+        }
+        return false;
+    }
+
     // return 0 on error
     public long takeTurn(long taskId, Calendar date, List<User> users, List<Turn> turns) {
         try {
@@ -305,13 +391,15 @@ public class Api {
         return false;
     }
 
-    public boolean getStatus(Task task, List<User> users, List<Turn> turns) {
+    public boolean getStatus(Task task, List<User> users, List<Turn> turns, Map<Integer, String> reasons, Map<Integer, String> methods) {
         Map<String, String> params = new HashMap<>(1);
         params.put("task_id", String.valueOf(task.id));
         JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {
             try {
+                getEnumValues(res.json.getJSONArray("reasons"), reasons);
+                getEnumValues(res.json.getJSONArray("methods"), methods);
                 processJsonUsers(res.json.getJSONArray("users"), users);
                 processJsonTurns(res.json.getJSONArray("turns"), turns);
                 return true;
@@ -326,6 +414,14 @@ public class Api {
             }
         }
         return false;
+    }
+
+    private void getEnumValues(JSONArray json, Map<Integer, String> values) throws JSONException {
+        int len = json.length();
+        for(int i = 0; i < len; i++) {
+            JSONObject e = json.getJSONObject(i);
+            values.put(e.getInt("id"), e.getString("description"));
+        }
     }
 
     public Task[] getTasks() {

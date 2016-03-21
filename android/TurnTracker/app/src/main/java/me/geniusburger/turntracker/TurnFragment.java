@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,6 +29,8 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
@@ -59,6 +62,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     GetStatusAsyncTask mGetStatusAsyncTask;
     TakeTurnAsyncTask mTakeTurnAsyncTask;
     UndoTurnAsyncTask mUndoTurnAsyncTask;
+    UpdateSubscriptionAsyncTask mUpdateSubscriptionAsyncTask;
 
     // Adapter
     private StatusAdapter mStatusAdapter;
@@ -90,7 +94,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             mAutoTurn = getArguments().getBoolean(ARG_AUTO_TURN);
         }
 
-        mStatusAdapter = new StatusAdapter(getContext(), mTask);
+        mStatusAdapter = new StatusAdapter(this, mTask);
 
         setHasOptionsMenu(true);
 
@@ -154,6 +158,66 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement TurnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        switch (v.getId()) {
+            case R.id.notificationImageView:
+                for (Map.Entry<Integer, String> pair : mStatusAdapter.getReasons().entrySet()) {
+                    menu.add(Menu.NONE, pair.getKey(), Menu.NONE, pair.getValue());
+                }
+                menu.add(Menu.NONE, 0, Menu.NONE, R.string.disable_notifications);
+                break;
+            case R.id.reminderImageView:
+                menu.add(Menu.NONE, -1, Menu.NONE, R.string.enable_reminders);
+                menu.add(Menu.NONE, -2, Menu.NONE, R.string.disable_reminders);
+                break;
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        Task tempTask = new Task(mTask);
+        switch (id) {
+            case -2:
+                if(mTask.reminder) {
+                    tempTask.reminder = false;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
+                return true;
+            case -1:
+                if(!mTask.reminder) {
+                    tempTask.reminder = true;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
+                return true;
+            case 0:
+                if(mTask.notification) {
+                    tempTask.notification = false;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
+                return true;
+            default:
+                String reason = mStatusAdapter.getReasons().get(id);
+                if(reason != null) {
+                    if(!mTask.notification) {
+
+                        tempTask.reasonID = id;
+                        tempTask.notification = true;
+                        tempTask.methodID = 1;// default (android)
+                        updateSubscription(mListener.getSnackBarView(), tempTask);
+                    } else if(mTask.reasonID != id) {
+                        tempTask.reasonID = id;
+                        updateSubscription(mListener.getSnackBarView(), tempTask);
+                    }
+                } else {
+                    return super.onContextItemSelected(item);
+                }
+                return true;
         }
     }
 
@@ -267,6 +331,8 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             Snackbar.make(view, "Already taking turn", Snackbar.LENGTH_LONG).show();
         } else if(mUndoTurnAsyncTask != null && !mUndoTurnAsyncTask.isCancelled()) {
             Snackbar.make(view, "Already undoing turn", Snackbar.LENGTH_LONG).show();
+        } else if(mUpdateSubscriptionAsyncTask != null && !mUpdateSubscriptionAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already updating subscription", Snackbar.LENGTH_LONG).show();
         } else {
             return false;
         }
@@ -311,6 +377,13 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         }
     }
 
+    private void updateSubscription(View view, Task tempTask) {
+        if(!checkBusy(view)) {
+            mUpdateSubscriptionAsyncTask = new UpdateSubscriptionAsyncTask(getActivity(), view, tempTask);
+            mUpdateSubscriptionAsyncTask.execute();
+        }
+    }
+
     private void showProgress(boolean show) {
         if(mSwipeLayout != null) {
             mSwipeLayout.setRefreshing(show);
@@ -343,6 +416,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 }
             });
             bar.show();
+            return true;
         }
         return false;
     }
@@ -392,6 +466,48 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         @Override
         protected void onCancelled() {
             mTakeTurnAsyncTask = null;
+            showProgress(false);
+        }
+    }
+
+    public class UpdateSubscriptionAsyncTask extends AsyncTask<Void, Void, Boolean> {
+
+        private View mView;
+        private Context mContext;
+        private Task mTempTask;
+
+        public UpdateSubscriptionAsyncTask(Context context, View view, Task tempTask) {
+            mView = view;
+            mContext = context;
+            mTempTask = tempTask;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showProgress(true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return new Api(mContext).setSubscription(mTempTask);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if(success) {
+                Snackbar.make(mView, "Updated subscription", Snackbar.LENGTH_LONG).show();
+                mTask.update(mTempTask);
+            } else {
+                Snackbar.make(mView, "Failed to update subscription", Snackbar.LENGTH_LONG).show();
+            }
+            mStatusAdapter.notifyDataSetChanged();
+            showProgress(false);
+            mUpdateSubscriptionAsyncTask = null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            mUpdateSubscriptionAsyncTask = null;
             showProgress(false);
         }
     }
@@ -457,7 +573,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(mContext).getStatus(mTask, mStatusAdapter.getUsers(), mStatusAdapter.getTurns());
+            return new Api(mContext).getStatus(mTask, mStatusAdapter.getUsers(), mStatusAdapter.getTurns(), mStatusAdapter.getReasons(), mStatusAdapter.getMethods());
         }
 
         @Override

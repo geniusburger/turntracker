@@ -1,7 +1,6 @@
 package me.geniusburger.turntracker;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -38,7 +37,9 @@ import me.geniusburger.turntracker.model.Task;
 public class TaskFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
 
     private static final String ARG_AUTO_TURN_TASK_ID = "autoTurnTaskId";
+    private static final String ARG_TAKE_TURN = "takeTurn";
     private long autoTurnTaskId = 0;
+    private boolean takeTurn = false;
 
     private List<Task> mTasks;
 
@@ -56,10 +57,11 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
      */
     private ListAdapter mAdapter;
 
-    public static TaskFragment newInstance(long autoTurnTaskId) {
+    public static TaskFragment newInstance(long autoTurnTaskId, boolean takeTurn) {
         TaskFragment fragment = new TaskFragment();
         Bundle args = new Bundle();
         args.putLong(ARG_AUTO_TURN_TASK_ID, autoTurnTaskId);
+        args.putBoolean(ARG_TAKE_TURN, takeTurn);
         fragment.setArguments(args);
         return fragment;
     }
@@ -76,7 +78,8 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            autoTurnTaskId = getArguments().getLong(ARG_AUTO_TURN_TASK_ID);
+            autoTurnTaskId = getArguments().getLong(ARG_AUTO_TURN_TASK_ID, 0);
+            takeTurn = getArguments().getBoolean(ARG_TAKE_TURN, false);
         }
 
         mTasks = new ArrayList<>();
@@ -253,14 +256,16 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
             if(autoTurnTaskId > 0 && mListener != null) {
                 for(Task task : mTasks) {
                     if(task.id == autoTurnTaskId) {
-                        mListener.onTaskSelected(task, true);
+                        mListener.onTaskSelected(task, takeTurn);
                         autoTurnTaskId = 0;
+                        takeTurn = false;
                         break;
                     }
                 }
                 if(autoTurnTaskId > 0) {
                     Snackbar.make(mListener.getSnackBarView(), "Can't find task ID " + autoTurnTaskId, Snackbar.LENGTH_LONG).show();
                     autoTurnTaskId = 0;
+                    takeTurn = false;
                 }
             }
         }
