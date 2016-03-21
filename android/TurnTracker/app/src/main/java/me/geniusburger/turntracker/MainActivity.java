@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Things
     long autoTurnTaskId = 0;
+    boolean takeTurn = false;
     Task mCurrentTask;
     boolean autoRefresh = false;
     long fabResourceId = 0;
@@ -102,11 +103,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mDisplayNameTextView = (TextView) headerLayout.findViewById(R.id.displayNameTextView);
 
         autoTurnTaskId = 0;
+        takeTurn = false;
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
             handleNfc();
         } else {
-            //autoTurnTaskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
-            // TODO setup a way of viewing a task instead of just taking a turn
+            autoTurnTaskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
+            takeTurn = false;
         }
 
         getFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
@@ -130,8 +132,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(userId <= 0) {
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         } else {
-            mTaskFragment = TaskFragment.newInstance(autoTurnTaskId);
+            mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
             autoTurnTaskId = 0;
+            takeTurn = false;
             getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
         }
 
@@ -222,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         Log.d(TAG, key + " => " + uri.getQueryParameter(key));
                         if("task".equals(key)) {
                             autoTurnTaskId = Long.parseLong(uri.getQueryParameter(key));
+                            takeTurn = true;
                         }
                     }
                     Log.d(TAG, languageCode + ": " + queryString);
@@ -242,8 +246,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         switch(requestCode) {
             case REQUEST_CODE_LOGIN:
                 if (mTaskFragment == null) {
-                    mTaskFragment = TaskFragment.newInstance(autoTurnTaskId);
+                    mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
                     autoTurnTaskId = 0;
+                    takeTurn = false;
                     getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
                 } else {
                     mTaskFragment.refreshData();
