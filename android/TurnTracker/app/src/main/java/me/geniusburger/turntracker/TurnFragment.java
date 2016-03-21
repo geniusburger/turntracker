@@ -62,6 +62,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     GetStatusAsyncTask mGetStatusAsyncTask;
     TakeTurnAsyncTask mTakeTurnAsyncTask;
     UndoTurnAsyncTask mUndoTurnAsyncTask;
+    UpdateSubscriptionAsyncTask mUpdateSubscriptionAsyncTask;
 
     // Adapter
     private StatusAdapter mStatusAdapter;
@@ -180,20 +181,39 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         int id = item.getItemId();
+        Task tempTask = new Task(mTask);
         switch (id) {
             case -2:
-                Toast.makeText(getContext(), "disable reminders", Toast.LENGTH_SHORT).show();
+                if(mTask.reminder) {
+                    tempTask.reminder = false;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
                 return true;
             case -1:
-                Toast.makeText(getContext(), "enable reminders", Toast.LENGTH_SHORT).show();
+                if(!mTask.reminder) {
+                    tempTask.reminder = true;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
                 return true;
             case 0:
-                Toast.makeText(getContext(),  R.string.disable_notifications, Toast.LENGTH_SHORT).show();
+                if(mTask.notification) {
+                    tempTask.notification = false;
+                    updateSubscription(mListener.getSnackBarView(), tempTask);
+                }
                 return true;
             default:
                 String reason = mStatusAdapter.getReasons().get(id);
                 if(reason != null) {
-                    Toast.makeText(getContext(), reason, Toast.LENGTH_SHORT).show();
+                    if(!mTask.notification) {
+
+                        tempTask.reasonID = id;
+                        tempTask.notification = true;
+                        tempTask.methodID = 1;// default (android)
+                        updateSubscription(mListener.getSnackBarView(), tempTask);
+                    } else if(mTask.reasonID != id) {
+                        tempTask.reasonID = id;
+                        updateSubscription(mListener.getSnackBarView(), tempTask);
+                    }
                 } else {
                     return super.onContextItemSelected(item);
                 }
@@ -311,6 +331,8 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             Snackbar.make(view, "Already taking turn", Snackbar.LENGTH_LONG).show();
         } else if(mUndoTurnAsyncTask != null && !mUndoTurnAsyncTask.isCancelled()) {
             Snackbar.make(view, "Already undoing turn", Snackbar.LENGTH_LONG).show();
+        } else if(mUpdateSubscriptionAsyncTask != null && !mUpdateSubscriptionAsyncTask.isCancelled()) {
+            Snackbar.make(view, "Already updating subscription", Snackbar.LENGTH_LONG).show();
         } else {
             return false;
         }
@@ -352,6 +374,13 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         if(!checkBusy(view)) {
             mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId, "delete", "deleted");
             mUndoTurnAsyncTask.execute();
+        }
+    }
+
+    private void updateSubscription(View view, Task tempTask) {
+        if(!checkBusy(view)) {
+            mUpdateSubscriptionAsyncTask = new UpdateSubscriptionAsyncTask(getActivity(), view, tempTask);
+            mUpdateSubscriptionAsyncTask.execute();
         }
     }
 
@@ -437,6 +466,48 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         @Override
         protected void onCancelled() {
             mTakeTurnAsyncTask = null;
+            showProgress(false);
+        }
+    }
+
+    public class UpdateSubscriptionAsyncTask extends AsyncTask<Void, Void, Boolean> {
+
+        private View mView;
+        private Context mContext;
+        private Task mTempTask;
+
+        public UpdateSubscriptionAsyncTask(Context context, View view, Task tempTask) {
+            mView = view;
+            mContext = context;
+            mTempTask = tempTask;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showProgress(true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return new Api(mContext).setSubscription(mTempTask);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if(success) {
+                Snackbar.make(mView, "Updated subscription", Snackbar.LENGTH_LONG).show();
+                mTask.update(mTempTask);
+            } else {
+                Snackbar.make(mView, "Failed to update subscription", Snackbar.LENGTH_LONG).show();
+            }
+            mStatusAdapter.notifyDataSetChanged();
+            showProgress(false);
+            mUpdateSubscriptionAsyncTask = null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            mUpdateSubscriptionAsyncTask = null;
             showProgress(false);
         }
     }

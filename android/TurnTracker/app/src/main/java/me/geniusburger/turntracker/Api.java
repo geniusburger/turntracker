@@ -248,6 +248,54 @@ public class Api {
         return 0;
     }
 
+    public boolean setSubscription(Task task) {
+        if(!task.notification) {
+            return deleteSubscription(task);
+        }
+        try {
+            JSONObject body = new JSONObject();
+            body.put("userId", prefs.getUserId());
+            body.put("taskId", task.id);
+            JSONObject note = new JSONObject();
+            note.put("reason_id", task.reasonID);
+            note.put("method_id", task.methodID);
+            note.put("reminder", task.reminder ? 1 : 0);
+            body.put("note", note);
+            JsonResponse res = httpPut("subscription", body);
+
+            if(200 == res.code) {
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to set subscription, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to set subscription, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build setSubscription json", e);
+        }
+        return false;
+    }
+
+    private boolean deleteSubscription(Task task) {
+        Map<String, String> params = new HashMap<>(2);
+        params.put("userId", String.valueOf(prefs.getUserId()));
+        params.put("taskId", String.valueOf(task.id));
+        JsonResponse res = httpDelete("subscription", params);
+
+        if(200 == res.code) {
+            return true;
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to delete subscription, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to delete subscription, HTTP res " + res.code);
+            }
+        }
+        return false;
+    }
+
     // return 0 on error
     public long takeTurn(long taskId, Calendar date, List<User> users, List<Turn> turns) {
         try {
