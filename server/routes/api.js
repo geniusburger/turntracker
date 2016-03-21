@@ -107,7 +107,7 @@ router.delete('/android', function(req, res, next){
 		.then(function onDeleteSuccess(){
 			return index.deleteAndroidSubscriptions(conn, req.query.user_id);
 		}, function onDeleteError(err){
-			throw new ApiError(err, 'Failaed to clear android token');
+			throw new ApiError(err, 'Failed to clear android token');
 		});
 	}).then(function(){
 		res.json({success: true});
@@ -265,7 +265,8 @@ router.post('/turn', function(req, res, next) {
 					};
 					if(otherTokens.length) {
 						var othersPromise = index.sendAndroidMessage({
-							message: turnTakerUserName + ' just took a turn for ' + otherNotes[0].task + ', ' + nextTurnUser.name + ' is next'
+							message: turnTakerUserName + ' just took a turn for ' + otherNotes[0].task + ', ' + nextTurnUser.name + ' is next',
+							taskId: req.body.task_id
 						}, otherTokens).then(function(gcmResponse){
 							log('sent ' + gcmResponse.success + ' out of ' + otherTokens.length + ' other notes', typeof gcmResponse, gcmResponse);
 							return gcmResponse.results.map(function(result, i){
@@ -281,7 +282,8 @@ router.post('/turn', function(req, res, next) {
 					}
 					if(nextTurnNote) {
 						var nextTurnPromise = index.sendAndroidMessage({
-							message: turnTakerUserName + ' just took a turn for ' + nextTurnNote.task + ', you are next'
+							message: turnTakerUserName + ' just took a turn for ' + nextTurnNote.task + ', you are next',
+							taskId: req.body.task_id
 						}, nextTurnNote.androidtoken).then(function(gcmResponse){
 							log('sent ' + gcmResponse.success + ' out of 1 next notes');
 							return gcmResponse.results.map(function(result){

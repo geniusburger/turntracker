@@ -1,5 +1,7 @@
 package me.geniusburger.turntracker;
 
+import android.app.Activity;
+import android.app.Fragment;
 import android.content.Context;
 import android.os.SystemClock;
 import android.view.LayoutInflater;
@@ -13,7 +15,9 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
@@ -29,15 +33,27 @@ public class StatusAdapter extends BaseAdapter {
 
     private List<User> mUsers = new ArrayList<>();
     private List<Turn> mTurns = new ArrayList<>();
+    private Map<Integer, String> mReasons = new HashMap();
+    private Map<Integer, String> mMethods = new HashMap<>();
     private Task mTask;
+    private Fragment mFragment;
     private Context mContext;
 
     private LayoutInflater mInflater;
 
-    public StatusAdapter(Context context, Task task) {
-        mContext = context;
+    public StatusAdapter(Fragment fragment, Task task) {
+        mFragment = fragment;
+        mContext = fragment.getContext();
         mTask = task;
-        mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    }
+
+    public Map<Integer, String> getReasons() {
+        return mReasons;
+    }
+
+    public Map<Integer, String> getMethods() {
+        return mMethods;
     }
 
     public List<User> getUsers() {
@@ -138,10 +154,11 @@ public class StatusAdapter extends BaseAdapter {
         public abstract void update(StatusAdapter adapter, Object data);
     }
 
-    public class HeaderViewHolder extends ViewHolder {
+    public class HeaderViewHolder extends ViewHolder implements View.OnClickListener {
         public TextView periodTextView;
         public TextView creatorTextView;
         public ImageView notificationImageView;
+        public ImageView reminderImageView;
         public Chronometer elapsedChrono;
         public Chronometer exceededChrono;
 
@@ -149,6 +166,7 @@ public class StatusAdapter extends BaseAdapter {
             periodTextView = (TextView) convertView.findViewById(R.id.periodTextView);
             creatorTextView = (TextView) convertView.findViewById(R.id.creatorTextView);
             notificationImageView = (ImageView) convertView.findViewById(R.id.notificationImageView);
+            reminderImageView = (ImageView) convertView.findViewById(R.id.reminderImageView);
             elapsedChrono = (Chronometer) convertView.findViewById(R.id.elapsedChronometer);
             exceededChrono = (Chronometer) convertView.findViewById(R.id.exceededChronometer);
         }
@@ -162,7 +180,22 @@ public class StatusAdapter extends BaseAdapter {
             } else {
                 periodTextView.setText(task.periodicHours + " hours");
             }
-            notificationImageView.setImageResource(task.notification ? R.drawable.ic_notifications_24dp : R.drawable.ic_notifications_none_24dp);
+            notificationImageView.setImageResource(task.notification
+                    ? R.drawable.ic_notifications_24dp
+                    : R.drawable.ic_notifications_none_24dp);
+            notificationImageView.setOnClickListener(this);
+            mFragment.registerForContextMenu(notificationImageView);
+            reminderImageView.setImageResource(task.reminder
+                    ? R.drawable.ic_alarm_on_24dp
+                    : R.drawable.ic_alarm_off_24dp);
+            reminderImageView.setOnClickListener(this);
+            if(task.notification) {
+                mFragment.registerForContextMenu(reminderImageView);
+                reminderImageView.setImageAlpha(255);
+            } else {
+                mFragment.unregisterForContextMenu(reminderImageView);
+                reminderImageView.setImageAlpha(70);
+            }
             String name = null;
             for(User user : adapter.mUsers) {
                 if(user.id == task.creatorUserID) {
@@ -178,7 +211,7 @@ public class StatusAdapter extends BaseAdapter {
             } else {
                 long msSinceLastTurn = new Date().getTime() - mTurns.get(0).date.getTime();
                 if(mTask.periodicHours <= 0 || (msSinceLastTurn / 3600000) < mTask.periodicHours) {
-                    exceededChrono.setVisibility(View.INVISIBLE);
+                    exceededChrono.setVisibility(View.GONE);
                     elapsedChrono.setBase(SystemClock.elapsedRealtime() - msSinceLastTurn);
                     elapsedChrono.start();
                 } else {
@@ -189,6 +222,19 @@ public class StatusAdapter extends BaseAdapter {
                     exceededChrono.start();
                 }
                 elapsedChrono.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void onClick(View v) {
+            if(v.getId() == R.id.notificationImageView) {
+                if(mTask.notification) {
+                    Toast.makeText(mContext, mReasons.get(mTask.reasonID), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(mContext, R.string.disable_notifications, Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(mContext, mTask.reminder ? R.string.enable_reminders : R.string.disable_reminders, Toast.LENGTH_SHORT).show();
             }
         }
     }

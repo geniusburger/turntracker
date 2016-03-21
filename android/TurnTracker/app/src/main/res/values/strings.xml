@@ -52,10 +52,15 @@
 
     <!-- Example settings for Notifications -->
     <string name="pref_header_notifications">Notifications</string>
-    <string name="pref_title_new_message_notifications">New message notifications</string>
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
-    <string name="pref_title_vibrate">Vibrate</string>
+    <string name="pref_title_token_sent_to_server">Token Sent To Server</string>
+    <string name="pref_title_token">Token</string>
     <string name="notifications_enabled_description">Notifications are enabled for this task</string>
     <string name="notifications_disabled_description">Notifications are disabled for this task</string>
+    <string name="reminders_enabled_description">Reminders are enabled for this task</string>
+    <string name="reminders_disabled_description">Reminders are disabled for this task</string>
+    <string name="enable_notifications_mine">Notifications When It\'s My Turn</string>
+    <string name="enable_notifications_all">Notifications After Any Turn</string>
+    <string name="disable_notifications">Notifications Off</string>
+    <string name="enable_reminders">Reminders On</string>
+    <string name="disable_reminders">Reminders Off</string>
 </resources>
