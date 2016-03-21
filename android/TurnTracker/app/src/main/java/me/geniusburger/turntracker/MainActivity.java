@@ -3,7 +3,10 @@ package me.geniusburger.turntracker;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -13,6 +16,7 @@ import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -24,14 +28,20 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
 
+    public static final String EXTRA_TASK_ID = "taskId";
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final int REQUEST_CODE_LOGIN = 1;
     private static final String FRAGMENT_TASKS = "tasks";
     private static final String FRAGMENT_TURNS = "turns";
@@ -54,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     Task mCurrentTask;
     boolean autoRefresh = false;
     long fabResourceId = 0;
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +104,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         autoTurnTaskId = 0;
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
             handleNfc();
+        } else {
+            //autoTurnTaskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
+            // TODO setup a way of viewing a task instead of just taking a turn
         }
 
         getFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
@@ -126,6 +140,51 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 //        NdefRecord aarRecord = NdefRecord.createApplicationRecord(packageName);
 //        NdefMessage msg = new NdefMessage( new NdefRecord[] { taskRecord, aarRecord });
 //        Log.d(TAG, "nfc length " + msg.getByteArrayLength());
+
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                boolean sentToken = prefs.getAndroidTokenSentToServer();
+                if (sentToken) {
+                    Toast.makeText(MainActivity.this, "Registered for GMC", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Failed to register for GCM", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+
+        if (checkPlayServices()) {
+            // Start IntentService to register this application with GCM.
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+        super.onPause();
+    }
+
+    /**
+     * Check the device to make sure it has the Google Play Services APK. If
+     * it doesn't, display a dialog that allows users to download the APK from
+     * the Google Play Store or enable it in the device's system settings.
+     */
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST)
+                        .show();
+            } else {
+                Log.i(TAG, "This device is not supported.");
+                finish();
+            }
+            return false;
+        }
+        return true;
     }
 
     private void handleNfc() {
@@ -198,6 +257,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onResume() {
         super.onResume();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(Preferences.ANDROID_REGISTRATION_COMPLETE));
         mUserNameTextView.setText(prefs.getUserName());
         mDisplayNameTextView.setText(prefs.getUserDisplayName());
     }

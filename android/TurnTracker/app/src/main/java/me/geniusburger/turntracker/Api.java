@@ -19,7 +19,6 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -186,6 +185,44 @@ public class Api {
                 user.consecutiveTurns = maxTurns - user.turns;
             }
         }
+    }
+
+    public boolean updateToken(String token) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("user_id", String.valueOf(prefs.getUserId()));
+            body.put("token", token);
+            JsonResponse res = httpPut("android", body);
+
+            if(200 == res.code) {
+                return true;
+            } else {
+                if(res.e != null) {
+                    Log.e(TAG, "failed to update android token, HTTP res " + res.code, res.e);
+                } else {
+                    Log.e(TAG, "failed to update android token, HTTP res " + res.code);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build json", e);
+        }
+        return false;
+    }
+
+    public boolean deleteToken() {
+        Map<String, String> params = new HashMap<>(1);
+        params.put("user_id", String.valueOf(prefs.getUserId()));
+        JsonResponse res = httpDelete("android", params);
+        if(200 == res.code) {
+            return true;
+        } else {
+            if(res.e != null) {
+                Log.e(TAG, "failed to delete android token, HTTP res " + res.code, res.e);
+            } else {
+                Log.e(TAG, "failed to delete android token, HTTP res " + res.code);
+            }
+        }
+        return false;
     }
 
     public boolean deleteTurn(long turnId, long taskId, List<User> users, List<Turn> turns) {
