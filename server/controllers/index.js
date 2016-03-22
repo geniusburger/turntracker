@@ -129,6 +129,64 @@ var getTasks = function(conn, userId) {
 };
 exports.getTasks = getTasks;
 
+var getAllReminders = function(conn) {
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'SELECT notifications.user_id, notifications.task_id, tasks.periodic_hours, tasks.name, users.androidtoken ' +
+			'FROM notifications JOIN users ON users.id = notifications.user_id JOIN tasks ON tasks.id = notifications.task_id ' +
+			'WHERE notifications.reminder = 1 ' +
+			'ORDER BY notifications.task_id, notifications.user_id',
+			[], function(err, rows){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
+
+var sendAllPendingReminders = function(conn) {
+	return getAllReminders(conn).then(function(reminders){
+		return (reminders || []).reduce(function(groups, reminder, i){
+			if(groups.length && groups[groups.length-1][0].task_id === reminder.task_id) {
+				groups[groups.length-1].push(reminder);
+			} else {
+				groups.push([reminder]);
+			}
+		}, []);
+	}).then(function(groups){
+		return Promise.all(groups.map(function(group){
+			return getStatus(conn, group[0].task_id).then(function(status){
+				group.status = status;
+				return group;
+			});
+		}));
+	}).then(function(statusGroups){
+		return statusGroups.map(function(statusGroup){
+			return statusGroup.filter(function(reminder){
+				return reminder.user_id == statusGroup.status[0].id;
+			});
+		}).filter(function(statusGroup){
+			return statusGroup.length;
+		});
+	}).then(function(statusGroups){
+		statusGroups.map(function(statusGroup){
+			var reminder = statusGroup[0];
+			return sendAndroidMessage({
+				message: 'Reminder: Take a turn for ' + reminder.name,
+				taskId: reminder.task_id
+			}, reminder.androidtoken);
+		});
+	}).then(function(sentMessages){
+		return sentMessages.map(function(update){
+			log('updating token');
+			return setAndroidTokens(conn, [update]);
+		});
+	});
+};
+exports.sendAllPendingReminders = sendAllPendingReminders;
+
 var getStatus = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
