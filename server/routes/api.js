@@ -247,11 +247,14 @@ router.post('/turn', function(req, res, next) {
 				if(allNotes.length) {
 					var nextTurnNote;
 					var otherNotes = allNotes.filter(function(note){
+						var keep = note.user_id !== turnTakerUserId; // don't send a notification to the person that just took a turn
 						if(note.user_id === nextTurnUser.id) {
-							nextTurnNote = note;
+							if(keep) {
+								nextTurnNote = note;
+							}
 							return false; // send a different message to the person whose turn it now is
 						}
-						return note.user_id !== turnTakerUserId; // don't send a notification to the person that just took a turn
+						return keep;
 					});
 					var otherTokens = otherNotes.map(function(note){
 						return note.androidtoken;

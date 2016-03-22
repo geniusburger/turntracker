@@ -17,8 +17,8 @@ USE `turn_tracker`;
 DELIMITER $$
 
 # Define the procedure
-DROP PROCEDURE IF EXISTS upgradeTurnTrackerV1to2 $$
-CREATE PROCEDURE upgradeTurnTrackerV1to2()
+DROP PROCEDURE IF EXISTS upgradeTurnTrackerV3to2 $$
+CREATE PROCEDURE upgradeTurnTrackerV3to2()
 BEGIN
 
 START TRANSACTION;
@@ -34,30 +34,14 @@ START TRANSACTION;
 
 -- --------------------------------------------------------
 
---
--- Table structure for table `version_history`
---
-
-CREATE TABLE IF NOT EXISTS `version_history` (
-  `id` int(10) unsigned NOT NULL,
-  `version` int(10) unsigned NOT NULL,
-  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-ALTER TABLE `version_history`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `version_history`
-  MODIFY `id` int(10) unsigned NOT NULL AUTO_INCREMENT;
-
 INSERT INTO `version_history` (`version`) VALUES (2);
 
 --
--- Add 'taken' column to 'turns' table. Use the 'inserted' date as its value.
+-- Remove reason 3
 --
 
-ALTER TABLE `turns` ADD `taken` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `task_id`;
-UPDATE `turns` SET taken = inserted;
+UPDATE `notifications` SET `reason_id` = 2 WHERE `reason_id` = 3;
+DELETE FROM `reasons` WHERE `id` = 3;
 
 COMMIT;
 
