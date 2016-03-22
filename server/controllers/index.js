@@ -114,11 +114,11 @@ var getTasks = function(conn, userId) {
     			'(notifications.method_id IS NOT NULL) as notification ' +
 			'FROM participants ' +
 				'JOIN tasks ON participants.task_id = tasks.id ' +
-    			'LEFT JOIN notifications ON tasks.id = notifications.task_id ' +
+    			'LEFT JOIN notifications ON tasks.id = notifications.task_id and notifications.user_id = ?' +
     			'LEFT JOIN methods ON notifications.method_id = methods.id ' +
     			'LEFT JOIN reasons ON notifications.reason_id = reasons.id ' +
 			'WHERE  participants.user_id = ?', 
-			[userId], function(err, rows, fields){
+			[userId, userId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
