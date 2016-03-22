@@ -45,7 +45,11 @@ upgrade_loop: LOOP
 			SET @version := 2;
 			CALL upgradeTurnTrackerV1to2();
 		WHEN 2 THEN
-			SELECT 'done version 2';
+			SELECT 'upgrading version from 2 to 3';
+			SET @version := 3;
+			CALL upgradeTurnTrackerV2to3();
+		WHEN 3 THEN
+			SELECT 'done version 3';
 			LEAVE upgrade_loop;
 		ELSE 
 			SET @error := CONCAT('unhandled upgrade version ',IFNULL(CONCAT("'",@version,"'"),'NULL'));
