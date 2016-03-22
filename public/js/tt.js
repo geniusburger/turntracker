@@ -64,9 +64,11 @@
     			throw data.error;
     		} else if(data.turns) {
     			data.turns.forEach(function(turn){
-    				turn.diff = turn.date !== turn.inserted;
-    				turn.date = new Date(turn.date).toLocaleString();
-    				turn.inserted = new Date(turn.inserted).toLocaleString();
+    				var date = new Date(turn.date);
+    				var inserted = new Date(turn.inserted);
+    				turn.diff = Math.abs(date.getTime() - inserted.getTime()) > 3600000;
+    				turn.date = date.toLocaleString();
+    				turn.inserted = inserted.toLocaleString();
     			});
     			self.turns = data.turns;
     			self.listError = null;
