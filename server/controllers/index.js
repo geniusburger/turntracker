@@ -176,7 +176,14 @@ var sendAllPendingReminders = function(conn) {
 			return sendAndroidMessage({
 				message: 'Reminder: Take a turn for ' + reminder.name,
 				taskId: reminder.task_id
-			}, reminder.androidtoken);
+			}, reminder.androidtoken).then(function(gcmResponse){
+				log('sent ' + gcmResponse.success + ' reminders');
+				return gcmResponse.results.map(function(result){
+					return { userId: reminder.user_id, token: result.registration_id};
+				}).filter(function(update){
+					return update.token;
+				});
+			});
 		});
 	}).then(function(sentMessages){
 		return sentMessages.map(function(update){
@@ -226,7 +233,7 @@ var getTaskUsers = function(conn, taskId) {
 exports.getTaskUsers = getTaskUsers;
 
 var getAll = function(conn, userId, taskId) {
-		// TODO, need to include task info
+	// TODO, need to include task info
 	var results = {};
 	return getTasks(conn, userId).then(function(tasks){
 		results.tasks = tasks;
