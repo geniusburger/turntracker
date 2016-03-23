@@ -7,6 +7,8 @@ var scripts = [
 	'turn_tracker_v0_to_v1.sql',
 	'turn_tracker_v1_to_v2.sql',
 	'turn_tracker_v2_to_v1.sql',
+	'turn_tracker_v2_to_v3.sql',
+	'turn_tracker_v3_to_v2.sql',
 	'turn_tracker_setup.sql'
 ];
 

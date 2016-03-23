@@ -8,6 +8,7 @@ public class User {
     public long id;
     public String username;
     public String displayName;
+    public String token;
     public int turns;
     public boolean mobile;
     public int consecutiveTurns;
@@ -17,10 +18,11 @@ public class User {
         this.id = id;
     }
 
-    public User(long id, String username, String displayName) {
+    public User(long id, String username, String displayName, String token) {
         this.id = id;
         this.username = username;
         this.displayName = displayName;
+        this.token = "null".equals(token) ? null : token;
     }
 
     public User(long id, String displayName, boolean selected) {

@@ -141,7 +141,7 @@ public class Api {
         if(200 == res.code) {
             try {
                 JSONObject user = res.json.getJSONObject("user");
-                return new User(user.getLong("id"), user.getString("username"), user.getString("displayname"));
+                return new User(user.getLong("id"), user.getString("username"), user.getString("displayname"), user.getString("androidtoken"));
             } catch (JSONException e) {
                 Log.w(TAG, "user not found in JSON", e);
                 return new User(RESULT_NOT_FOUND);

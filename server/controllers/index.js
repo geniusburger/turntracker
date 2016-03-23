@@ -81,7 +81,7 @@ var getAndroidSubscriptions = function(conn, taskId, /* the user whose turn it i
 		conn.query(
 			'SELECT notifications.user_id, users.androidtoken, last_android_id, reasons.label, tasks.name AS task ' +
 			'FROM notifications JOIN reasons on reasons.id = notifications.reason_id JOIN users on users.id = notifications.user_id JOIN tasks on tasks.id = notifications.task_id ' +
-			'WHERE task_id = ? AND method_id = 1 AND users.androidtoken IS NOT NULL AND ( reason_id = 1 OR user_id = ? )',
+			'WHERE task_id = ? AND method_id = 1 AND users.androidtoken IS NOT NULL AND ( reason_id = 1 OR (reason_id = 2 and user_id = ?) )',
 			[taskId, userId], function(err, rows, fields){
 				if(err) {
 					reject(err);
@@ -114,11 +114,11 @@ var getTasks = function(conn, userId) {
     			'(notifications.method_id IS NOT NULL) as notification ' +
 			'FROM participants ' +
 				'JOIN tasks ON participants.task_id = tasks.id ' +
-    			'LEFT JOIN notifications ON tasks.id = notifications.task_id ' +
+    			'LEFT JOIN notifications ON tasks.id = notifications.task_id and notifications.user_id = ?' +
     			'LEFT JOIN methods ON notifications.method_id = methods.id ' +
     			'LEFT JOIN reasons ON notifications.reason_id = reasons.id ' +
 			'WHERE  participants.user_id = ?', 
-			[userId], function(err, rows, fields){
+			[userId, userId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
@@ -128,6 +128,78 @@ var getTasks = function(conn, userId) {
 	});
 };
 exports.getTasks = getTasks;
+
+var getAllReminders = function(conn) {
+	return new Promise(function(resolve, reject){
+		conn.query(
+			'SELECT notifications.user_id, notifications.task_id, tasks.periodic_hours, tasks.name, users.androidtoken ' +
+			'FROM notifications JOIN users ON users.id = notifications.user_id JOIN tasks ON tasks.id = notifications.task_id ' +
+			'WHERE notifications.reminder = 1 ' +
+			'ORDER BY notifications.task_id, notifications.user_id',
+			[], function(err, rows){
+				if(err) {
+					reject(err);
+				} else {
+					resolve(rows);
+				}
+			});
+	});
+};
+
+var sendAllPendingReminders = function(conn) {
+	return getAllReminders(conn).then(function(reminders){
+		log(reminders);
+		return (reminders || []).reduce(function(groups, reminder){
+			if(groups.length && groups[groups.length-1][0].task_id === reminder.task_id) {
+				groups[groups.length-1].push(reminder);
+			} else {
+				groups.push([reminder]);
+			}
+			return groups;
+		}, []);
+	}).then(function(groups){
+		log(groups);
+		return Promise.all(groups.map(function(group){
+			return getStatus(conn, group[0].task_id).then(function(status){
+				group.status = status;
+				return group;
+			});
+		}));
+	}).then(function(statusGroups){
+		log(statusGroups);
+		return statusGroups.map(function(statusGroup){
+			return statusGroup.filter(function(reminder){
+				return reminder.user_id == statusGroup.status[0].id;
+			});
+		}).filter(function(statusGroup){
+			return statusGroup.length;
+		});
+	}).then(function(statusGroups){
+		log(statusGroups);
+		return statusGroups.map(function(statusGroup){
+			var reminder = statusGroup[0];
+			return sendAndroidMessage({
+				message: 'Reminder: Take a turn for ' + reminder.name,
+				taskId: reminder.task_id,
+				userId: reminder.user_id
+			}, reminder.androidtoken).then(function(gcmResponse){
+				log('sent ' + gcmResponse.success + ' reminders');
+				return gcmResponse.results.map(function(result){
+					return { userId: reminder.user_id, token: result.registration_id};
+				}).filter(function(update){
+					return update.token;
+				});
+			});
+		});
+	}).then(function(sentMessages){
+		log(sentMessages);
+		return sentMessages.map(function(update){
+			log('updating token');
+			return setAndroidTokens(conn, [update]);
+		});
+	});
+};
+exports.sendAllPendingReminders = sendAllPendingReminders;
 
 var getStatus = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
@@ -168,7 +240,7 @@ var getTaskUsers = function(conn, taskId) {
 exports.getTaskUsers = getTaskUsers;
 
 var getAll = function(conn, userId, taskId) {
-		// TODO, need to include task info
+	// TODO, need to include task info
 	var results = {};
 	return getTasks(conn, userId).then(function(tasks){
 		results.tasks = tasks;
@@ -442,7 +514,7 @@ exports.getAndroidUsers = getAndroidUsers;
 
 var getUser = function(conn, username){
 	return new Promise(function(resolve, reject){
-		conn.query('SELECT id, username, displayname FROM users WHERE username = ?', [username], function(err, rows, fields){
+		conn.query('SELECT id, username, displayname, androidtoken FROM users WHERE username = ?', [username], function(err, rows, fields){
 			if(err) {
 				log("ERROR failed to get user '" + username + "'", err);
 				reject(err);

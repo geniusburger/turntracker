@@ -78,6 +78,9 @@ public class Preferences {
         editor.putLong(KEY_USER_ID, user.id);
         editor.putString(KEY_USER_NAME, user.username);
         editor.putString(KEY_USER_DISPLAY_NAME, user.displayName);
+        if(user.token == null) {
+            editor.putBoolean(KEY_ANDROID_TOKEN_SENT_TO_SERVER, false);
+        }
         editor.apply();
     }
 
