@@ -171,7 +171,7 @@ var sendAllPendingReminders = function(conn) {
 			return statusGroup.length;
 		});
 	}).then(function(statusGroups){
-		statusGroups.map(function(statusGroup){
+		return statusGroups.map(function(statusGroup){
 			var reminder = statusGroup[0];
 			return sendAndroidMessage({
 				message: 'Reminder: Take a turn for ' + reminder.name,
