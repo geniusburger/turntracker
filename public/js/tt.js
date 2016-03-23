@@ -239,6 +239,16 @@
 		    	});
 	    };
 
+	    self.remind = function() {
+	    	self.clearError();
+	    	return $http.put('/api/remind')
+		    	.then(function(res){
+		    		console.log('remind results', res.data);
+		    	}, function(res) {
+		    		self.handleApiError(res, 'Failed to remind');
+		    	});
+	    };
+
 	    self.getUsers = function() {
 	    	self.clearError();
 	    	return $http.get('/api/users')
