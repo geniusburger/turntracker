@@ -148,14 +148,17 @@ var getAllReminders = function(conn) {
 
 var sendAllPendingReminders = function(conn) {
 	return getAllReminders(conn).then(function(reminders){
+		log(reminders);
 		return (reminders || []).reduce(function(groups, reminder){
 			if(groups.length && groups[groups.length-1][0].task_id === reminder.task_id) {
 				groups[groups.length-1].push(reminder);
 			} else {
 				groups.push([reminder]);
 			}
+			return groups;
 		}, []);
 	}).then(function(groups){
+		log(groups);
 		return Promise.all(groups.map(function(group){
 			return getStatus(conn, group[0].task_id).then(function(status){
 				group.status = status;
@@ -163,6 +166,7 @@ var sendAllPendingReminders = function(conn) {
 			});
 		}));
 	}).then(function(statusGroups){
+		log(statusGroups);
 		return statusGroups.map(function(statusGroup){
 			return statusGroup.filter(function(reminder){
 				return reminder.user_id == statusGroup.status[0].id;
@@ -171,11 +175,13 @@ var sendAllPendingReminders = function(conn) {
 			return statusGroup.length;
 		});
 	}).then(function(statusGroups){
+		log(statusGroups);
 		return statusGroups.map(function(statusGroup){
 			var reminder = statusGroup[0];
 			return sendAndroidMessage({
 				message: 'Reminder: Take a turn for ' + reminder.name,
-				taskId: reminder.task_id
+				taskId: reminder.task_id,
+				userId: reminder.user_id
 			}, reminder.androidtoken).then(function(gcmResponse){
 				log('sent ' + gcmResponse.success + ' reminders');
 				return gcmResponse.results.map(function(result){
@@ -186,6 +192,7 @@ var sendAllPendingReminders = function(conn) {
 			});
 		});
 	}).then(function(sentMessages){
+		log(sentMessages);
 		return sentMessages.map(function(update){
 			log('updating token');
 			return setAndroidTokens(conn, [update]);
@@ -507,7 +514,7 @@ exports.getAndroidUsers = getAndroidUsers;
 
 var getUser = function(conn, username){
 	return new Promise(function(resolve, reject){
-		conn.query('SELECT id, username, displayname FROM users WHERE username = ?', [username], function(err, rows, fields){
+		conn.query('SELECT id, username, displayname, androidtoken FROM users WHERE username = ?', [username], function(err, rows, fields){
 			if(err) {
 				log("ERROR failed to get user '" + username + "'", err);
 				reject(err);

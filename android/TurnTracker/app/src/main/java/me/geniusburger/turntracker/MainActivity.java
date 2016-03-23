@@ -245,6 +245,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch(requestCode) {
             case REQUEST_CODE_LOGIN:
+                if (checkPlayServices()) {
+                    // Start IntentService to register this application with GCM.
+                    Intent intent = new Intent(this, RegistrationIntentService.class);
+                    startService(intent);
+                }
                 if (mTaskFragment == null) {
                     mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
                     autoTurnTaskId = 0;

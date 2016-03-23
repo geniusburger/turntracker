@@ -30,6 +30,7 @@ import android.util.Log;
 import com.google.android.gms.gcm.GcmListenerService;
 
 import me.geniusburger.turntracker.MainActivity;
+import me.geniusburger.turntracker.Preferences;
 import me.geniusburger.turntracker.R;
 
 public class MyGcmListenerService extends GcmListenerService {
@@ -48,9 +49,16 @@ public class MyGcmListenerService extends GcmListenerService {
     public void onMessageReceived(String from, Bundle data) {
         final String message = data.getString("message");
         final long taskId = Long.parseLong(data.getString("taskId", "0"));
+        final long userId = Long.parseLong(data.getString("userId", "0"));
         Log.d(TAG, "From: " + from);
         Log.d(TAG, "Message: " + message);
         Log.d(TAG, "TaskId: " + taskId);
+        Log.d(TAG, "UserId: " + userId);
+
+        if(userId != new Preferences(getApplicationContext()).getUserId()) {
+            // TODO ignore other IDs for now
+            return;
+        }
 
         if (from.startsWith("/topics/")) {
             // message received from some topic.
