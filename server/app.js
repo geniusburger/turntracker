@@ -11,7 +11,7 @@ var db = require('./controllers/db');
 var options = require('./options');
 var api = require('./routes/api');
 
-var REQUIRED_DB_VERSION = 2;
+var REQUIRED_DB_VERSION = 3;
 
 var app = express();
 
