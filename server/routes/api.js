@@ -339,6 +339,16 @@ router.post('/notify', function(req, res, next) {
 	});
 });
 
+router.put('/remind', function(req, res, next){
+	using(db.getConnection(), function(conn){
+		return index.sendAllPendingReminders(conn);
+	}).then(function(jsonResults){
+		res.json(jsonResults);
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to remind'));
+	});
+});
+
 router.use(function(req, res, next) {
     next(new ApiError({status: 404}, 'Not Found'));
 });

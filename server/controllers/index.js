@@ -148,7 +148,7 @@ var getAllReminders = function(conn) {
 
 var sendAllPendingReminders = function(conn) {
 	return getAllReminders(conn).then(function(reminders){
-		return (reminders || []).reduce(function(groups, reminder, i){
+		return (reminders || []).reduce(function(groups, reminder){
 			if(groups.length && groups[groups.length-1][0].task_id === reminder.task_id) {
 				groups[groups.length-1].push(reminder);
 			} else {
