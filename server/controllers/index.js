@@ -196,10 +196,7 @@ var sendAllPendingReminders = function(conn) {
 			return reminders.filter(function(reminder){
 				// filter out reminders that are not overdue
 				// TODO need to store date/time in a consistent way so calculations can be done across time zones. For now, assume the same time zone
-				if(!reminder.lastTurn) {
-					return false;
-				}
-				return reminder.lastTurn.date.getTime() + (reminder.periodic_hours * 3600000) > Date.now();
+				return reminder.lastTurn && (reminder.lastTurn.date.getTime() + (reminder.periodic_hours * 3600000) <= Date.now());
 			});
 		});
 	}).then(function(reminders){
