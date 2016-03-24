@@ -205,8 +205,7 @@ var sendAllPendingReminders = function(conn) {
 	}).then(function(reminders){
 		log(reminders);
 		// send a message for each reminder
-		return reminders.map(function(statusGroup){
-			var reminder = statusGroup[0];
+		return reminders.map(function(reminder){
 			return sendAndroidMessage({
 				message: 'Reminder: Take a turn for ' + reminder.name,
 				taskId: reminder.task_id,
