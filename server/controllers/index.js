@@ -189,13 +189,16 @@ var sendAllPendingReminders = function(conn) {
 		// get most recent turn and attach it to the reminder
 		return Promise.all(reminders.map(function(reminder){
 			return getTurns(conn, reminder.task_id, 1).then(function(turns){
-				reminder.lastTurn = turns.length ? turns[0] ? null;
+				reminder.lastTurn = turns.length ? turns[0] : null;
 				return reminder;
 			});
 		})).then(function(reminders){
 			return reminders.filter(function(reminder){
 				// filter out reminders that are not overdue
 				// TODO need to store date/time in a consistent way so calculations can be done across time zones. For now, assume the same time zone
+				if(!reminder.lastTurn) {
+					return false;
+				}
 				return reminder.lastTurn.date.getTime() + (reminder.periodic_hours * 3600000) > Date.now();
 			});
 		});
