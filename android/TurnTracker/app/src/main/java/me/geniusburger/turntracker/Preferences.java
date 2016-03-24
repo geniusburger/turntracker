@@ -10,6 +10,7 @@ public class Preferences {
 
     public static final String KEY_ANDROID_TOKEN = "android.token";
     public static final String KEY_ANDROID_TOKEN_SENT_TO_SERVER = "android.token.senttoserver";
+    public static final String KEY_ANDROID_TOKEN_RETRY = "android.token.retry";
     public static final String ANDROID_REGISTRATION_COMPLETE = "android.registration.complete";
 
     public static final String KEY_SERVER_IP = "server.ip";
