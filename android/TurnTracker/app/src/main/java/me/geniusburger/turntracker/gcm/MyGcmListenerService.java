@@ -55,8 +55,10 @@ public class MyGcmListenerService extends GcmListenerService {
         Log.d(TAG, "TaskId: " + taskId);
         Log.d(TAG, "UserId: " + userId);
 
-        if(userId != new Preferences(getApplicationContext()).getUserId()) {
+        long myUserId = new Preferences(getApplicationContext()).getUserId();
+        if(userId != myUserId) {
             // TODO ignore other IDs for now
+            Log.w(TAG, "ignoring message for wrong user id " + userId + " instead of " + myUserId);
             return;
         }
 
