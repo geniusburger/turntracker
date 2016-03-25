@@ -1,3 +1,6 @@
+// Schedule task in windows
+// SCHTASKS /CREATE /SC DAILY /TN TURNTRACKER_CRON /TR "node C:\turntracker\server\cron.js" /ST 18:00
+
 var Curl = require('node-libcurl').Curl;
 var curl = new Curl();
 
