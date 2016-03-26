@@ -54,6 +54,8 @@
     <string name="pref_header_notifications">Notifications</string>
     <string name="pref_title_token_sent_to_server">Token Sent To Server</string>
     <string name="pref_title_token">Token</string>
+    <string name="pref_title_token_retry">Force Retry</string>
+    <string name="pref_summary_token_retry">Try to register get/send a token again</string>
     <string name="notifications_enabled_description">Notifications are enabled for this task</string>
     <string name="notifications_disabled_description">Notifications are disabled for this task</string>
     <string name="reminders_enabled_description">Reminders are enabled for this task</string>

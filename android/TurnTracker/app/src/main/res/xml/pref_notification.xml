@@ -36,4 +36,9 @@
         android:defaultValue=""
         android:enabled="false"/>
 
+    <Preference
+        android:key="android.token.retry"
+        android:title="@string/pref_title_token_retry"
+        android:summary="@string/pref_summary_token_retry"/>
+
 </PreferenceScreen>

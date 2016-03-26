@@ -3,6 +3,7 @@ package me.geniusburger.turntracker;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -21,6 +22,8 @@ import android.view.MenuItem;
 
 import java.util.List;
 
+import me.geniusburger.turntracker.gcm.RegistrationIntentService;
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
@@ -34,7 +37,6 @@ import java.util.List;
  */
 public class SettingsActivity extends AppCompatPreferenceActivity {
 
-    private static final String TAG = SettingsActivity.class.getSimpleName();
     public static final String EXTRA_NETWORK = "network_extra";
 
     @SuppressWarnings("deprecation")
@@ -117,7 +119,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 if (TextUtils.isEmpty(stringValue)) {
                     // Empty values correspond to 'silent' (no ringtone).
                     //preference.setSummary(R.string.pref_ringtone_silent);
-
                 } else {
                     Ringtone ringtone = RingtoneManager.getRingtone(
                             preference.getContext(), Uri.parse(stringValue));
@@ -204,13 +205,35 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class NotificationPreferenceFragment extends PreferenceFragment {
+    public static class NotificationPreferenceFragment extends PreferenceFragment implements Preference.OnPreferenceClickListener {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_notification);
             bindPreferenceSummaryToBooleanValue(findPreference(Preferences.KEY_ANDROID_TOKEN_SENT_TO_SERVER));
             bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_ANDROID_TOKEN));
+            findPreference(Preferences.KEY_ANDROID_TOKEN_RETRY).setOnPreferenceClickListener(this);
+
+
+
+//                    new Preference.OnPreferenceClickListener() {
+//                @Override
+//                public boolean onPreferenceClick(Preference preference) {
+//                    if (MainActivity.checkPlayServices(this)) {
+//                        // Start IntentService to register this application with GCM.
+//                        Intent intent = new Intent(this, RegistrationIntentService.class);
+//                        startService(intent);
+//                    }
+//                    return true;
+//                }
+//            });
+        }
+
+        @Override
+        public boolean onPreferenceClick(Preference preference) {
+            Context context = preference.getContext();
+            context.startService(new Intent(context, RegistrationIntentService.class));
+            return true;
         }
     }
 }
