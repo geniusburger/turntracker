@@ -6,12 +6,13 @@ var mysql = require('mysql');
 var db = require('./db');
 var config = require('../config');
 
-var getTurns = function(conn, taskId) {
+var getTurns = function(conn, taskId, limit) {
 	return new Promise(function(resolve, reject){
 		conn.query(
 	    	'SELECT users.displayname AS name, turns.taken AS date, turns.inserted, users.id as userid, turns.id as turnid ' +
 	    	'FROM tasks INNER JOIN turns on turns.task_id = tasks.id INNER JOIN USERS ON turns.user_id = users.id ' +
-			'WHERE tasks.id = ? ORDER BY turns.taken DESC',
+			'WHERE tasks.id = ? ORDER BY turns.taken DESC ' +
+			(typeof limit == 'number' && limit > 0 ? ('LIMIT ' + limit) : ''),
 			[taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
@@ -134,7 +135,7 @@ var getAllReminders = function(conn) {
 		conn.query(
 			'SELECT notifications.user_id, notifications.task_id, tasks.periodic_hours, tasks.name, users.androidtoken ' +
 			'FROM notifications JOIN users ON users.id = notifications.user_id JOIN tasks ON tasks.id = notifications.task_id ' +
-			'WHERE notifications.reminder = 1 ' +
+			'WHERE notifications.reminder = 1 and tasks.periodic_hours > 0 ' +
 			'ORDER BY notifications.task_id, notifications.user_id',
 			[], function(err, rows){
 				if(err) {
@@ -149,6 +150,7 @@ var getAllReminders = function(conn) {
 var sendAllPendingReminders = function(conn) {
 	return getAllReminders(conn).then(function(reminders){
 		log(reminders);
+		// group all reminders by task
 		return (reminders || []).reduce(function(groups, reminder){
 			if(groups.length && groups[groups.length-1][0].task_id === reminder.task_id) {
 				groups[groups.length-1].push(reminder);
@@ -159,25 +161,48 @@ var sendAllPendingReminders = function(conn) {
 		}, []);
 	}).then(function(groups){
 		log(groups);
+		// attach status of the next user to each reminder group/array
 		return Promise.all(groups.map(function(group){
 			return getStatus(conn, group[0].task_id).then(function(status){
-				group.status = status;
+				group.statusOfNext = status[0];
 				return group;
 			});
 		}));
-	}).then(function(statusGroups){
-		log(statusGroups);
-		return statusGroups.map(function(statusGroup){
-			return statusGroup.filter(function(reminder){
-				return reminder.user_id == statusGroup.status[0].id;
+	}).then(function(reminderGroups){
+		log(reminderGroups);
+		// 
+		return reminderGroups.map(function(reminderGroup){
+			// filter out reminders that aren't for the next user
+			return reminderGroup.filter(function(reminder){
+				return reminder.user_id == reminderGroup.statusOfNext.id;
 			});
-		}).filter(function(statusGroup){
-			return statusGroup.length;
+		}).filter(function(reminderGroup){
+			// filter out empty reminder groups
+			return reminderGroup.length;
+		}).map(function(reminderGroup){
+			// convert from array to single reminder
+			var reminder = reminderGroup[0];
+			reminder.lastTurn = reminderGroup.statusOfNext
+			return reminderGroup[0];
 		});
-	}).then(function(statusGroups){
-		log(statusGroups);
-		return statusGroups.map(function(statusGroup){
-			var reminder = statusGroup[0];
+	}).then(function(reminders){
+		// get most recent turn and attach it to the reminder
+		return Promise.all(reminders.map(function(reminder){
+			return getTurns(conn, reminder.task_id, 1).then(function(turns){
+				reminder.lastTurn = turns.length ? turns[0] : null;
+				return reminder;
+			});
+		})).then(function(reminders){
+			return reminders.filter(function(reminder){
+				// filter out reminders that are not overdue
+				// TODO need to store date/time in a consistent way so calculations can be done across time zones. For now, assume the same time zone
+				return reminder.lastTurn && (reminder.lastTurn.date.getTime() + (reminder.periodic_hours * 3600000) <= Date.now());
+			});
+		});
+	}).then(function(reminders){
+		log(reminders);
+		// send a message for each reminder
+		return reminders.map(function(reminder){
 			return sendAndroidMessage({
 				message: 'Reminder: Take a turn for ' + reminder.name,
 				taskId: reminder.task_id,

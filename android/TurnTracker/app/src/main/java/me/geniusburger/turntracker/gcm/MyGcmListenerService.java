@@ -55,8 +55,10 @@ public class MyGcmListenerService extends GcmListenerService {
         Log.d(TAG, "TaskId: " + taskId);
         Log.d(TAG, "UserId: " + userId);
 
-        if(userId != new Preferences(getApplicationContext()).getUserId()) {
+        long myUserId = new Preferences(getApplicationContext()).getUserId();
+        if(userId != myUserId) {
             // TODO ignore other IDs for now
+            Log.w(TAG, "ignoring message for wrong user id " + userId + " instead of " + myUserId);
             return;
         }
 
@@ -78,7 +80,7 @@ public class MyGcmListenerService extends GcmListenerService {
          * In some cases it may be useful to show a notification indicating to the user
          * that a message was received.
          */
-        sendNotification(message, taskId);
+        sendNotification(message, taskId, userId);
         // [END_EXCLUDE]
     }
     // [END receive_message]
@@ -88,10 +90,11 @@ public class MyGcmListenerService extends GcmListenerService {
      *
      * @param message GCM message received.
      */
-    private void sendNotification(String message, long taskId) {
+    private void sendNotification(String message, long taskId, long userId) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
+        intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
 
@@ -106,9 +109,7 @@ public class MyGcmListenerService extends GcmListenerService {
                 .setContentIntent(pendingIntent)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message));
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE))
+                .notify((int)taskId, notificationBuilder.build());
     }
 }

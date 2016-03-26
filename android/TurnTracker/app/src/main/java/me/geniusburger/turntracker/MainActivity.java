@@ -3,6 +3,7 @@ package me.geniusburger.turntracker;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +41,7 @@ import me.geniusburger.turntracker.model.Task;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
 
     public static final String EXTRA_TASK_ID = "taskId";
+    public static final String EXTRA_USER_ID = "userId";
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final int REQUEST_CODE_LOGIN = 1;
@@ -310,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             mTaskFragment.clear();
             prefs.clearUser();
+            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         }
 

@@ -269,7 +269,8 @@ router.post('/turn', function(req, res, next) {
 					if(otherTokens.length) {
 						var othersPromise = index.sendAndroidMessage({
 							message: turnTakerUserName + ' just took a turn for ' + otherNotes[0].task + ', ' + nextTurnUser.name + ' is next',
-							taskId: req.body.task_id
+							taskId: req.body.task_id,
+							userId: req.body.user_id
 						}, otherTokens).then(function(gcmResponse){
 							log('sent ' + gcmResponse.success + ' out of ' + otherTokens.length + ' other notes', typeof gcmResponse, gcmResponse);
 							return gcmResponse.results.map(function(result, i){
@@ -286,7 +287,8 @@ router.post('/turn', function(req, res, next) {
 					if(nextTurnNote) {
 						var nextTurnPromise = index.sendAndroidMessage({
 							message: turnTakerUserName + ' just took a turn for ' + nextTurnNote.task + ', you are next',
-							taskId: req.body.task_id
+							taskId: req.body.task_id,
+							userId: req.body.user_id
 						}, nextTurnNote.androidtoken).then(function(gcmResponse){
 							log('sent ' + gcmResponse.success + ' out of 1 next notes');
 							return gcmResponse.results.map(function(result){
