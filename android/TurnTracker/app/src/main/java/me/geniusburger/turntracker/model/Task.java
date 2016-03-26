@@ -33,14 +33,7 @@ public class Task {
     }
 
     public Task(Task task) {
-        this.creatorUserID = task.creatorUserID;
-        this.methodID = task.methodID;
-        this.notification = task.notification;
-        this.periodicHours = task.periodicHours;
-        this.reasonID = task.reasonID;
-        this.reminder = task.reminder;
-        this.id = task.id;
-        this.name = task.name;
+        update(task);
     }
 
     public void update(Task task) {
