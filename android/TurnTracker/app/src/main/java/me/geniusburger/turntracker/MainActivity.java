@@ -134,10 +134,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(userId <= 0) {
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         } else {
-            mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
             autoTurnTaskId = 0;
             takeTurn = false;
-            getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
+            if(savedInstanceState == null) {
+                mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
+                getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
+            }
         }
 
 //        String packageName = MainActivity.class.getPackage().getName();
