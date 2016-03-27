@@ -213,20 +213,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToBooleanValue(findPreference(Preferences.KEY_ANDROID_TOKEN_SENT_TO_SERVER));
             bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_ANDROID_TOKEN));
             findPreference(Preferences.KEY_ANDROID_TOKEN_RETRY).setOnPreferenceClickListener(this);
-
-
-
-//                    new Preference.OnPreferenceClickListener() {
-//                @Override
-//                public boolean onPreferenceClick(Preference preference) {
-//                    if (MainActivity.checkPlayServices(this)) {
-//                        // Start IntentService to register this application with GCM.
-//                        Intent intent = new Intent(this, RegistrationIntentService.class);
-//                        startService(intent);
-//                    }
-//                    return true;
-//                }
-//            });
         }
 
         @Override
