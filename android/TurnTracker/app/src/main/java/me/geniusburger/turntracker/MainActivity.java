@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // UI
     TextView mUserNameTextView;
     TextView mDisplayNameTextView;
+    TextView mVersionTextView;
     FloatingActionButton fab;
 
     // Fragments
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mVersionTextView = (TextView) drawer.findViewById(R.id.versionTextView);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
@@ -275,6 +279,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 new IntentFilter(Preferences.ANDROID_REGISTRATION_COMPLETE));
         mUserNameTextView.setText(prefs.getUserName());
         mDisplayNameTextView.setText(prefs.getUserDisplayName());
+        try {
+            mVersionTextView.setText("Version: " + getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Failed to get app version", e);
+        }
     }
 
     @Override
