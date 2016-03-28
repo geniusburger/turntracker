@@ -1,6 +1,7 @@
 package me.geniusburger.turntracker;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -71,19 +72,18 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
         setHasOptionsMenu(true);
 
+        mUsers = new ArrayList<>();
+        mAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_list_item_multiple_choice,
+                android.R.id.text1, mUsers);
+
         if(mListener != null) {
             mMyUserId = mListener.getMyUserID();
             if(mEdit) {
                 mTask = mListener.getCurrentTask();
             }
+            getUsers(getContext());
         }
-
-        mUsers = new ArrayList<>();
-        mAdapter = new ArrayAdapter<>(getActivity(),
-                android.R.layout.simple_list_item_multiple_choice,
-                android.R.id.text1, mUsers);
-
-        getUsers();
     }
 
     @Override
@@ -155,7 +155,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                getUsers();
+                getUsers(getContext());
                 return true;
             case R.id.action_delete:
                 // TODO handle delete
@@ -178,9 +178,9 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         cancelAllAsyncTasks();
     }
 
-    public void getUsers() {
+    public void getUsers(Context context) {
         cancelAllAsyncTasks();
-        mGetUsersAsyncTask = new GetUsersAsyncTask();
+        mGetUsersAsyncTask = new GetUsersAsyncTask(context);
         mGetUsersAsyncTask.execute();
     }
 
@@ -282,6 +282,12 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
     public class GetUsersAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
+        private Context mContext;
+
+        public GetUsersAsyncTask(Context context) {
+            mContext = context;
+        }
+
         @Override
         protected void onPreExecute() {
             showProgress(true);
@@ -289,7 +295,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            return new Api(getContext()).getTaskUsers(mEdit ? mTask.id : 0, mUsers);
+            return new Api(mContext).getTaskUsers(mEdit ? mTask.id : 0, mUsers);
         }
 
         @Override
@@ -317,8 +323,13 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     }
 
     @Override
+    public void onRefresh(Context context) {
+        getUsers(context);
+    }
+
+    @Override
     public void onRefresh() {
-        getUsers();
+        getUsers(getContext());
     }
 
     @Override

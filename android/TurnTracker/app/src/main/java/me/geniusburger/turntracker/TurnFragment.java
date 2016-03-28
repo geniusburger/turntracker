@@ -2,7 +2,6 @@ package me.geniusburger.turntracker;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
-import android.app.Fragment;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,14 +22,12 @@ import android.view.animation.LayoutAnimationController;
 import android.view.animation.TranslateAnimation;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.Chronometer;
 import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
@@ -103,7 +101,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             mAutoTurn = false;
             takeTurn(mListener.getSnackBarView());
         } else {
-            refreshData();
+            refreshData(getContext());
         }
     }
 
@@ -135,7 +133,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         emptyView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                refreshData();
+                refreshData(v.getContext());
             }
         });
         mListView.setEmptyView(emptyView);
@@ -235,7 +233,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         }
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                refreshData();
+                refreshData(getContext());
                 return true;
             case R.id.action_pick_turn_date:
                 mTurnDate = Calendar.getInstance();
@@ -300,12 +298,12 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         // TODO handle click
     }
 
-    public void refreshData() {
+    public void refreshData(Context context) {
         if(bar != null && bar.isShownOrQueued()) {
             bar.dismiss();
         }
         cancelAllAsyncTasks();
-        mGetStatusAsyncTask = new GetStatusAsyncTask(getContext());
+        mGetStatusAsyncTask = new GetStatusAsyncTask(context);
         mGetStatusAsyncTask.execute();
     }
 
@@ -357,7 +355,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 if(mTurnDate == null) {
                     mTurnDate = Calendar.getInstance();
                 }
-                mTakeTurnAsyncTask = new TakeTurnAsyncTask(getActivity(), view, mTurnDate);
+                mTakeTurnAsyncTask = new TakeTurnAsyncTask(getContext(), view, mTurnDate);
                 mTurnDate = null;
                 mTakeTurnAsyncTask.execute();
             }
@@ -366,21 +364,21 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     private void undoTurn(View view, long turnId) {
         if(!checkBusy(view)) {
-            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId, "undo", "undone");
+            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getContext(), view, turnId, "undo", "undone");
             mUndoTurnAsyncTask.execute();
         }
     }
 
     private void deleteTurn(View view, long turnId) {
         if(!checkBusy(view)) {
-            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getActivity(), view, turnId, "delete", "deleted");
+            mUndoTurnAsyncTask = new UndoTurnAsyncTask(getContext(), view, turnId, "delete", "deleted");
             mUndoTurnAsyncTask.execute();
         }
     }
 
     private void updateSubscription(View view, Task tempTask) {
         if(!checkBusy(view)) {
-            mUpdateSubscriptionAsyncTask = new UpdateSubscriptionAsyncTask(getActivity(), view, tempTask);
+            mUpdateSubscriptionAsyncTask = new UpdateSubscriptionAsyncTask(getContext(), view, tempTask);
             mUpdateSubscriptionAsyncTask.execute();
         }
     }
@@ -392,8 +390,13 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     }
 
     @Override
+    public void onRefresh(Context context) {
+        refreshData(context);
+    }
+
+    @Override
     public void onRefresh() {
-        refreshData();
+        refreshData(getContext());
     }
 
     @Override
@@ -497,12 +500,12 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         @Override
         protected void onPostExecute(Boolean success) {
             if(success) {
-                Snackbar.make(mView, "Updated subscription", Snackbar.LENGTH_LONG).show();
                 mTask.update(mTempTask);
+                mStatusAdapter.notifyDataSetChanged();
+                Snackbar.make(mView, "Updated subscription", Snackbar.LENGTH_LONG).show();
             } else {
                 Snackbar.make(mView, "Failed to update subscription", Snackbar.LENGTH_LONG).show();
             }
-            mStatusAdapter.notifyDataSetChanged();
             showProgress(false);
             mUpdateSubscriptionAsyncTask = null;
         }

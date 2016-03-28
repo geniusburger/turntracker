@@ -122,12 +122,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onBackStackChanged() {
                 if(autoRefresh) {
                     if(mTaskFragment != null) {
-                        mTaskFragment.onRefresh();
+                        mTaskFragment.onRefresh(MainActivity.this);
                     }
                     // TODO figure out why this is throwing an exception
-//                    if(mTurnFragment != null) {
-//                        mTurnFragment.onRefresh();
-//                    }
+                    if(mTurnFragment != null) {// && !mTurnFragment.isDetached() && mTurnFragment.isAdded()) {
+                        mTurnFragment.onRefresh(MainActivity.this);
+                    }
                     autoRefresh = false;
                 }
             }
@@ -264,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     takeTurn = false;
                     getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
                 } else {
-                    mTaskFragment.refreshData();
+                    mTaskFragment.refreshData(this);
                 }
                 break;
             default:
@@ -309,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
                 getFragmentManager().popBackStack();
             }
-            mTaskFragment.refreshData();
+            mTaskFragment.refreshData(this);
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (id == R.id.nav_logout) {
