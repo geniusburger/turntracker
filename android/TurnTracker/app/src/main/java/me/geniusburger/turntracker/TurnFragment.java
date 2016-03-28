@@ -46,6 +46,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";
     private static final String ARG_AUTO_TURN = "autoTurn";
+    private static final String TAG = TurnFragment.class.getSimpleName();
 
     private Calendar mTurnDate;
     private Task mTask;
@@ -465,6 +466,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
         @Override
         protected void onCancelled() {
+            mStatusAdapter.notifyDataSetChanged();
             mTakeTurnAsyncTask = null;
             showProgress(false);
         }
@@ -508,6 +510,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         @Override
         protected void onCancelled() {
             mUpdateSubscriptionAsyncTask = null;
+            mStatusAdapter.notifyDataSetChanged();
             showProgress(false);
         }
     }
@@ -554,6 +557,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         @Override
         protected void onCancelled() {
             mUndoTurnAsyncTask = null;
+            mStatusAdapter.notifyDataSetChanged();
             showProgress(false);
         }
     }
@@ -594,6 +598,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
         protected void onCancelled() {
             mGetStatusAsyncTask = null;
             setEmptyText(R.string.status_failed);
+            mStatusAdapter.notifyDataSetChanged();
             showProgress(false);
         }
     }

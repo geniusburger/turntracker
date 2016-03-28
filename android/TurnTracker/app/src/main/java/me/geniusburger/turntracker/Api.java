@@ -394,6 +394,7 @@ public class Api {
     public boolean getStatus(Task task, List<User> users, List<Turn> turns, Map<Integer, String> reasons, Map<Integer, String> methods) {
         Map<String, String> params = new HashMap<>(1);
         params.put("task_id", String.valueOf(task.id));
+        params.put("user_id", String.valueOf(prefs.getUserId()));
         JsonResponse res = httpGet("turns-status", params);
 
         if(200 == res.code) {
@@ -402,6 +403,7 @@ public class Api {
                 getEnumValues(res.json.getJSONArray("methods"), methods);
                 processJsonUsers(res.json.getJSONArray("users"), users);
                 processJsonTurns(res.json.getJSONArray("turns"), turns);
+                task.update(res.json.getJSONObject("task"));
                 return true;
             } catch (JSONException | ParseException e) {
                 Log.e(TAG, "failed to extract status from JSON", e);

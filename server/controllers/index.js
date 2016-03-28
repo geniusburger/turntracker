@@ -107,7 +107,7 @@ var deleteAndroidSubscriptions = function(conn, userId) {
 };
 exports.deleteAndroidSubscriptions = deleteAndroidSubscriptions;
 
-var getTasks = function(conn, userId) {
+var getTasks = function(conn, userId, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
 			'SELECT tasks.id AS taskId, tasks.name AS taskName, tasks.periodic_hours, tasks.creator_user_id, notifications.reason_id, ' +
@@ -118,8 +118,8 @@ var getTasks = function(conn, userId) {
     			'LEFT JOIN notifications ON tasks.id = notifications.task_id and notifications.user_id = ?' +
     			'LEFT JOIN methods ON notifications.method_id = methods.id ' +
     			'LEFT JOIN reasons ON notifications.reason_id = reasons.id ' +
-			'WHERE  participants.user_id = ?', 
-			[userId, userId], function(err, rows, fields){
+			'WHERE  participants.user_id = ?' + (taskId ? ' and tasks.id = ?' : ''), 
+			[userId, userId, taskId], function(err, rows, fields){
 				if(err) {
 					reject(err);
 				} else {
