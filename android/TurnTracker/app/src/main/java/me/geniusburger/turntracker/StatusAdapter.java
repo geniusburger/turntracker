@@ -1,6 +1,5 @@
 package me.geniusburger.turntracker;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.SystemClock;
@@ -22,6 +21,7 @@ import java.util.Map;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
+import me.geniusburger.turntracker.utilities.UnitMapping;
 
 public class StatusAdapter extends BaseAdapter {
 
@@ -38,12 +38,14 @@ public class StatusAdapter extends BaseAdapter {
     private Task mTask;
     private Fragment mFragment;
     private Context mContext;
+    private UnitMapping mUnits;
 
     private LayoutInflater mInflater;
 
     public StatusAdapter(Fragment fragment, Task task) {
         mFragment = fragment;
         mContext = fragment.getContext();
+        mUnits = UnitMapping.getInstance(mContext);
         mTask = task;
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
@@ -174,11 +176,9 @@ public class StatusAdapter extends BaseAdapter {
         public void update(StatusAdapter adapter, Object data) {
             Task task = (Task)data;
             if(task.periodicHours == 0) {
-                periodTextView.setText("Unspecified");
-            } else if(task.periodicHours % 24 == 0) {
-                periodTextView.setText(task.periodicHours / 24 + " days");
+                periodTextView.setText("-");
             } else {
-                periodTextView.setText(task.periodicHours + " hours");
+                periodTextView.setText(mUnits.getMatchingText(task.periodicHours));
             }
             notificationImageView.setImageResource(task.notification
                     ? R.drawable.ic_notifications_24dp

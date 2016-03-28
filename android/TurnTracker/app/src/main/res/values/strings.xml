@@ -33,7 +33,7 @@
     <string name="period_label">Period</string>
     <string name="creator_label">Creator</string>
     <string name="prompt_name">name</string>
-    <string name="prompt_period">hours</string>
+    <string name="prompt_period">period</string>
 
     <!-- Menu -->
     <string name="action_refresh">Refresh</string>

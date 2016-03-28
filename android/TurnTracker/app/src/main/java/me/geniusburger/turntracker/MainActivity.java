@@ -293,11 +293,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             drawer.closeDrawer(GravityCompat.START);
         } else {
             if (getFragmentManager().getBackStackEntryCount() > 0){
-                EditTaskFragment editFragment = (EditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
-                if (editFragment != null && editFragment.isVisible()) {
-                    // coming back from edit, reset fab to add icon
-                    // todo setFabIcon(R.drawable.ic_add_24dp);
-                }
                 getFragmentManager().popBackStack();
             } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
                 super.onBackPressed();

@@ -15,6 +15,7 @@ import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.User;
+import me.geniusburger.turntracker.utilities.UnitMapping;
 
 public class EditTaskFragment extends RefreshableFragment implements SwipeRefreshLayout.OnRefreshListener {
 
@@ -35,10 +37,12 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     private ListView mListView;
     private ListAdapter mAdapter;
     private long mMyUserId;
+    private UnitMapping mUnits;
 
     // Views
     EditText mNameEditText;
     EditText mPeriodEditText;
+    Spinner mSpinner;
 
     // Workers
     GetUsersAsyncTask mGetUsersAsyncTask;
@@ -58,6 +62,8 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mUnits = UnitMapping.getInstance(getContext());
 
         if (getArguments() != null) {
             mEdit = getArguments().getBoolean(ARG_EDIT, false);
@@ -103,10 +109,21 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         mListView.setHeaderDividersEnabled(true);
         mNameEditText = (EditText) header.findViewById(R.id.nameEditText);
         mPeriodEditText = (EditText) header.findViewById(R.id.periodEditText);
+        mSpinner = (Spinner) header.findViewById(R.id.unitSpinner);
+
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(getContext(),
+                android.R.layout.simple_spinner_item, mUnits.getLabels());
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSpinner.setAdapter(adapter);
 
         if(mTask != null && mEdit) {
             mNameEditText.setText(mTask.name);
-            mPeriodEditText.setText( String.valueOf(mTask.periodicHours));
+            mPeriodEditText.setText(String.valueOf(mTask.periodicHours));
+            int matchingIndex = mUnits.getMatchingIndex(mTask.periodicHours);
+            mSpinner.setSelection(matchingIndex);
+            mPeriodEditText.setText(String.valueOf(mTask.periodicHours / mUnits.getMultiplier(matchingIndex)));
+        } else {
+            mSpinner.setSelection(mUnits.getDefaultIndex());
         }
 
         // show progress if the task is already running
@@ -208,11 +225,19 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     public class SaveTaskAsyncTask extends AsyncTask<Void, Void, Long> {
 
         List<Long> mSelectedUserIds = new ArrayList<>();
-        Task mTaskUpdate = new Task(
-                mEdit ? mTask.id : 0,
-                mNameEditText.getText().toString(),
-                Integer.parseInt(mPeriodEditText.getText().toString()),
-                mEdit ? mTask.creatorUserID : mMyUserId);
+        Task mTaskUpdate;
+
+        public SaveTaskAsyncTask() {
+
+            int multiplier = mUnits.getMultiplier(mSpinner.getSelectedItemPosition());
+            int count = Integer.parseInt(mPeriodEditText.getText().toString());
+
+            mTaskUpdate = new Task(
+                    mEdit ? mTask.id : 0,
+                    mNameEditText.getText().toString(),
+                    count * multiplier,
+                    mEdit ? mTask.creatorUserID : mMyUserId);
+        }
 
         @Override
         protected void onPreExecute() {
