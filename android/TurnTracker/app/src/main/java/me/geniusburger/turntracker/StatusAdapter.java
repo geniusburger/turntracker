@@ -212,6 +212,7 @@ public class StatusAdapter extends BaseAdapter {
                 long msSinceLastTurn = new Date().getTime() - mTurns.get(0).date.getTime();
                 if(mTask.periodicHours <= 0 || (msSinceLastTurn / 3600000) < mTask.periodicHours) {
                     exceededChrono.setVisibility(View.GONE);
+                    elapsedChrono.setVisibility(View.VISIBLE);
                     elapsedChrono.setBase(SystemClock.elapsedRealtime() - msSinceLastTurn);
                     elapsedChrono.start();
                 } else {
@@ -219,9 +220,9 @@ public class StatusAdapter extends BaseAdapter {
                     elapsedChrono.setBase(SystemClock.elapsedRealtime() - (3600000 * mTask.periodicHours));
                     exceededChrono.setBase(SystemClock.elapsedRealtime() - (msSinceLastTurn - (3600000 * mTask.periodicHours)));
                     exceededChrono.setVisibility(View.VISIBLE);
+                    elapsedChrono.setVisibility(View.GONE);
                     exceededChrono.start();
                 }
-                elapsedChrono.setVisibility(View.VISIBLE);
             }
         }
 
