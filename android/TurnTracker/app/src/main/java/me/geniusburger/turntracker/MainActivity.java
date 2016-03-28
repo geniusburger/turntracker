@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, TurnFragment.newInstance(task.id, task.name, autoTurn), FRAGMENT_TURNS)
+                .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
     }
