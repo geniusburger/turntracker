@@ -68,7 +68,7 @@ public class RegistrationIntentService extends IntentService {
             // If an exception happens while fetching the new token or updating our registration data
             // on a third-party server, this ensures that we'll attempt the update at a later time.
             prefs.setAndroidTokenSentToServer(false);
-            notifyUI();
+            notifyUI(e);
         }
     }
 
@@ -84,12 +84,15 @@ public class RegistrationIntentService extends IntentService {
         if(!prefs.getAndroidTokenSentToServer()) {
             boolean success = new Api(getApplicationContext()).updateToken(token);
             prefs.setAndroidTokenSentToServer(success);
-            notifyUI();
+            notifyUI(null);
         }
     }
 
-    private void notifyUI() {
+    private void notifyUI(Exception e) {
         Intent registrationComplete = new Intent(Preferences.ANDROID_REGISTRATION_COMPLETE);
+        if(e != null) {
+            registrationComplete.putExtra(Preferences.ANDROID_REGISTRATION_COMPLETE_ERROR, e.getMessage());
+        }
         LocalBroadcastManager.getInstance(this).sendBroadcast(registrationComplete);
     }
 

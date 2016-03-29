@@ -159,7 +159,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (sentToken) {
                     Toast.makeText(MainActivity.this, "Registered for GMC", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to register for GCM", Toast.LENGTH_SHORT).show();
+                    String msg ="Failed to register for GCM";
+                    String error = intent.getStringExtra(Preferences.ANDROID_REGISTRATION_COMPLETE_ERROR);
+                    if(error != null) {
+                        msg += " - " + error;
+                    }
+                    Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
                 }
             }
         };
