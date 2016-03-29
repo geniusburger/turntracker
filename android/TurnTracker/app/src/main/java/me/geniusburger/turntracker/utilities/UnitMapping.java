@@ -68,7 +68,8 @@ public class UnitMapping {
     }
 
     public int getMultiplier(int i) {
-        return multipliers[i];
+        int m = multipliers[i];
+        return m == 0 ? 1 : m;
     }
 
     public String[] getLabels() {

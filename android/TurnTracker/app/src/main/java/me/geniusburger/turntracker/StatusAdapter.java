@@ -25,6 +25,7 @@ import me.geniusburger.turntracker.utilities.UnitMapping;
 
 public class StatusAdapter extends BaseAdapter {
 
+    private static final String TAG = StatusAdapter.class.getSimpleName();
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_SUB_HEADER = 1;
     private static final int TYPE_USER_ITEM = 2;
@@ -121,33 +122,38 @@ public class StatusAdapter extends BaseAdapter {
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder = null;
+        ViewHolder holder;
         int rowType = getItemViewType(position);
 
         if (convertView == null) {
             switch (rowType) {
                 case TYPE_HEADER:
-                    convertView = mInflater.inflate(R.layout.status_list_header, null);
+                    convertView = mInflater.inflate(R.layout.status_list_header, parent, false);
                     holder = new HeaderViewHolder(convertView);
                     break;
                 case TYPE_SUB_HEADER:
-                    convertView = mInflater.inflate(R.layout.status_list_sub_header, null);
+                    convertView = mInflater.inflate(R.layout.status_list_sub_header, parent, false);
                     holder = new SubHeaderViewHolder(convertView);
                     break;
                 case TYPE_USER_ITEM:
-                    convertView = mInflater.inflate(R.layout.status_list_user_item, null);
+                    convertView = mInflater.inflate(R.layout.status_list_user_item, parent, false);
                     holder = new UserItemViewHolder(convertView);
                     break;
                 case TYPE_TURN_ITEM:
-                    convertView = mInflater.inflate(R.layout.status_list_turn_item, null);
+                    convertView = mInflater.inflate(R.layout.status_list_turn_item, parent, false);
                     holder = new TurnItemViewHolder(convertView);
                     break;
+                default:
+                    throw new UnsupportedOperationException("Unsuported row type " + rowType);
             }
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
-        holder.update(this, getItem(position));
+        Object item = getItem(position);
+        if(item != null) {
+            holder.update(this, item);
+        }
 
         return convertView;
     }
