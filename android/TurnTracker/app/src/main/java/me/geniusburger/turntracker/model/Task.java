@@ -47,6 +47,10 @@ public class Task {
         this.name = task.name;
     }
 
+    public void update(JSONObject json) throws JSONException {
+        update(new Task(json));
+    }
+
     @Override
     public String toString() {
         return name;

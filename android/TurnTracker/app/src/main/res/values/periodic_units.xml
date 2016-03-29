@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="unitLabels">
+        <item>"None"</item>
+        <item>"Hours"</item>
+        <item>"Days"</item>
+        <item>"Weeks"</item>
+        <item>"Months"</item>
+        <item>"Years"</item>
+    </string-array>
+    <integer-array name="unitMultipliers">
+        <item>0</item>
+        <item>1</item>
+        <item>24</item>
+        <item>168</item>
+        <item>720</item>
+        <item>8760</item>
+    </integer-array>
+</resources>

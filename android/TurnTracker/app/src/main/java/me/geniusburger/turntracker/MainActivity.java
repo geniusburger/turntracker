@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     // UI
     TextView mUserNameTextView;
     TextView mDisplayNameTextView;
+    TextView mVersionTextView;
     FloatingActionButton fab;
 
     // Fragments
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mVersionTextView = (TextView) drawer.findViewById(R.id.versionTextView);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
@@ -118,12 +122,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onBackStackChanged() {
                 if(autoRefresh) {
                     if(mTaskFragment != null) {
-                        mTaskFragment.onRefresh();
+                        mTaskFragment.onRefresh(MainActivity.this);
                     }
                     // TODO figure out why this is throwing an exception
-//                    if(mTurnFragment != null) {
-//                        mTurnFragment.onRefresh();
-//                    }
+                    if(mTurnFragment != null) {// && !mTurnFragment.isDetached() && mTurnFragment.isAdded()) {
+                        mTurnFragment.onRefresh(MainActivity.this);
+                    }
                     autoRefresh = false;
                 }
             }
@@ -155,7 +159,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (sentToken) {
                     Toast.makeText(MainActivity.this, "Registered for GMC", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to register for GCM", Toast.LENGTH_SHORT).show();
+                    String msg ="Failed to register for GCM";
+                    String error = intent.getStringExtra(Preferences.ANDROID_REGISTRATION_COMPLETE_ERROR);
+                    if(error != null) {
+                        msg += " - " + error;
+                    }
+                    Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
                 }
             }
         };
@@ -260,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     takeTurn = false;
                     getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
                 } else {
-                    mTaskFragment.refreshData();
+                    mTaskFragment.refreshData(this);
                 }
                 break;
             default:
@@ -275,6 +284,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 new IntentFilter(Preferences.ANDROID_REGISTRATION_COMPLETE));
         mUserNameTextView.setText(prefs.getUserName());
         mDisplayNameTextView.setText(prefs.getUserDisplayName());
+        try {
+            mVersionTextView.setText("Version: " + getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Failed to get app version", e);
+        }
     }
 
     @Override
@@ -284,11 +298,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             drawer.closeDrawer(GravityCompat.START);
         } else {
             if (getFragmentManager().getBackStackEntryCount() > 0){
-                EditTaskFragment editFragment = (EditTaskFragment)getFragmentManager().findFragmentByTag(FRAGMENT_EDIT);
-                if (editFragment != null && editFragment.isVisible()) {
-                    // coming back from edit, reset fab to add icon
-                    // todo setFabIcon(R.drawable.ic_add_24dp);
-                }
                 getFragmentManager().popBackStack();
             } else if(null == mTaskFragment || !mTaskFragment.cancelRefreshData()) {
                 super.onBackPressed();
@@ -305,7 +314,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
                 getFragmentManager().popBackStack();
             }
-            mTaskFragment.refreshData();
+            mTaskFragment.refreshData(this);
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (id == R.id.nav_logout) {
@@ -334,7 +343,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, TurnFragment.newInstance(task.id, task.name, autoTurn), FRAGMENT_TURNS)
+                .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
     }

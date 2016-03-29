@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <LinearLayout
         android:orientation="horizontal"
@@ -15,7 +17,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="25dp"
+            android:layout_marginEnd="15dp"
             android:focusable="true"
             android:id="@+id/notificationImageView"
             android:contentDescription="@string/notifications_enabled_description"
@@ -23,6 +25,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
             android:focusable="true"
             android:id="@+id/reminderImageView"
             android:contentDescription="@string/reminders_enabled_description"
@@ -55,7 +58,7 @@
         android:textColor="@color/colorText"
         android:id="@+id/periodTextView"
         android:layout_below="@+id/periodLabel"
-        android:hint="2 days"
+        tools:text="2 days"
         android:layout_alignParentStart="true" />
 
     <TextView
@@ -65,7 +68,7 @@
         android:textColor="@color/colorText"
         android:id="@+id/creatorTextView"
         android:layout_below="@+id/creatorLabel"
-        android:hint="Gary"
+        tools:text="Gary"
         android:layout_alignParentEnd="true" />
 
     <LinearLayout
@@ -80,7 +83,6 @@
             android:layout_height="wrap_content"
             android:id="@+id/elapsedChronometer"
             android:textColor="@color/colorAccent"
-            android:layout_marginRight="10dp"
             android:textSize="18sp" />
 
         <Chronometer

@@ -1,6 +1,5 @@
 package me.geniusburger.turntracker;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.SystemClock;
@@ -22,9 +21,11 @@ import java.util.Map;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
+import me.geniusburger.turntracker.utilities.UnitMapping;
 
 public class StatusAdapter extends BaseAdapter {
 
+    private static final String TAG = StatusAdapter.class.getSimpleName();
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_SUB_HEADER = 1;
     private static final int TYPE_USER_ITEM = 2;
@@ -38,12 +39,14 @@ public class StatusAdapter extends BaseAdapter {
     private Task mTask;
     private Fragment mFragment;
     private Context mContext;
+    private UnitMapping mUnits;
 
     private LayoutInflater mInflater;
 
     public StatusAdapter(Fragment fragment, Task task) {
         mFragment = fragment;
         mContext = fragment.getContext();
+        mUnits = UnitMapping.getInstance(mContext);
         mTask = task;
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
@@ -119,33 +122,38 @@ public class StatusAdapter extends BaseAdapter {
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder = null;
+        ViewHolder holder;
         int rowType = getItemViewType(position);
 
         if (convertView == null) {
             switch (rowType) {
                 case TYPE_HEADER:
-                    convertView = mInflater.inflate(R.layout.status_list_header, null);
+                    convertView = mInflater.inflate(R.layout.status_list_header, parent, false);
                     holder = new HeaderViewHolder(convertView);
                     break;
                 case TYPE_SUB_HEADER:
-                    convertView = mInflater.inflate(R.layout.status_list_sub_header, null);
+                    convertView = mInflater.inflate(R.layout.status_list_sub_header, parent, false);
                     holder = new SubHeaderViewHolder(convertView);
                     break;
                 case TYPE_USER_ITEM:
-                    convertView = mInflater.inflate(R.layout.status_list_user_item, null);
+                    convertView = mInflater.inflate(R.layout.status_list_user_item, parent, false);
                     holder = new UserItemViewHolder(convertView);
                     break;
                 case TYPE_TURN_ITEM:
-                    convertView = mInflater.inflate(R.layout.status_list_turn_item, null);
+                    convertView = mInflater.inflate(R.layout.status_list_turn_item, parent, false);
                     holder = new TurnItemViewHolder(convertView);
                     break;
+                default:
+                    throw new UnsupportedOperationException("Unsuported row type " + rowType);
             }
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
-        holder.update(this, getItem(position));
+        Object item = getItem(position);
+        if(item != null) {
+            holder.update(this, item);
+        }
 
         return convertView;
     }
@@ -174,11 +182,9 @@ public class StatusAdapter extends BaseAdapter {
         public void update(StatusAdapter adapter, Object data) {
             Task task = (Task)data;
             if(task.periodicHours == 0) {
-                periodTextView.setText("Unspecified");
-            } else if(task.periodicHours % 24 == 0) {
-                periodTextView.setText(task.periodicHours / 24 + " days");
+                periodTextView.setText("-");
             } else {
-                periodTextView.setText(task.periodicHours + " hours");
+                periodTextView.setText(mUnits.getMatchingText(task.periodicHours));
             }
             notificationImageView.setImageResource(task.notification
                     ? R.drawable.ic_notifications_24dp
@@ -212,6 +218,7 @@ public class StatusAdapter extends BaseAdapter {
                 long msSinceLastTurn = new Date().getTime() - mTurns.get(0).date.getTime();
                 if(mTask.periodicHours <= 0 || (msSinceLastTurn / 3600000) < mTask.periodicHours) {
                     exceededChrono.setVisibility(View.GONE);
+                    elapsedChrono.setVisibility(View.VISIBLE);
                     elapsedChrono.setBase(SystemClock.elapsedRealtime() - msSinceLastTurn);
                     elapsedChrono.start();
                 } else {
@@ -219,9 +226,9 @@ public class StatusAdapter extends BaseAdapter {
                     elapsedChrono.setBase(SystemClock.elapsedRealtime() - (3600000 * mTask.periodicHours));
                     exceededChrono.setBase(SystemClock.elapsedRealtime() - (msSinceLastTurn - (3600000 * mTask.periodicHours)));
                     exceededChrono.setVisibility(View.VISIBLE);
+                    elapsedChrono.setVisibility(View.GONE);
                     exceededChrono.start();
                 }
-                elapsedChrono.setVisibility(View.VISIBLE);
             }
         }
 
