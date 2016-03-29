@@ -158,12 +158,14 @@ router.delete('/subscription', function(req, res, next) {
 router.get('/turns-status', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		return Promise.all([
+			index.getTasks(conn, req.query.user_id, req.query.task_id),
 			index.getTurns(conn, req.query.task_id),
 			index.getStatus(conn, req.query.task_id),
 			index.getEnums(conn, 'methods'),
 			index.getEnums(conn, 'reasons')]);
-	}).spread(function(turns, users, methods, reasons){
+	}).spread(function(tasks, turns, users, methods, reasons){
 		res.json({
+			task: tasks[0],
 			turns: turns,
 			users: users,
 			taskid: parseInt(req.query.task_id),

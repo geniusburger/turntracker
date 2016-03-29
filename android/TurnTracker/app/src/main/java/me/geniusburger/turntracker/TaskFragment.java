@@ -83,13 +83,13 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         }
 
         mTasks = new ArrayList<>();
-        mAdapter = new ArrayAdapter<>(getActivity(),
+        mAdapter = new ArrayAdapter<>(getContext(),
                 android.R.layout.simple_list_item_1,
                 android.R.id.text1, mTasks);
 
         setHasOptionsMenu(true);
 
-        refreshData();
+        refreshData(getContext());
     }
 
     @Override
@@ -102,7 +102,7 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                refreshData();
+                refreshData(getContext());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -131,7 +131,7 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         emptyView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                refreshData();
+                refreshData(getContext());
             }
         });
         mListView.setEmptyView(emptyView);
@@ -188,9 +188,9 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
         return true;
     }
 
-    public void refreshData() {
+    public void refreshData(Context context) {
         cancelRefreshData();
-        mGetTasksAsyncTask = new GetTasksAsyncTask(getActivity());
+        mGetTasksAsyncTask = new GetTasksAsyncTask(context);
         mGetTasksAsyncTask.execute();
     }
 
@@ -214,8 +214,13 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
     }
 
     @Override
+    public void onRefresh(Context context) {
+        refreshData(context);
+    }
+
+    @Override
     public void onRefresh() {
-        refreshData();
+        refreshData(getContext());
     }
 
     @Override
