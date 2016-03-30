@@ -335,9 +335,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
                 startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
                 break;
-            case R.id.nav_notify:
-                NotificationReceiver.sendNotification(this, "test notification", 1, prefs.getUserId());
-                break;
             default:
                 throw new UnsupportedOperationException("Didn't handle drawer id " + id);
         }

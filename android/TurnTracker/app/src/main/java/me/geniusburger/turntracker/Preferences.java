@@ -8,6 +8,7 @@ import me.geniusburger.turntracker.model.User;
 
 public class Preferences {
 
+    public static final String KEY_NOTIFICATION_SNOOZE = "notification.snooze";
     public static final String KEY_ANDROID_TOKEN = "android.token";
     public static final String KEY_ANDROID_TOKEN_SENT_TO_SERVER = "android.token.senttoserver";
     public static final String KEY_ANDROID_TOKEN_RETRY = "android.token.retry";
@@ -28,8 +29,10 @@ public class Preferences {
     private static final String DEFAULT_USER = "?";
 
     private SharedPreferences prefs;
+    private Context context;
 
     public Preferences(Context context) {
+        this.context = context;
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         DEFAULT_SERVER_IP = context.getString(R.string.pref_default_server_ip);
         DEFAULT_SERVER_PORT = context.getString(R.string.pref_default_server_port);
@@ -53,6 +56,10 @@ public class Preferences {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(KEY_ANDROID_TOKEN_SENT_TO_SERVER, sent);
         editor.apply();
+    }
+
+    public int getNotificationSnoozeMilliseconds() {
+        return Integer.parseInt(prefs.getString(KEY_NOTIFICATION_SNOOZE, context.getString(R.string.snoozeDurationDefault)));
     }
 
     public String getServerIP() {

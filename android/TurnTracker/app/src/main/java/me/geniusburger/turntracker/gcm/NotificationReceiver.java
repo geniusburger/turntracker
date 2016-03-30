@@ -41,7 +41,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         switch (action) {
             case ACTION_SNOOZE: // fall-through
-                snooze(context, intent.getExtras(), taskId);
+                snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds());
             case ACTION_DISMISS:
                 ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel((int) taskId);
                 break;
@@ -65,10 +65,10 @@ public class NotificationReceiver extends BroadcastReceiver {
         return PendingIntent.getBroadcast(context, 0, intent, 0);
     }
 
-    private void snooze(Context context, Bundle extras, long taskId) {
+    private void snooze(Context context, Bundle extras, long taskId, int milliseconds) {
         PendingIntent pendingIntent = createAlarmIntent(context, extras, taskId);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + (1000/*ms*/ * 60/*sec*/ * 60/*min*/ * 2/*hr*/), pendingIntent);
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + milliseconds, pendingIntent);
     }
 
     private static void cancelSnoozedNotifications(Context context, long taskId) {

@@ -213,6 +213,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToBooleanValue(findPreference(Preferences.KEY_ANDROID_TOKEN_SENT_TO_SERVER));
             bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_ANDROID_TOKEN));
             findPreference(Preferences.KEY_ANDROID_TOKEN_RETRY).setOnPreferenceClickListener(this);
+            bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_NOTIFICATION_SNOOZE));
         }
 
         @Override
