@@ -16,28 +16,16 @@
 
 package me.geniusburger.turntracker.gcm;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
-import me.geniusburger.turntracker.MainActivity;
 import me.geniusburger.turntracker.Preferences;
-import me.geniusburger.turntracker.R;
 
 public class MyGcmListenerService extends GcmListenerService {
 
     private static final String TAG = "MyGcmListenerService";
-    public static final String ACTION_DISMISS = "dismiss";
-    public static final String ACTION_SNOOZE = "snooze";
 
     /**
      * Called when message is received.
@@ -82,47 +70,8 @@ public class MyGcmListenerService extends GcmListenerService {
          * In some cases it may be useful to show a notification indicating to the user
          * that a message was received.
          */
-        sendNotification(message, taskId, userId);
+        NotificationReceiver.sendNotification(this, message, taskId, userId);
         // [END_EXCLUDE]
     }
     // [END receive_message]
-
-    /**
-     * Create and show a simple notification containing the received GCM message.
-     *
-     * @param message GCM message received.
-     */
-    private void sendNotification(String message, long taskId, long userId) {
-
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
-        intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Intent snoozeIntent = new Intent(this, NotificationReceiver.class);
-        snoozeIntent.putExtras(intent.getExtras());
-        snoozeIntent.setAction(ACTION_SNOOZE);
-        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(this, 1, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Intent dismissIntent = new Intent(this, NotificationReceiver.class);
-        dismissIntent.putExtras(intent.getExtras());
-        dismissIntent.setAction(ACTION_DISMISS);
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(this, 2, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
-                .setContentTitle(getResources().getString(R.string.app_name))
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .addAction(R.drawable.ic_notifications_paused_24dp, "Snooze", snoozePendingIntent)
-                .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
-
-        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify((int)taskId, notificationBuilder.build());
-    }
 }

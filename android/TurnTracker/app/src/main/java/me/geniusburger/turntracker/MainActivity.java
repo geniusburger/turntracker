@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
                 break;
             case R.id.nav_notify:
-                sendNotification("test notification", 1, prefs.getUserId());
+                NotificationReceiver.sendNotification(this, "test notification", 1, prefs.getUserId());
                 break;
             default:
                 throw new UnsupportedOperationException("Didn't handle drawer id " + id);
@@ -345,40 +345,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    private void sendNotification(String message, long taskId, long userId) {
-
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
-        intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Intent snoozeIntent = new Intent(this, NotificationReceiver.class);
-        snoozeIntent.putExtras(intent.getExtras());
-        snoozeIntent.setAction(MyGcmListenerService.ACTION_SNOOZE);
-        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(this, 1, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Intent dismissIntent = new Intent(this, NotificationReceiver.class);
-        dismissIntent.putExtras(intent.getExtras());
-        dismissIntent.setAction(MyGcmListenerService.ACTION_DISMISS);
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(this, 2, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
-                .setContentTitle(getResources().getString(R.string.app_name))
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .addAction(R.drawable.ic_notifications_paused_24dp, "Snooze", snoozePendingIntent)
-                .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
-
-        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify((int) taskId, notificationBuilder.build());
     }
 
     @Override
