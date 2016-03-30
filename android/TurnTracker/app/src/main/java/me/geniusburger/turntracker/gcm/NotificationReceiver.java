@@ -41,7 +41,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         switch (action) {
             case ACTION_SNOOZE: // fall-through
-                snooze(context, intent.getExtras());
+                snooze(context, intent.getExtras(), taskId);
             case ACTION_DISMISS:
                 ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel((int) taskId);
                 break;
@@ -55,18 +55,30 @@ public class NotificationReceiver extends BroadcastReceiver {
 
     }
 
-    private void snooze(Context context, Bundle extras) {
+    private static PendingIntent createAlarmIntent(Context context, Bundle extras, long taskId) {
         Intent intent = new Intent(context, NotificationReceiver.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        intent.putExtras(extras);
+        if(extras != null) {
+            intent.putExtras(extras);
+        }
+        intent.addCategory(String.valueOf(taskId));
         intent.setAction(ACTION_NOTIFY);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 3, intent, 0);
+        return PendingIntent.getBroadcast(context, 0, intent, 0);
+    }
+
+    private void snooze(Context context, Bundle extras, long taskId) {
+        PendingIntent pendingIntent = createAlarmIntent(context, extras, taskId);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 5000, pendingIntent);
-        alarmManager.cancel();
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + (1000/*ms*/ * 60/*sec*/ * 60/*min*/ * 2/*hr*/), pendingIntent);
+    }
+
+    private static void cancelSnoozedNotifications(Context context, long taskId) {
+        AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(createAlarmIntent(context, null, taskId));
     }
 
     public static void sendNotification(Context context, String message, long taskId, long userId) {
+
+        cancelSnoozedNotifications(context, taskId);
 
         Intent intent = new Intent(context, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -78,11 +90,11 @@ public class NotificationReceiver extends BroadcastReceiver {
         snoozeIntent.putExtras(intent.getExtras());
         snoozeIntent.putExtra(EXTRA_MESSAGE, message);
         snoozeIntent.setAction(ACTION_SNOOZE);
-        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 1, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         Intent dismissIntent = new Intent(context, NotificationReceiver.class);
         dismissIntent.putExtras(intent.getExtras());
         dismissIntent.setAction(ACTION_DISMISS);
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 2, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
