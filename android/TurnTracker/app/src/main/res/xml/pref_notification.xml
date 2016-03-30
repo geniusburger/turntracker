@@ -41,4 +41,12 @@
         android:title="@string/pref_title_token_retry"
         android:summary="@string/pref_summary_token_retry"/>
 
+    <ListPreference
+        android:key="notification.snooze"
+        android:title="Snooze Duration"
+        android:summary="How long to snooze notifications"
+        android:entries="@array/snoozeDurationLabels"
+        android:entryValues="@array/snoozeDurationMilliseconds"
+        android:defaultValue="@string/snoozeDurationDefault"/>
+
 </PreferenceScreen>
