@@ -4,12 +4,15 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -19,6 +22,7 @@ import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -37,6 +41,8 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import me.geniusburger.turntracker.gcm.MyGcmListenerService;
+import me.geniusburger.turntracker.gcm.NotificationReceiver;
 import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
 
@@ -310,26 +316,69 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_tasks) {
-            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
-                getFragmentManager().popBackStack();
-            }
-            mTaskFragment.refreshData(this);
-        } else if (id == R.id.nav_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-        } else if (id == R.id.nav_logout) {
-            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
-                getFragmentManager().popBackStack();
-            }
-            mTaskFragment.clear();
-            prefs.clearUser();
-            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-            startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
+        switch(id) {
+            case R.id.nav_tasks:
+                for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
+                    getFragmentManager().popBackStack();
+                }
+                mTaskFragment.refreshData(this);
+                break;
+            case R.id.nav_settings:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+            case R.id.nav_logout:
+                for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
+                    getFragmentManager().popBackStack();
+                }
+                mTaskFragment.clear();
+                prefs.clearUser();
+                ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
+                startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
+                break;
+            case R.id.nav_notify:
+                sendNotification("test notification", 1, prefs.getUserId());
+                break;
+            default:
+                throw new UnsupportedOperationException("Didn't handle drawer id " + id);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void sendNotification(String message, long taskId, long userId) {
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
+        intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent snoozeIntent = new Intent(this, NotificationReceiver.class);
+        snoozeIntent.putExtras(intent.getExtras());
+        snoozeIntent.setAction(MyGcmListenerService.ACTION_SNOOZE);
+        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(this, 1, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent dismissIntent = new Intent(this, NotificationReceiver.class);
+        dismissIntent.putExtras(intent.getExtras());
+        dismissIntent.setAction(MyGcmListenerService.ACTION_DISMISS);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(this, 2, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
+                .setContentTitle(getResources().getString(R.string.app_name))
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+                .addAction(R.drawable.ic_notifications_paused_24dp, "Snooze", snoozePendingIntent)
+                .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
+
+        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE))
+                .notify((int) taskId, notificationBuilder.build());
     }
 
     @Override
