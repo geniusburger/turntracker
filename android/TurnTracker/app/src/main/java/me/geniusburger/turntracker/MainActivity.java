@@ -4,12 +4,15 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -19,6 +22,7 @@ import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -37,6 +41,8 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import me.geniusburger.turntracker.gcm.MyGcmListenerService;
+import me.geniusburger.turntracker.gcm.NotificationReceiver;
 import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
 
@@ -310,21 +316,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_tasks) {
-            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
-                getFragmentManager().popBackStack();
-            }
-            mTaskFragment.refreshData(this);
-        } else if (id == R.id.nav_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-        } else if (id == R.id.nav_logout) {
-            for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
-                getFragmentManager().popBackStack();
-            }
-            mTaskFragment.clear();
-            prefs.clearUser();
-            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-            startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
+        switch(id) {
+            case R.id.nav_tasks:
+                for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
+                    getFragmentManager().popBackStack();
+                }
+                mTaskFragment.refreshData(this);
+                break;
+            case R.id.nav_settings:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+            case R.id.nav_logout:
+                for(int fragments = getFragmentManager().getBackStackEntryCount(); fragments > 0; fragments--) {
+                    getFragmentManager().popBackStack();
+                }
+                mTaskFragment.clear();
+                prefs.clearUser();
+                ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
+                startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
+                break;
+            default:
+                throw new UnsupportedOperationException("Didn't handle drawer id " + id);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

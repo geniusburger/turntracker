@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="snoozeDurationLabels">
+        <item>½ Hour</item>
+        <item>1 Hour</item>
+        <item>2 Hours</item>
+        <item>4 Hours</item>
+        <item>6 Hours</item>
+        <item>½ Day</item>
+        <item>1 Day</item>
+    </string-array>
+    <string-array name="snoozeDurationMilliseconds">
+        <item>1800000</item>
+        <item>3600000</item>
+        <item>7200000</item>
+        <item>14400000</item>
+        <item>21600000</item>
+        <item>43200000</item>
+        <item>86400000</item>
+    </string-array>
+    <string name="snoozeDurationDefault">7200000</string>
+</resources>
