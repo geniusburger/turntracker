@@ -15,19 +15,13 @@ public class NfcUtil {
 
     private static final String TAG = NfcUtil.class.getSimpleName();
 
-    private long autoTurnTaskId;
-
-    public long getAutoTurnTaskId() {
-        return autoTurnTaskId;
-    }
-
 //        String packageName = MainActivity.class.getPackage().getName();
 //        NdefRecord taskRecord = NdefRecord.createUri("http://geniusburger.me/task/123");
 //        NdefRecord aarRecord = NdefRecord.createApplicationRecord(packageName);
 //        NdefMessage msg = new NdefMessage( new NdefRecord[] { taskRecord, aarRecord });
 //        Log.d(TAG, "nfc length " + msg.getByteArrayLength());
 
-    public boolean readTag(Intent intent) {
+    public static void readTag(Intent intent, TagHandler handler) {
 
         //Tag tag = getIntent().getParcelableExtra(NfcAdapter.EXTRA_TAG);
         Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
@@ -60,10 +54,7 @@ public class NfcUtil {
                     Uri uri = Uri.parse(queryString);
                     for(String key : uri.getQueryParameterNames()) {
                         Log.d(TAG, key + " => " + uri.getQueryParameter(key));
-                        if("task".equals(key)) {
-                            autoTurnTaskId = Long.parseLong(uri.getQueryParameter(key));
-                            return true;
-                        }
+                        handler.processTag(key, uri.getQueryParameter(key));
                     }
                     Log.d(TAG, languageCode + ": " + queryString);
                 } catch (UnsupportedEncodingException e) {
@@ -76,7 +67,9 @@ public class NfcUtil {
                 Log.d(TAG, "unhandled record");
             }
         }
+    }
 
-        return false;
+    public interface TagHandler {
+        void processTag(String key, String value);
     }
 }

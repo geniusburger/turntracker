@@ -104,12 +104,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         autoTurnTaskId = 0;
         takeTurn = false;
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
-            NfcUtil nfc = new NfcUtil();
-            if(nfc.readTag(getIntent())) {
-                takeTurn = true;
-                autoTurnTaskId = nfc.getAutoTurnTaskId();
-                Log.d(TAG,"Read NFC tag for task id " + autoTurnTaskId);
-            }
+            NfcUtil.readTag(getIntent(), new NfcUtil.TagHandler() {
+                @Override
+                public void processTag(String key, String value) {
+                    if("task".equals(key)) {
+                        autoTurnTaskId = Long.parseLong(value);
+                        takeTurn = true;
+                    }
+                }
+            });
         } else {
             autoTurnTaskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
             takeTurn = false;
