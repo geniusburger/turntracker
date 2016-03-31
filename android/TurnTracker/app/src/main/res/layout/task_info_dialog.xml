@@ -80,7 +80,7 @@
                 android:layout_gravity="start"
                 android:paddingStart="5dp"
                 android:paddingEnd="5dp"
-                tools:text="3/27/2014"
+                tools:text="Sun Nov 08 14:40:57 PST 2015"
                 android:id="@+id/textViewCreated" />
         </TableRow>
 
@@ -103,7 +103,7 @@
                 android:layout_gravity="start"
                 android:paddingStart="5dp"
                 android:paddingEnd="5dp"
-                tools:text="7/12/2015"
+                tools:text="Mon Mar 28 22:04:37 PDF 2016"
                 android:id="@+id/textViewModified" />
         </TableRow>
     </TableLayout>
