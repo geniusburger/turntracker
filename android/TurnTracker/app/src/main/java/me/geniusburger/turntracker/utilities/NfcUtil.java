@@ -23,7 +23,6 @@ public class NfcUtil {
 
     public static void readTag(Intent intent, TagHandler handler) {
 
-        //Tag tag = getIntent().getParcelableExtra(NfcAdapter.EXTRA_TAG);
         Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
         Log.d(TAG, "msgs: " + rawMsgs.length);
         NdefMessage msg = (NdefMessage) rawMsgs[0];
@@ -34,17 +33,14 @@ public class NfcUtil {
             if(record.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
                 byte[] payload = record.getPayload();
                 String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
-
-                // Get the Language Code
                 int languageCodeLength = payload[0] & 0063;
 
                 try {
                     String languageCode = new String(payload, 1, languageCodeLength, "US-ASCII");
                     if(!"en".equals(languageCode)) {
-                        Log.d(TAG, "unsupported language code " + languageCode);
+                        Log.e(TAG, "unsupported language code " + languageCode);
                         continue;
                     }
-                    // e.g. "en"
 
                     // Get the Text
                     String queryString = new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding).trim();
@@ -56,11 +52,9 @@ public class NfcUtil {
                         Log.d(TAG, key + " => " + uri.getQueryParameter(key));
                         handler.processTag(key, uri.getQueryParameter(key));
                     }
-                    Log.d(TAG, languageCode + ": " + queryString);
                 } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Failed to read NFC tag", e);
                 }
-
             } else if(record.getTnf() == NdefRecord.TNF_EXTERNAL_TYPE) {
                 Log.d(TAG, "ext: " + new String(record.getPayload()));
             } else {
