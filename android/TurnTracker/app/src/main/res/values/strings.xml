@@ -36,6 +36,8 @@
     <string name="prompt_period">period</string>
 
     <!-- Menu -->
+    <string name="action_info">Info</string>
+    <string name="action_delete">Delete</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_settings">Settings</string>
 
@@ -50,7 +52,7 @@
     <string name="pref_title_server_port">Server Port</string>
     <string name="pref_default_server_port">3000</string>
 
-    <!-- Example settings for Notifications -->
+    <!-- Notifications -->
     <string name="pref_header_notifications">Notifications</string>
     <string name="pref_title_token_sent_to_server">Token Sent To Server</string>
     <string name="pref_title_token">Token</string>
@@ -65,4 +67,10 @@
     <string name="disable_notifications">Notifications Off</string>
     <string name="enable_reminders">Reminders On</string>
     <string name="disable_reminders">Reminders Off</string>
+    <string name="snooze_duration">Snooze Duration</string>
+    <string name="snooze_summary">How long to snooze notifications</string>
+    <string name="label_created">Created</string>
+    <string name="label_modified">Modified</string>
+    <string name="label_creator">Creator</string>
+    <string name="label_id">ID</string>
 </resources>

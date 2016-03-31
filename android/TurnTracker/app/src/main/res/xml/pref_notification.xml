@@ -43,8 +43,8 @@
 
     <ListPreference
         android:key="notification.snooze"
-        android:title="Snooze Duration"
-        android:summary="How long to snooze notifications"
+        android:title="@string/snooze_duration"
+        android:summary="@string/snooze_summary"
         android:entries="@array/snoozeDurationLabels"
         android:entryValues="@array/snoozeDurationMilliseconds"
         android:defaultValue="@string/snoozeDurationDefault"/>
