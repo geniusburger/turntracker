@@ -111,7 +111,7 @@ var getTasks = function(conn, userId, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
 			'SELECT tasks.id AS taskId, tasks.name AS taskName, tasks.periodic_hours, tasks.creator_user_id, ' +
-				'tasks.modified as taskModified, inserted as taskInserted, notifications.reason_id, ' +
+				'tasks.modified as taskModified, tasks.inserted as taskInserted, notifications.reason_id, ' +
     			'notifications.method_id, notifications.reminder, notifications.last_android_id, notifications.modified AS notificationModified, ' +
     			'(notifications.method_id IS NOT NULL) as notification ' +
 			'FROM participants ' +
