@@ -5,7 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.view.View;
 
-public class UiUtil {
+public class UiUtils {
 
     public static void showProgress(Context context, final boolean show, final View formView, final View progressView) {
         formView.setVisibility(show ? View.GONE : View.VISIBLE);
