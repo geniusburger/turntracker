@@ -1,7 +1,9 @@
 package me.geniusburger.turntracker;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -17,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -38,6 +41,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
     private ListView mListView;
     private ListAdapter mAdapter;
     private long mMyUserId;
+    private String mCreatorUserDisplayName;
     private UnitMapping mUnits;
 
     // Views
@@ -161,9 +165,35 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
                 // TODO handle delete
                 Toast.makeText(getContext(), "Delete not yet implemented", Toast.LENGTH_SHORT).show();
                 return true;
+            case R.id.action_info:
+                showInfo();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void showInfo() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        builder.setTitle(mTask.name);
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        View view = inflater.inflate(R.layout.task_info_dialog, null);
+        ((TextView)view.findViewById(R.id.textViewId)).setText(String.valueOf(mTask.id));
+        ((TextView)view.findViewById(R.id.textViewCreated)).setText(String.valueOf(mTask.created));
+        ((TextView)view.findViewById(R.id.textViewCreator)).setText(mCreatorUserDisplayName);
+        ((TextView)view.findViewById(R.id.textViewModified)).setText(String.valueOf(mTask.modified));
+
+        builder.setView(view);
+        builder.setCancelable(true);
+        builder.setPositiveButton("OK",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // do nothing, just dismiss
+                    }
+                });
+
+        builder.create().show();;
     }
 
     @Override
@@ -307,6 +337,9 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
                     User user = mUsers.get(i);
                     // set the i+1 position to compensate for the header row, which is at position 0
                     mListView.setItemChecked(i + 1, user.selected);
+                    if(user.id == mTask.creatorUserID) {
+                        mCreatorUserDisplayName = user.displayName;
+                    }
                 }
             } else {
                 Toast.makeText(getContext(), "Failed to get users", Toast.LENGTH_LONG).show();
