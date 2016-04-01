@@ -3,7 +3,10 @@ package me.geniusburger.turntracker.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Task {
+import java.text.ParseException;
+import java.util.Date;
+
+public class Task extends DateModel {
 
     public long creatorUserID;
     public int methodID;
@@ -13,8 +16,10 @@ public class Task {
     public boolean reminder;
     public long id;
     public String name;
+    public Date modified;
+    public Date created;
 
-    public Task(JSONObject json) throws JSONException {
+    public Task(JSONObject json) throws JSONException, ParseException {
         creatorUserID = json.getLong("creator_user_id");
         methodID = json.optInt("method_id", 0);
         notification = 0 != json.getInt("notification");
@@ -23,6 +28,8 @@ public class Task {
         reminder = 0 != json.optInt("reminder", 0);
         id = json.getLong("taskId");
         name = json.getString("taskName");
+        modified = inputFormat.parse(json.getString("taskModified"));
+        created = inputFormat.parse(json.getString("taskInserted"));
     }
 
     public Task(long id, String name, int periodicHours, long creatorUserID) {
@@ -45,9 +52,11 @@ public class Task {
         this.reminder = task.reminder;
         this.id = task.id;
         this.name = task.name;
+        this.created = task.created;
+        this.modified = task.modified;
     }
 
-    public void update(JSONObject json) throws JSONException {
+    public void update(JSONObject json) throws JSONException, ParseException {
         update(new Task(json));
     }
 

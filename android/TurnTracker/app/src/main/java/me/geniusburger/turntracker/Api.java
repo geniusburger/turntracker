@@ -440,7 +440,7 @@ public class Api {
                     tasks[i] = new Task(jsonTasks.getJSONObject(i));
                 }
                 return tasks;
-            } catch (JSONException e) {
+            } catch (JSONException | ParseException e) {
                 Log.e(TAG, "failed to extract tasks from JSON", e);
             }
         } else {

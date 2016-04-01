@@ -1,10 +1,15 @@
 package me.geniusburger.turntracker;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -27,11 +32,13 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
+import me.geniusburger.turntracker.nfc.TagReceiver;
 
 /**
  * A fragment representing a list of Items.
@@ -39,12 +46,12 @@ import me.geniusburger.turntracker.model.Turn;
  * Large screen devices (such as tablets) are supported by replacing the ListView with a GridView.
  * <p/>
  */
-public class TurnFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
+public class StatusFragment extends RefreshableFragment implements AbsListView.OnItemClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemLongClickListener {
 
     private static final String ARG_TASK_ID = "taskId";
     private static final String ARG_TASK_NAME = "taskName";
     private static final String ARG_AUTO_TURN = "autoTurn";
-    private static final String TAG = TurnFragment.class.getSimpleName();
+    private static final String TAG = StatusFragment.class.getSimpleName();
 
     private Calendar mTurnDate;
     private Task mTask;
@@ -53,9 +60,13 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
     private boolean mAutoTurn = false;
     private TurnFragmentInteractionListener mListener;
     private Snackbar bar;
+    private boolean mWaitingToWrite = false;
+    private boolean mOverwrite = false;
+    private byte[] lastNfcId;
 
     private AbsListView mListView;
     private SwipeRefreshLayout mSwipeLayout;
+    private AlertDialog mWaitingDialog;
 
     // Workers
     GetStatusAsyncTask mGetStatusAsyncTask;
@@ -65,9 +76,10 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
 
     // Adapter
     private StatusAdapter mStatusAdapter;
+    private NfcAdapter mNfcAdapter;
 
-    public static TurnFragment newInstance(long taskId, String taskName, boolean autoTurn) {
-        TurnFragment fragment = new TurnFragment();
+    public static StatusFragment newInstance(long taskId, String taskName, boolean autoTurn) {
+        StatusFragment fragment = new StatusFragment();
         Bundle args = new Bundle();
         args.putLong(ARG_TASK_ID, taskId);
         args.putString(ARG_TASK_NAME, taskName);
@@ -80,7 +92,7 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public TurnFragment() {
+    public StatusFragment() {
     }
 
     @Override
@@ -236,45 +248,171 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
                 refreshData(getContext());
                 return true;
             case R.id.action_pick_turn_date:
-                mTurnDate = Calendar.getInstance();
-                DatePickerDialog datePicker = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                        mTurnDate.set(Calendar.YEAR, year);
-                        mTurnDate.set(Calendar.MONTH, monthOfYear);
-                        mTurnDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                        TimePickerDialog timePicker = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
-                            @Override
-                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                                mTurnDate.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                mTurnDate.set(Calendar.MINUTE, minute);
-                                takeTurn();
-                            }
-                        }, mTurnDate.get(Calendar.HOUR_OF_DAY), mTurnDate.get(Calendar.MINUTE), false);
-                        timePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                            @Override
-                            public void onCancel(DialogInterface dialog) {
-                                mTurnDate = null;
-                            }
-                        });
-                        timePicker.show();
-                    }
-                }, mTurnDate.get(Calendar.YEAR), mTurnDate.get(Calendar.MONTH), mTurnDate.get(Calendar.DAY_OF_MONTH));
-                datePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
-                        mTurnDate = null;
-                    }
-                });
-                datePicker.show();
+                takeTurnInThePast();
                 return true;
             case R.id.action_edit_task:
                 if(mListener != null) {
                     mListener.editTask();
                 }
                 return true;
+            case R.id.action_write_nfc:
+                showNfcWaitingDialog(false);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void takeTurnInThePast() {
+        mTurnDate = Calendar.getInstance();
+        DatePickerDialog datePicker = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                mTurnDate.set(Calendar.YEAR, year);
+                mTurnDate.set(Calendar.MONTH, monthOfYear);
+                mTurnDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                TimePickerDialog timePicker = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        mTurnDate.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        mTurnDate.set(Calendar.MINUTE, minute);
+                        takeTurn();
+                    }
+                }, mTurnDate.get(Calendar.HOUR_OF_DAY), mTurnDate.get(Calendar.MINUTE), false);
+                timePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        mTurnDate = null;
+                    }
+                });
+                timePicker.show();
+            }
+        }, mTurnDate.get(Calendar.YEAR), mTurnDate.get(Calendar.MONTH), mTurnDate.get(Calendar.DAY_OF_MONTH));
+        datePicker.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                mTurnDate = null;
+            }
+        });
+        datePicker.show();
+    }
+
+    private void showNfcWaitingDialog(boolean write) {
+        mWaitingToWrite = write;
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(getContext());
+        PendingIntent pi = PendingIntent.getActivity(getContext(), 0, new Intent(getContext(), getActivity().getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+        mNfcAdapter.enableForegroundDispatch(getActivity(), pi, null, null);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setIcon(R.drawable.ic_nfc_24dp);
+        builder.setTitle(write ? "Write NFC Tag" : "Scan NFC Tag");
+        builder.setMessage(write ? "Waiting for you to re-scan the same NFC tag..." : "Waiting for you to scan an NFC tag...");
+        builder.setCancelable(false);
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mWaitingToWrite = false;
+                mOverwrite = false;
+            }
+        });
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if (mNfcAdapter != null) {
+                    mNfcAdapter.disableForegroundDispatch(getActivity());
+                    mNfcAdapter = null;
+                }
+                mWaitingDialog = null;
+            }
+        });
+        mWaitingDialog = builder.create();
+        mWaitingDialog.show();
+    }
+
+    private void showNfcOverwriteDialog(final Intent intent) {
+        mOverwrite = false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setIcon(R.drawable.ic_nfc_24dp);
+        builder.setTitle("Overwrite NFC Tag");
+        final StringBuilder sb = new StringBuilder("This NFC tag is not blank:\n");
+        TagReceiver.readTag(intent, new TagReceiver.TagHandler() {
+            @Override
+            public void processText(String key, String value) {
+                sb.append("\n").append(key).append(" - ").append(value);
+            }
+            @Override
+            public void processOther(String ext) {
+                sb.append("\n").append(ext);
+            }
+        });
+        sb.append("\n\nDo you want to overwrite it?");
+        builder.setMessage(sb.toString());
+        builder.setCancelable(false);
+        builder.setNegativeButton("No", null);
+        builder.setPositiveButton("Overwrite", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mOverwrite = true;
+                lastNfcId = TagReceiver.getTag(intent).getId();
+                showNfcWaitingDialog(true);
+            }
+        });
+        builder.create().show();
+    }
+
+    private boolean isValidTech(Tag tag) {
+        return tag.getTechList().length > 1;
+    }
+
+    private boolean isSameTag(Tag tag) {
+        return Arrays.equals(tag.getId(), lastNfcId);
+    }
+
+    private void writeNfc(Intent intent) {
+
+        Tag tag = TagReceiver.getTag(intent);
+        Log.d(TAG, tag.getId().toString());
+        Log.d(TAG, tag.getTechList().toString());
+        // todo write nfc tag
+        Bundle bundle = intent.getExtras();
+        for (String key : bundle.keySet()) {
+            Object value = bundle.get(key);
+            Log.d(TAG, String.format("%s %s (%s)", key, value.toString(), value.getClass().getName()));
+        }
+
+        TagReceiver.writeNfc(getContext(), tag, "task=" + mTask.id);
+
+        mWaitingToWrite = false;
+        mOverwrite = false;
+    }
+
+    public void onNewIntent(Intent intent) {
+        String action = intent.getAction();
+        Log.d(TAG, "onNewIntent action: " + action);
+        if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            Tag tag = TagReceiver.getTag(intent);
+            if(mWaitingDialog != null && mWaitingDialog.isShowing()) {
+                mWaitingDialog.dismiss();
+            }
+            if(mWaitingToWrite && mOverwrite) {
+                if(isSameTag(tag)) {
+                    writeNfc(intent);
+                }
+            } else {
+                if(isValidTech(tag)) {
+                    showNfcOverwriteDialog(intent);
+                }
+            }
+        } else if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)) {
+            Tag tag = TagReceiver.getTag(intent);
+            if(mWaitingDialog != null && mWaitingDialog.isShowing()) {
+                mWaitingDialog.dismiss();
+            }
+            if(isValidTech(tag)) {
+                writeNfc(intent);
+            }
+        } else {
+            Log.e(TAG, "Unexpected action received in onNewIntent");
         }
     }
 
@@ -290,6 +428,9 @@ public class TurnFragment extends RefreshableFragment implements AbsListView.OnI
             bar.dismiss();
         }
         cancelAllAsyncTasks();
+        if(mWaitingDialog != null && mWaitingDialog.isShowing()) {
+            mWaitingDialog.dismiss();
+        }
         super.onPause();
     }
 
