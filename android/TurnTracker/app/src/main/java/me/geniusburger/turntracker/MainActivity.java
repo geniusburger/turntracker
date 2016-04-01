@@ -147,9 +147,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if(savedInstanceState == null) {
                 mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
                 getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
-                autoTurnTaskId = 0;
-                takeTurn = false;
             }
+            autoTurnTaskId = 0;
+            takeTurn = false;
         }
 
         mRegistrationBroadcastReceiver = new BroadcastReceiver() {
