@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -31,11 +32,13 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
+import me.geniusburger.turntracker.nfc.TagReceiver;
 
 /**
  * A fragment representing a list of Items.
@@ -59,6 +62,7 @@ public class StatusFragment extends RefreshableFragment implements AbsListView.O
     private Snackbar bar;
     private boolean mWaitingToWrite = false;
     private boolean mOverwrite = false;
+    private byte[] lastNfcId;
 
     private AbsListView mListView;
     private SwipeRefreshLayout mSwipeLayout;
@@ -325,66 +329,86 @@ public class StatusFragment extends RefreshableFragment implements AbsListView.O
         mWaitingDialog.show();
     }
 
-    private void showNfcOverwriteDialog(Intent intent) {
+    private void showNfcOverwriteDialog(final Intent intent) {
         mOverwrite = false;
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setIcon(R.drawable.ic_nfc_24dp);
         builder.setTitle("Overwrite NFC Tag");
-        // todo include data from tag in message
-        builder.setMessage("This NFC tag is not blank, do you want to overwrite it?");
+        final StringBuilder sb = new StringBuilder("This NFC tag is not blank:\n");
+        TagReceiver.readTag(intent, new TagReceiver.TagHandler() {
+            @Override
+            public void processText(String key, String value) {
+                sb.append("\n").append(key).append(" - ").append(value);
+            }
+            @Override
+            public void processOther(String ext) {
+                sb.append("\n").append(ext);
+            }
+        });
+        sb.append("\n\nDo you want to overwrite it?");
+        builder.setMessage(sb.toString());
         builder.setCancelable(false);
         builder.setNegativeButton("No", null);
         builder.setPositiveButton("Overwrite", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mOverwrite = true;
+                lastNfcId = TagReceiver.getTag(intent).getId();
                 showNfcWaitingDialog(true);
             }
         });
         builder.create().show();
     }
 
-    private boolean isValidTech(Intent intent) {
-        return true;
+    private boolean isValidTech(Tag tag) {
+        return tag.getTechList().length > 1;
     }
 
-    private boolean isSameTag(Intent intent) {
-        return true;
+    private boolean isSameTag(Tag tag) {
+        return Arrays.equals(tag.getId(), lastNfcId);
     }
 
     private void writeNfc(Intent intent) {
-        mWaitingToWrite = false;
-        mOverwrite = false;
-        
+
+        Tag tag = TagReceiver.getTag(intent);
+        Log.d(TAG, tag.getId().toString());
+        Log.d(TAG, tag.getTechList().toString());
         // todo write nfc tag
         Bundle bundle = intent.getExtras();
         for (String key : bundle.keySet()) {
             Object value = bundle.get(key);
             Log.d(TAG, String.format("%s %s (%s)", key, value.toString(), value.getClass().getName()));
         }
+
+        TagReceiver.writeNfc(getContext(), tag, "task=" + mTask.id);
+
+        mWaitingToWrite = false;
+        mOverwrite = false;
     }
 
     public void onNewIntent(Intent intent) {
         String action = intent.getAction();
         Log.d(TAG, "onNewIntent action: " + action);
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            Tag tag = TagReceiver.getTag(intent);
             if(mWaitingDialog != null && mWaitingDialog.isShowing()) {
                 mWaitingDialog.dismiss();
             }
             if(mWaitingToWrite && mOverwrite) {
-                if(isSameTag(intent)) {
+                if(isSameTag(tag)) {
                     writeNfc(intent);
                 }
             } else {
-                if(isValidTech(intent)) {
+                if(isValidTech(tag)) {
                     showNfcOverwriteDialog(intent);
                 }
             }
         } else if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)) {
+            Tag tag = TagReceiver.getTag(intent);
             if(mWaitingDialog != null && mWaitingDialog.isShowing()) {
                 mWaitingDialog.dismiss();
             }
-            if(isValidTech(intent)) {
+            if(isValidTech(tag)) {
                 writeNfc(intent);
             }
         } else {

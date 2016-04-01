@@ -106,11 +106,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
             TagReceiver.readTag(getIntent(), new TagReceiver.TagHandler() {
                 @Override
-                public void processTag(String key, String value) {
+                public void processText(String key, String value) {
                     if ("task".equals(key)) {
                         autoTurnTaskId = Long.parseLong(value);
                         takeTurn = true;
                     }
+                }
+
+                @Override
+                public void processOther(String ext) {
+                    // do nothing
                 }
             });
         } else {
@@ -139,11 +144,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(userId <= 0) {
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
         } else {
-            autoTurnTaskId = 0;
-            takeTurn = false;
             if(savedInstanceState == null) {
                 mTaskFragment = TaskFragment.newInstance(autoTurnTaskId, takeTurn);
                 getFragmentManager().beginTransaction().add(R.id.fragment_container, mTaskFragment, FRAGMENT_TASKS).commit();
+                autoTurnTaskId = 0;
+                takeTurn = false;
             }
         }
 
