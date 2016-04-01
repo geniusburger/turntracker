@@ -73,4 +73,6 @@
     <string name="label_modified">Modified</string>
     <string name="label_creator">Creator</string>
     <string name="label_id">ID</string>
+    <string name="action_take_turn_in_past">Take Turn In Past</string>
+    <string name="write_nfc_tag">Write NFC Tag</string>
 </resources>

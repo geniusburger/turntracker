@@ -1,19 +1,23 @@
-package me.geniusburger.turntracker.utilities;
+package me.geniusburger.turntracker.nfc;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-public class NfcUtil {
+public class TagReceiver extends BroadcastReceiver {
 
-    private static final String TAG = NfcUtil.class.getSimpleName();
+    private static final String TAG = TagReceiver.class.getSimpleName();
 
 //        String packageName = MainActivity.class.getPackage().getName();
 //        NdefRecord taskRecord = NdefRecord.createUri("http://geniusburger.me/task/123");
@@ -21,9 +25,18 @@ public class NfcUtil {
 //        NdefMessage msg = new NdefMessage( new NdefRecord[] { taskRecord, aarRecord });
 //        Log.d(TAG, "nfc length " + msg.getByteArrayLength());
 
+    public static Tag getTag(Intent intent) {
+        return (Tag)intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+    }
+
     public static void readTag(Intent intent, TagHandler handler) {
 
         Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+        Bundle bundle = intent.getExtras();
+        for (String key : bundle.keySet()) {
+            Object value = bundle.get(key);
+            Log.d(TAG, String.format("%s %s (%s)", key, value.toString(), value.getClass().getName()));
+        }
         Log.d(TAG, "msgs: " + rawMsgs.length);
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
@@ -60,6 +73,16 @@ public class NfcUtil {
             } else {
                 Log.d(TAG, "unhandled record");
             }
+        }
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Log.d(TAG, "action: " + intent.getAction());
+        Bundle bundle = intent.getExtras();
+        for (String key : bundle.keySet()) {
+            Object value = bundle.get(key);
+            Log.d(TAG, String.format("%s %s (%s)", key, value.toString(), value.getClass().getName()));
         }
     }
 

@@ -31,9 +31,9 @@ import com.google.android.gms.common.GoogleApiAvailability;
 
 import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
-import me.geniusburger.turntracker.utilities.NfcUtil;
+import me.geniusburger.turntracker.nfc.TagReceiver;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, TurnFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, StatusFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
 
     public static final String EXTRA_TASK_ID = "taskId";
     public static final String EXTRA_USER_ID = "userId";
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Fragments
     TaskFragment mTaskFragment;
-    TurnFragment mTurnFragment;
+    StatusFragment mStatusFragment;
 
     // Preferences
     private Preferences prefs;
@@ -104,10 +104,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         autoTurnTaskId = 0;
         takeTurn = false;
         if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
-            NfcUtil.readTag(getIntent(), new NfcUtil.TagHandler() {
+            TagReceiver.readTag(getIntent(), new TagReceiver.TagHandler() {
                 @Override
                 public void processTag(String key, String value) {
-                    if("task".equals(key)) {
+                    if ("task".equals(key)) {
                         autoTurnTaskId = Long.parseLong(value);
                         takeTurn = true;
                     }
@@ -126,8 +126,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         mTaskFragment.onRefresh(MainActivity.this);
                     }
                     // TODO figure out why this is throwing an exception
-                    if(mTurnFragment != null) {// && !mTurnFragment.isDetached() && mTurnFragment.isAdded()) {
-                        mTurnFragment.onRefresh(MainActivity.this);
+                    if(mStatusFragment != null) {// && !mTurnFragment.isDetached() && mTurnFragment.isAdded()) {
+                        mStatusFragment.onRefresh(MainActivity.this);
                     }
                     autoRefresh = false;
                 }
@@ -175,6 +175,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onPause() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
         super.onPause();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if(mStatusFragment != null) {
+            mStatusFragment.onNewIntent(intent);
+        } else {
+            Log.e(TAG, "onNewIntent ignored");
+        }
     }
 
     /**
@@ -289,11 +298,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Replace whatever is in the fragment_container view with this fragment,
         // and add the transaction to the back stack so the user can navigate back
 
-        mTurnFragment = TurnFragment.newInstance(task.id, task.name, autoTurn);
+        mStatusFragment = StatusFragment.newInstance(task.id, task.name, autoTurn);
         getFragmentManager()
                 .beginTransaction()
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .replace(R.id.fragment_container, mTurnFragment, FRAGMENT_TURNS)
+                .replace(R.id.fragment_container, mStatusFragment, FRAGMENT_TURNS)
                 .addToBackStack(null)
                 .commit();
     }
