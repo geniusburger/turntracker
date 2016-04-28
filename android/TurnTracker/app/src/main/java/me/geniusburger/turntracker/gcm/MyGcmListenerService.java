@@ -25,7 +25,7 @@ import me.geniusburger.turntracker.Preferences;
 
 public class MyGcmListenerService extends GcmListenerService {
 
-    private static final String TAG = "MyGcmListenerService";
+    private static final String TAG = MyGcmListenerService.class.getSimpleName();
 
     /**
      * Called when message is received.
