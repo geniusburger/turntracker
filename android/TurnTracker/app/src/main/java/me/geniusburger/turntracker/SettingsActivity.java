@@ -213,13 +213,18 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToBooleanValue(findPreference(Preferences.KEY_ANDROID_TOKEN_SENT_TO_SERVER));
             bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_ANDROID_TOKEN));
             findPreference(Preferences.KEY_ANDROID_TOKEN_RETRY).setOnPreferenceClickListener(this);
+            findPreference(Preferences.KEY_ANDROID_TOKEN_REFRESH).setOnPreferenceClickListener(this);
             bindPreferenceSummaryToStringValue(findPreference(Preferences.KEY_NOTIFICATION_SNOOZE));
         }
 
         @Override
         public boolean onPreferenceClick(Preference preference) {
             Context context = preference.getContext();
-            context.startService(new Intent(context, RegistrationIntentService.class));
+            Intent intent = new Intent(context, RegistrationIntentService.class);
+            if(preference.getKey().equals(Preferences.KEY_ANDROID_TOKEN_REFRESH)) {
+                intent.putExtra(RegistrationIntentService.KEY_REFRESH_TOKEN, true);
+            }
+            context.startService(intent);
             return true;
         }
     }

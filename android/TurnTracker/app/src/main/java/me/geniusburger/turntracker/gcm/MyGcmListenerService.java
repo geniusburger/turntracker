@@ -18,10 +18,12 @@ package me.geniusburger.turntracker.gcm;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
 import me.geniusburger.turntracker.Preferences;
+import me.geniusburger.turntracker.utilities.ToastUtils;
 
 public class MyGcmListenerService extends GcmListenerService {
 
@@ -48,7 +50,9 @@ public class MyGcmListenerService extends GcmListenerService {
         long myUserId = new Preferences(getApplicationContext()).getUserId();
         if(userId != myUserId) {
             // TODO ignore other IDs for now
-            Log.w(TAG, "ignoring message for wrong user id " + userId + " instead of " + myUserId);
+            String msg = "ignoring message for wrong user id " + userId + " instead of " + myUserId;
+            Log.w(TAG, msg);
+            ToastUtils.showToastOnUiThread(this, msg, Toast.LENGTH_LONG);
             return;
         }
 
