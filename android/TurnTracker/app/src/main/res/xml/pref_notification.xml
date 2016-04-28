@@ -30,6 +30,11 @@
         android:enabled="false"
         android:defaultValue="false" />
 
+    <Preference
+        android:key="android.token.retry"
+        android:title="@string/pref_title_token_retry"
+        android:summary="@string/pref_summary_token_retry"/>
+
     <EditTextPreference
         android:key="android.token"
         android:title="@string/pref_title_token"
@@ -37,9 +42,9 @@
         android:enabled="false"/>
 
     <Preference
-        android:key="android.token.retry"
-        android:title="@string/pref_title_token_retry"
-        android:summary="@string/pref_summary_token_retry"/>
+        android:key="android.token.refresh"
+        android:title="@string/pref_title_token_refresh"
+        android:summary="@string/pref_summary_token_refresh"/>
 
     <ListPreference
         android:key="notification.snooze"

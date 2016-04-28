@@ -20,6 +20,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmPubSub;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -30,11 +31,13 @@ import java.io.IOException;
 import me.geniusburger.turntracker.Api;
 import me.geniusburger.turntracker.Preferences;
 import me.geniusburger.turntracker.R;
+import me.geniusburger.turntracker.utilities.ToastUtils;
 
 public class RegistrationIntentService extends IntentService {
 
     private static final String TAG = RegistrationIntentService.class.getSimpleName();
     private static final String[] TOPICS = {};//{"global"};
+    public static final String KEY_REFRESH_TOKEN = "RefreshToken";
 
     public RegistrationIntentService() {
         super(TAG);
@@ -50,12 +53,31 @@ public class RegistrationIntentService extends IntentService {
             // are local.
             // [START get_token]
             InstanceID instanceID = InstanceID.getInstance(this);
+            boolean refresh = intent.getBooleanExtra(KEY_REFRESH_TOKEN, false);
+            if(refresh) {
+                try {
+                    ToastUtils.showToastOnUiThread(this, "Deleting instance ID", Toast.LENGTH_SHORT);
+                    instanceID.deleteInstanceID();
+                } catch(IOException e) {
+                    String msg = "Failed to delete instance ID";
+                    Log.e(TAG, msg, e);
+                    ToastUtils.showToastOnUiThread(this, msg, Toast.LENGTH_SHORT);
+                }
+                instanceID = InstanceID.getInstance(this);
+            }
             String token = instanceID.getToken(
                     getResources().getString(R.string.SENDER_ID),
-                    GoogleCloudMessaging.INSTANCE_ID_SCOPE,
-                    null);
+                    GoogleCloudMessaging.INSTANCE_ID_SCOPE);
             // [END get_token]
             Log.i(TAG, "GCM Registration Token: " + token);
+            if(refresh) {
+                String displayToken = token;
+                if (displayToken.length() > 10) {
+                    displayToken = displayToken.substring(0, 10) + "...";
+                }
+                ToastUtils.showToastOnUiThread(this, "GCM Registration Token: " + displayToken, Toast.LENGTH_LONG);
+                prefs.setAndroidTokenSentToServer(false);
+            }
 
             prefs.setAndroidToken(token);
             sendRegistrationToServer(token, prefs);
