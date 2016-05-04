@@ -16,3 +16,5 @@ server/daemon/
 
 # Custom configuration files
 server/config.js
+gcm-master.zip
+gcm-master/
