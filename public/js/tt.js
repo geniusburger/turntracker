@@ -231,7 +231,7 @@
 
 	    self.notify = function() {
 	    	self.clearError();
-	    	return $http.post('/api/notify', {message: 'message from TT'})
+	    	return $http.post('/api/notify', {message: 'Test notification', user_id: self.me.id})
 		    	.then(function(res){
 		    		console.log('notify results', res.data);
 		    	}, function(res) {

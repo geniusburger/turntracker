@@ -524,9 +524,13 @@ var setParticipants = function(conn, taskId, userIds) {
 };
 exports.setParticipants = setParticipants;
 
-var getAndroidUsers = function(conn) {
+var getAndroidUsers = function(conn, userIds) {
 	return new Promise(function(resolve, reject){
-		conn.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', function(err, rows, fields) {
+		var fields = userIds || [];
+		if(!Array.isArray(fields)) {
+			fields = [fields];
+		}
+		conn.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', fields, function(err, rows, fields) {
 			if(err) {
 				log('ERROR failed to get android users', err);
 				reject(err);
@@ -579,6 +583,7 @@ var setAndroidTokens = function(conn, updates) {
  //          cod_office = '17389551';
  	var query = 'UPDATE users SET androidtoken = ( CASE ';
  	var fields = [];
+ 	log('updates', updates);
  	var ids = updates.map(function(up){
  		query += 'WHEN id = ? then ? ';
  		fields.push(up.userId, up.token);

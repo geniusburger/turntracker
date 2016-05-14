@@ -321,7 +321,7 @@ router.post('/turn', function(req, res, next) {
 
 router.post('/notify', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
-		return index.getAndroidUsers(conn).then(function(rows){
+		return index.getAndroidUsers(conn, req.body.user_id).then(function(rows){
 			log('users', rows);
 			if(Array.isArray(rows) && rows.length) {
 				return rows.map(function(row){
@@ -334,7 +334,7 @@ router.post('/notify', function(req, res, next) {
 		});
 	}).then(function(token){
 		return index.sendAndroidMessage({
-			message: 'Android message from TT'
+			message: req.body.message
 		}, token);
 	}).then(function(jsonResults){
 		res.json(jsonResults);

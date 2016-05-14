@@ -22,6 +22,7 @@ import android.view.MenuItem;
 
 import java.util.List;
 
+import me.geniusburger.turntracker.gcm.NotificationReceiver;
 import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 
 /**
@@ -100,6 +101,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
+            NotificationReceiver.updateNotification(preference.getContext(), 0);
             String stringValue = value.toString();
 
             if (preference instanceof ListPreference) {

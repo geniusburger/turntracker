@@ -1,6 +1,7 @@
 package me.geniusburger.turntracker.gcm;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -11,6 +12,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -103,6 +105,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                 .setContentTitle(context.getResources().getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
                 .setOngoing(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent)
@@ -112,5 +115,21 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
                 .notify((int) taskId, notificationBuilder.build());
+    }
+
+    public static void updateNotification(Context context, int id) {
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        StatusBarNotification[] notes = nm.getActiveNotifications();
+        for (StatusBarNotification wrapper : notes) {
+            Notification note = wrapper.getNotification();
+            for( int i = 0; i < note.actions.length; i++) {
+                Notification.Action action = note.actions[i];
+                Bundle extras = action.getExtras();
+                for(String key : extras.keySet()) {
+                    Object value = extras.get(key);
+                    Log.d(TAG, wrapper.getId() + " - " + key + ": " + value);
+                }
+            }
+        }
     }
 }
