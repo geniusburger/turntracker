@@ -530,7 +530,13 @@ var getAndroidUsers = function(conn, userIds) {
 		if(!Array.isArray(fields)) {
 			fields = [fields];
 		}
-		conn.query('SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL', fields, function(err, rows, fields) {
+		var query = 'SELECT id, displayname AS name, androidtoken as token FROM users WHERE androidtoken IS NOT NULL';
+		if(fields.length) {
+			query += ' AND users.id IN (';
+			query += fields.map(function(){return '?';}).join(',');
+			query += ')';
+		}
+		conn.query(query, fields, function(err, rows, fields) {
 			if(err) {
 				log('ERROR failed to get android users', err);
 				reject(err);
