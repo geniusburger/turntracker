@@ -36,6 +36,7 @@ import me.geniusburger.turntracker.nfc.TagReceiver;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, TaskFragment.OnTaskSelectedListener, StatusFragment.TurnFragmentInteractionListener, EditTaskFragment.TaskListener {
 
     public static final String EXTRA_TASK_ID = "taskId";
+    public static final String EXTRA_TEST = "test";
     public static final String EXTRA_USER_ID = "userId";
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;

@@ -32,11 +32,12 @@ public class NotificationReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Preferences prefs = new Preferences(context);
+        boolean test = intent.getBooleanExtra(MainActivity.EXTRA_TEST, false);
         long userId = prefs.getUserId();
         long taskId = intent.getLongExtra(MainActivity.EXTRA_TASK_ID, 0);
         String action = intent.getAction();
         Log.d(TAG, "received action " + action + " for task " + taskId);
-        if(taskId <= 0) {
+        if(taskId <= 0 && !test) {
             Log.e(TAG, "received intent for " + action + " missing task ID");
             return;
         }
@@ -86,32 +87,38 @@ public class NotificationReceiver extends BroadcastReceiver {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
         intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent snoozeIntent = new Intent(context, NotificationReceiver.class);
-        snoozeIntent.putExtras(intent.getExtras());
-        snoozeIntent.putExtra(EXTRA_MESSAGE, message);
-        snoozeIntent.setAction(ACTION_SNOOZE);
-        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Intent dismissIntent = new Intent(context, NotificationReceiver.class);
-        dismissIntent.putExtras(intent.getExtras());
-        dismissIntent.setAction(ACTION_DISMISS);
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher))
-                .setContentTitle(context.getResources().getString(R.string.app_name))
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setOnlyAlertOnce(true)
-                .setOngoing(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher))
+            .setContentTitle(context.getResources().getString(R.string.app_name))
+            .setContentText(message)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setSound(defaultSoundUri)
+            .setContentIntent(pendingIntent)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(message));
+
+        if(taskId > 0) {
+            Intent snoozeIntent = new Intent(context, NotificationReceiver.class);
+            snoozeIntent.putExtras(intent.getExtras());
+            snoozeIntent.putExtra(EXTRA_MESSAGE, message);
+            snoozeIntent.setAction(ACTION_SNOOZE);
+            PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            Intent dismissIntent = new Intent(context, NotificationReceiver.class);
+            dismissIntent.putExtras(intent.getExtras());
+            dismissIntent.setAction(ACTION_DISMISS);
+            PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            notificationBuilder
                 .addAction(R.drawable.ic_notifications_paused_24dp, "Snooze", snoozePendingIntent)
                 .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
+        }
 
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
                 .notify((int) taskId, notificationBuilder.build());

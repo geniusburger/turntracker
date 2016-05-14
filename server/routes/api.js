@@ -334,7 +334,8 @@ router.post('/notify', function(req, res, next) {
 		});
 	}).then(function(token){
 		return index.sendAndroidMessage({
-			message: req.body.message
+			message: req.body.message,
+			test: true
 		}, token);
 	}).then(function(jsonResults){
 		res.json(jsonResults);
