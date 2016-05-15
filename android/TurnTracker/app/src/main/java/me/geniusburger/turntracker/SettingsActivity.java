@@ -4,6 +4,7 @@ package me.geniusburger.turntracker;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -101,7 +102,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
-            NotificationReceiver.updateNotification(preference.getContext(), 0);
             String stringValue = value.toString();
 
             if (preference instanceof ListPreference) {
@@ -110,14 +110,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 int index = listPreference.findIndexOfValue(stringValue);
 
                 // Set the summary to reflect the new value.
-                preference.setSummary(
-                        index >= 0
-                                ? listPreference.getEntries()[index]
-                                : null);
+                preference.setSummary( index >= 0 ? listPreference.getEntries()[index] : null);
 
             } else if (preference instanceof RingtonePreference) {
-                // For ringtone preferences, look up the correct display value
-                // using RingtoneManager.
+                // For ringtone preferences, look up the correct display value using RingtoneManager.
                 if (TextUtils.isEmpty(stringValue)) {
                     // Empty values correspond to 'silent' (no ringtone).
                     //preference.setSummary(R.string.pref_ringtone_silent);
@@ -129,18 +125,21 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                         // Clear the summary if there was a lookup error.
                         preference.setSummary(null);
                     } else {
-                        // Set the summary to reflect the new ringtone display
-                        // name.
+                        // Set the summary to reflect the new ringtone display name.
                         String name = ringtone.getTitle(preference.getContext());
                         preference.setSummary(name);
                     }
                 }
-
             } else {
                 // For all other preferences, set the summary to the value's
                 // simple string representation.
                 preference.setSummary(stringValue);
             }
+
+            if(Preferences.KEY_NOTIFICATION_SNOOZE.equals(preference.getKey())) {
+                NotificationReceiver.updateNotifications(preference.getContext(), stringValue);
+            }
+
             return true;
         }
     };
@@ -207,7 +206,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class NotificationPreferenceFragment extends PreferenceFragment implements Preference.OnPreferenceClickListener {
+    public static class NotificationPreferenceFragment extends PreferenceFragment implements Preference.OnPreferenceClickListener, SharedPreferences.OnSharedPreferenceChangeListener {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -227,7 +226,28 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 intent.putExtra(RegistrationIntentService.KEY_REFRESH_TOKEN, true);
             }
             context.startService(intent);
+
+            PreferenceManager.getDefaultSharedPreferences(preference.getContext()).registerOnSharedPreferenceChangeListener(this);
+
             return true;
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            switch (key) {
+                case Preferences.KEY_ANDROID_TOKEN_SENT_TO_SERVER:
+                    findPreference(key).setSummary(String.valueOf(sharedPreferences.getBoolean(key, false)));
+                    break;
+                case Preferences.KEY_ANDROID_TOKEN:
+                    findPreference(key).setSummary(sharedPreferences.getString(key, ""));
+                    break;
+            }
+        }
+
+        @Override
+        public void onPause() {
+            PreferenceManager.getDefaultSharedPreferences(getContext()).unregisterOnSharedPreferenceChangeListener(this);
+            super.onPause();
         }
     }
 }

@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import java.util.Arrays;
+
 import me.geniusburger.turntracker.model.User;
 
 public class Preferences {
@@ -60,7 +62,25 @@ public class Preferences {
     }
 
     public int getNotificationSnoozeMilliseconds() {
-        return Integer.parseInt(prefs.getString(KEY_NOTIFICATION_SNOOZE, context.getString(R.string.snoozeDurationDefault)));
+        return Integer.parseInt(getKeyNotificationSnoozeMillisecondsString());
+    }
+
+    private String getKeyNotificationSnoozeMillisecondsString() {
+        return prefs.getString(KEY_NOTIFICATION_SNOOZE, context.getString(R.string.snoozeDurationDefault));
+    }
+
+    public String getNotificationSnoozeLabel(String millis) {
+        String[] allMillis = context.getResources().getStringArray(R.array.snoozeDurationMilliseconds);
+        int index = Arrays.asList(allMillis).indexOf(millis);
+        String[] allLabels = context.getResources().getStringArray(R.array.snoozeDurationLabels);
+        if(index >= 0 && index < allLabels.length) {
+            return allLabels[index];
+        }
+        return "Snooze";
+    }
+
+    public String getNotificationSnoozeLabel() {
+        return getNotificationSnoozeLabel(getKeyNotificationSnoozeMillisecondsString());
     }
 
     public String getServerIP() {
