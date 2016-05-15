@@ -173,6 +173,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (checkPlayServices()) {
             // Start IntentService to register this application with GCM.
             Intent intent = new Intent(this, RegistrationIntentService.class);
+            if(prefs.IsNewAppVersion()) {
+                // refresh the token if the app version gets bumped
+                intent.putExtra(RegistrationIntentService.KEY_REFRESH_TOKEN, true);
+            }
             startService(intent);
         }
     }
