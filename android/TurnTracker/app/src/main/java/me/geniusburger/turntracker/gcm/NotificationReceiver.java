@@ -11,6 +11,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -21,6 +22,7 @@ import me.geniusburger.turntracker.R;
 public class NotificationReceiver extends BroadcastReceiver {
 
     private static final String TAG = NotificationReceiver.class.getSimpleName();
+    private static final String TAG_REMINDER = "reminder";
 
     public static final String ACTION_DISMISS = "dismiss";
     public static final String ACTION_SNOOZE = "snooze-start";
@@ -30,11 +32,12 @@ public class NotificationReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Preferences prefs = new Preferences(context);
+        boolean test = intent.getBooleanExtra(MainActivity.EXTRA_TEST, false);
         long userId = prefs.getUserId();
         long taskId = intent.getLongExtra(MainActivity.EXTRA_TASK_ID, 0);
         String action = intent.getAction();
         Log.d(TAG, "received action " + action + " for task " + taskId);
-        if(taskId <= 0) {
+        if(taskId <= 0 && !test) {
             Log.e(TAG, "received intent for " + action + " missing task ID");
             return;
         }
@@ -77,20 +80,34 @@ public class NotificationReceiver extends BroadcastReceiver {
     }
 
     public static void sendNotification(Context context, String message, long taskId, long userId) {
+        sendNotification(context, message, taskId, userId, null);
+    }
+
+    public static void sendNotification(Context context, String message, long taskId, long userId, String snoozeLabel) {
+
+        Preferences prefs = new Preferences(context);
+        if(snoozeLabel == null) {
+            snoozeLabel = prefs.getNotificationSnoozeLabel();
+        } else {
+            snoozeLabel = prefs.getNotificationSnoozeLabel(snoozeLabel);
+        }
+        Log.d(TAG, "Building notification: '" + message + "', task: " + taskId + ", user: " + userId + ", snooze: " + snoozeLabel);
 
         cancelSnoozedNotifications(context, taskId);
 
         Intent intent = new Intent(context, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra(EXTRA_MESSAGE, message);
         intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
         intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
+
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent snoozeIntent = new Intent(context, NotificationReceiver.class);
         snoozeIntent.putExtras(intent.getExtras());
-        snoozeIntent.putExtra(EXTRA_MESSAGE, message);
         snoozeIntent.setAction(ACTION_SNOOZE);
         PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
         Intent dismissIntent = new Intent(context, NotificationReceiver.class);
         dismissIntent.putExtras(intent.getExtras());
         dismissIntent.setAction(ACTION_DISMISS);
@@ -103,14 +120,36 @@ public class NotificationReceiver extends BroadcastReceiver {
                 .setContentTitle(context.getResources().getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
-                .setOngoing(true)
+                .setOnlyAlertOnce(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent)
+                .setExtras(intent.getExtras())
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .addAction(R.drawable.ic_notifications_paused_24dp, "Snooze", snoozePendingIntent)
+                .addAction(R.drawable.ic_notifications_paused_24dp, snoozeLabel, snoozePendingIntent)
                 .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
 
+        if(taskId > 0) {
+            notificationBuilder.setOngoing(true);
+        }
+
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify((int) taskId, notificationBuilder.build());
+                .notify(TAG_REMINDER, (int) taskId, notificationBuilder.build());
+    }
+
+    public static void updateNotifications(Context context, String updatedSnoozeLabel) {
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        StatusBarNotification[] notes = nm.getActiveNotifications();
+        for (StatusBarNotification wrapper : notes) {
+            if(TAG_REMINDER.equals(wrapper.getTag())) {
+                Bundle extras = wrapper.getNotification().extras;
+                String message = extras.getString(EXTRA_MESSAGE);
+                long userId = extras.getLong(MainActivity.EXTRA_USER_ID);
+                long taskId = extras.getLong(MainActivity.EXTRA_TASK_ID);
+                if (message != null) {
+                    Log.d(TAG, "Updating notification " + wrapper.getId());
+                    sendNotification(context, message, taskId, userId, updatedSnoozeLabel);
+                }
+            }
+        }
     }
 }
