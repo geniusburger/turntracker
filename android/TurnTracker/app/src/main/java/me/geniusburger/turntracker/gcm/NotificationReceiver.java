@@ -46,7 +46,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             case ACTION_SNOOZE: // fall-through
                 snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds());
             case ACTION_DISMISS:
-                ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel((int) taskId);
+                ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(TAG_REMINDER, (int) taskId);
                 break;
             case ACTION_NOTIFY:
                 sendNotification(context, intent.getStringExtra(EXTRA_MESSAGE), taskId, userId);
@@ -80,10 +80,18 @@ public class NotificationReceiver extends BroadcastReceiver {
     }
 
     public static void sendNotification(Context context, String message, long taskId, long userId) {
-        sendNotification(context, message, taskId, userId, null);
+        sendNotification(context, message, taskId, userId, null, false);
+    }
+
+    public static void sendNotification(Context context, String message, long taskId, long userId, boolean test) {
+        sendNotification(context, message, taskId, userId, null, test);
     }
 
     public static void sendNotification(Context context, String message, long taskId, long userId, String snoozeLabel) {
+        sendNotification(context, message, taskId, userId, snoozeLabel, false);
+    }
+
+    public static void sendNotification(Context context, String message, long taskId, long userId, String snoozeLabel, boolean test) {
 
         Preferences prefs = new Preferences(context);
         if(snoozeLabel == null) {
@@ -91,7 +99,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         } else {
             snoozeLabel = prefs.getNotificationSnoozeLabel(snoozeLabel);
         }
-        Log.d(TAG, "Building notification: '" + message + "', task: " + taskId + ", user: " + userId + ", snooze: " + snoozeLabel);
+        Log.d(TAG, "Building notification: '" + message + "', task: " + taskId + ", user: " + userId + ", snooze: " + snoozeLabel + ", test: " + test);
 
         cancelSnoozedNotifications(context, taskId);
 
@@ -100,6 +108,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         intent.putExtra(EXTRA_MESSAGE, message);
         intent.putExtra(MainActivity.EXTRA_TASK_ID, taskId);
         intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
+        intent.putExtra(MainActivity.EXTRA_TEST, test);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -128,7 +137,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                 .addAction(R.drawable.ic_notifications_paused_24dp, snoozeLabel, snoozePendingIntent)
                 .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
 
-        if(taskId > 0) {
+        if(!test) {
             notificationBuilder.setOngoing(true);
         }
 
@@ -145,9 +154,10 @@ public class NotificationReceiver extends BroadcastReceiver {
                 String message = extras.getString(EXTRA_MESSAGE);
                 long userId = extras.getLong(MainActivity.EXTRA_USER_ID);
                 long taskId = extras.getLong(MainActivity.EXTRA_TASK_ID);
+                boolean test = extras.getBoolean(MainActivity.EXTRA_TEST);
                 if (message != null) {
                     Log.d(TAG, "Updating notification " + wrapper.getId());
-                    sendNotification(context, message, taskId, userId, updatedSnoozeLabel);
+                    sendNotification(context, message, taskId, userId, updatedSnoozeLabel, test);
                 }
             }
         }
