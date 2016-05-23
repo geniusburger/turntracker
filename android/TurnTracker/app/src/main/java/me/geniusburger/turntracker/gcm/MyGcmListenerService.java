@@ -42,10 +42,13 @@ public class MyGcmListenerService extends GcmListenerService {
         final String message = data.getString("message");
         final long taskId = Long.parseLong(data.getString("taskId", "0"));
         final long userId = Long.parseLong(data.getString("userId", "0"));
+        final boolean test = Boolean.parseBoolean(data.getString("test", "false"));
+
         Log.d(TAG, "From: " + from);
         Log.d(TAG, "Message: " + message);
         Log.d(TAG, "TaskId: " + taskId);
         Log.d(TAG, "UserId: " + userId);
+        Log.d(TAG, "test: " + test);
 
         long myUserId = new Preferences(getApplicationContext()).getUserId();
         if(userId != myUserId) {
@@ -74,7 +77,7 @@ public class MyGcmListenerService extends GcmListenerService {
          * In some cases it may be useful to show a notification indicating to the user
          * that a message was received.
          */
-        NotificationReceiver.sendNotification(this, message, taskId, userId);
+        NotificationReceiver.sendNotification(this, message, taskId, userId, test);
         // [END_EXCLUDE]
     }
     // [END receive_message]

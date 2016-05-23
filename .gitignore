@@ -18,3 +18,4 @@ server/daemon/
 server/config.js
 gcm-master.zip
 gcm-master/
+android/TurnTracker/app/google-services.json
