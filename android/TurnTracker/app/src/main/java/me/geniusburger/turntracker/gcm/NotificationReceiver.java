@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import me.geniusburger.turntracker.MainActivity;
 import me.geniusburger.turntracker.Preferences;
@@ -44,7 +45,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         switch (action) {
             case ACTION_SNOOZE: // fall-through
-                snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds());
+                snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds(), prefs.getNotificationSnoozeLabel());
             case ACTION_DISMISS:
                 ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(TAG_REMINDER, (int) taskId);
                 break;
@@ -68,10 +69,11 @@ public class NotificationReceiver extends BroadcastReceiver {
         return PendingIntent.getBroadcast(context, 0, intent, 0);
     }
 
-    private void snooze(Context context, Bundle extras, long taskId, int milliseconds) {
+    public static void snooze(Context context, Bundle extras, long taskId, int milliseconds, String description) {
         PendingIntent pendingIntent = createAlarmIntent(context, extras, taskId);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
         alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + milliseconds, pendingIntent);
+        Toast.makeText(context, "Snoozing " + description, Toast.LENGTH_SHORT).show();
     }
 
     private static void cancelSnoozedNotifications(Context context, long taskId) {
