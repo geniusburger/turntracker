@@ -23,12 +23,14 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
+import me.geniusburger.turntracker.gcm.NotificationReceiver;
 import me.geniusburger.turntracker.gcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.nfc.TagReceiver;
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     TextView mUserNameTextView;
     TextView mDisplayNameTextView;
     TextView mVersionTextView;
+    Button mTestNotificationButton;
     FloatingActionButton fab;
 
     // Fragments
@@ -90,6 +93,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         mVersionTextView = (TextView) drawer.findViewById(R.id.versionTextView);
+        mTestNotificationButton = (Button) drawer.findViewById(R.id.testNotificationButton);
+        mTestNotificationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NotificationReceiver.sendNotification(MainActivity.this, "Test notification", 0, getMyUserID(), null, true);
+            }
+        });
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);

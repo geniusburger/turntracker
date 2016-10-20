@@ -1,12 +1,12 @@
 package me.geniusburger.turntracker.gcm;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -124,10 +124,13 @@ public class NotificationReceiver extends BroadcastReceiver {
         dismissIntent.setAction(ACTION_DISMISS);
         PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+//        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher, );
+//        Log.d(TAG, "Bitmap size: " + bitmap.getAllocationByteCount());
+
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher))
+                //.setLargeIcon(bitmap)
                 .setContentTitle(context.getResources().getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
@@ -143,8 +146,9 @@ public class NotificationReceiver extends BroadcastReceiver {
             notificationBuilder.setOngoing(true);
         }
 
+        Notification note = notificationBuilder.build();
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify(TAG_REMINDER, (int) taskId, notificationBuilder.build());
+                .notify(TAG_REMINDER, (int) taskId, note);
     }
 
     public static void updateNotifications(Context context, String updatedSnoozeLabel) {
