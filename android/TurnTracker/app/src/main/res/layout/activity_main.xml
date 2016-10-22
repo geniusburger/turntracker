@@ -13,14 +13,25 @@
             android:layout_gravity="start" android:fitsSystemWindows="true"
             app:menu="@menu/activity_main_drawer">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/versionTextView"
+                android:orientation="vertical"
                 android:layout_marginStart="10dp"
                 android:layout_marginBottom="5dp"
-                tools:text="Version: 0.2.5"
-                android:layout_gravity="bottom"/>
+                android:layout_gravity="bottom">
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/testNotificationButton"
+                    android:text="@string/test_notification"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/versionTextView"
+                    tools:text="Version: 0.2.5"/>
+            </LinearLayout>
+
         </android.support.design.widget.NavigationView>
 
 </android.support.v4.widget.DrawerLayout>

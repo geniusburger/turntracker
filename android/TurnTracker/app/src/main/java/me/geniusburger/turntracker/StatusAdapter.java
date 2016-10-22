@@ -1,7 +1,10 @@
 package me.geniusburger.turntracker;
 
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import me.geniusburger.turntracker.gcm.NotificationReceiver;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;
@@ -228,6 +232,7 @@ public class StatusAdapter extends BaseAdapter {
                     exceededChrono.setVisibility(View.VISIBLE);
                     elapsedChrono.setVisibility(View.GONE);
                     exceededChrono.start();
+                    exceededChrono.setOnClickListener(this);
                 }
             }
         }
@@ -235,14 +240,40 @@ public class StatusAdapter extends BaseAdapter {
         @Override
         public void onClick(View v) {
             if(v.getId() == R.id.notificationImageView) {
-                if(mTask.notification) {
+                if (mTask.notification) {
                     Toast.makeText(mContext, mReasons.get(mTask.reasonID), Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(mContext, R.string.disable_notifications, Toast.LENGTH_SHORT).show();
                 }
+            } else if(v.getId() == R.id.exceededChronometer) {
+                showSnoozeDialog();
             } else {
                 Toast.makeText(mContext, mTask.reminder ? R.string.enable_reminders : R.string.disable_reminders, Toast.LENGTH_SHORT).show();
             }
+        }
+
+        private void showSnoozeDialog() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            builder.setIcon(R.drawable.ic_notifications_paused_24dp);
+            builder.setTitle("Snooze " + new Preferences(mContext).getNotificationSnoozeLabel() + "?");
+            //builder.setMessage("Snooze " + new Preferences(mContext).getNotificationSnoozeLabel());
+            builder.setPositiveButton("Snooze", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Bundle extras = new Bundle();
+                    Preferences prefs = new Preferences(mContext);
+                    long myId = prefs.getUserId();
+                    String message = (mUsers.get(0).id == myId
+                        ? "It's your turn for "
+                        : "Don't forget about ") + mTask.name;
+                    extras.putString(NotificationReceiver.EXTRA_MESSAGE, message);
+                    extras.putLong(MainActivity.EXTRA_TASK_ID, mTask.id);
+                    extras.putLong(MainActivity.EXTRA_USER_ID, myId);
+                    NotificationReceiver.snooze(mContext, extras, mTask.id, prefs.getNotificationSnoozeMilliseconds(), prefs.getNotificationSnoozeLabel());
+                }
+            });
+            builder.setNegativeButton("No", null);
+            builder.create().show();
         }
     }
 

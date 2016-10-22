@@ -1,12 +1,12 @@
 package me.geniusburger.turntracker.gcm;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import me.geniusburger.turntracker.MainActivity;
 import me.geniusburger.turntracker.Preferences;
@@ -44,7 +45,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         switch (action) {
             case ACTION_SNOOZE: // fall-through
-                snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds());
+                snooze(context, intent.getExtras(), taskId, prefs.getNotificationSnoozeMilliseconds(), prefs.getNotificationSnoozeLabel());
             case ACTION_DISMISS:
                 ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(TAG_REMINDER, (int) taskId);
                 break;
@@ -68,10 +69,11 @@ public class NotificationReceiver extends BroadcastReceiver {
         return PendingIntent.getBroadcast(context, 0, intent, 0);
     }
 
-    private void snooze(Context context, Bundle extras, long taskId, int milliseconds) {
+    public static void snooze(Context context, Bundle extras, long taskId, int milliseconds, String description) {
         PendingIntent pendingIntent = createAlarmIntent(context, extras, taskId);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
         alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + milliseconds, pendingIntent);
+        Toast.makeText(context, "Snoozing " + description, Toast.LENGTH_SHORT).show();
     }
 
     private static void cancelSnoozedNotifications(Context context, long taskId) {
@@ -122,10 +124,13 @@ public class NotificationReceiver extends BroadcastReceiver {
         dismissIntent.setAction(ACTION_DISMISS);
         PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+//        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher, );
+//        Log.d(TAG, "Bitmap size: " + bitmap.getAllocationByteCount());
+
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher))
+                //.setLargeIcon(bitmap)
                 .setContentTitle(context.getResources().getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
@@ -141,8 +146,9 @@ public class NotificationReceiver extends BroadcastReceiver {
             notificationBuilder.setOngoing(true);
         }
 
+        Notification note = notificationBuilder.build();
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify(TAG_REMINDER, (int) taskId, notificationBuilder.build());
+                .notify(TAG_REMINDER, (int) taskId, note);
     }
 
     public static void updateNotifications(Context context, String updatedSnoozeLabel) {
