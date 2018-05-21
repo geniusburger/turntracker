@@ -1,7 +1,8 @@
-package me.geniusburger.turntracker.gcm;
+package me.geniusburger.turntracker.fcm;
 
 import android.app.AlarmManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -9,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
@@ -127,6 +129,8 @@ public class NotificationReceiver extends BroadcastReceiver {
 //        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher, );
 //        Log.d(TAG, "Bitmap size: " + bitmap.getAllocationByteCount());
 
+        String chanelId = "mysinglenotificationchannel";
+
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
@@ -138,6 +142,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent)
                 .setExtras(intent.getExtras())
+                .setChannelId(chanelId)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .addAction(R.drawable.ic_notifications_paused_24dp, snoozeLabel, snoozePendingIntent)
                 .addAction(R.drawable.ic_clear_24dp, "Dismiss", dismissPendingIntent);
@@ -147,8 +152,12 @@ public class NotificationReceiver extends BroadcastReceiver {
         }
 
         Notification note = notificationBuilder.build();
-        ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE))
-                .notify(TAG_REMINDER, (int) taskId, note);
+        NotificationManager nm = ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(chanelId, "Test Channel", NotificationManager.IMPORTANCE_DEFAULT);
+            nm.createNotificationChannel(channel);
+        }
+        nm.notify(TAG_REMINDER, (int) taskId, note);
     }
 
     public static void updateNotifications(Context context, String updatedSnoozeLabel) {

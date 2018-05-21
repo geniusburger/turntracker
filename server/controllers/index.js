@@ -208,9 +208,9 @@ var sendAllPendingReminders = function(conn) {
 				message: 'Reminder: Take a turn for ' + reminder.name,
 				taskId: reminder.task_id,
 				userId: reminder.user_id
-			}, reminder.androidtoken).then(function(gcmResponse){
-				log('sent ' + gcmResponse.success + ' reminders');
-				return gcmResponse.results.map(function(result){
+			}, reminder.androidtoken).then(function(fcmResponse){
+				log('sent ' + fcmResponse.success + ' reminders');
+				return fcmResponse.results.map(function(result){
 					return { userId: reminder.user_id, token: result.registration_id};
 				}).filter(function(update){
 					return update.token;
@@ -633,17 +633,19 @@ var sendAndroidMessage = function(dataObject, token) {
 
 		// Set up the request
 		var req = https.request({
-			host: 'android.googleapis.com',
-			port: '443',
-			path: '/gcm/send',
+			hostname: 'fcm.googleapis.com',
+			port: 443,
+			path: '/fcm/send',
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 				'Content-Length': dataString.length,
-				"Authorization": "key=" + config.gcm.apiKey
+				"Authorization": "key=" + config.fcm.apiKey
 			}
 		}, function(res) {
 			res.setEncoding('utf8');
+			log('response code: ' + res.statusCode);
+			log('response headers', res.headers);
 			res.on('data', function (chunk) {
 				resolve(chunk);
 			});
@@ -651,13 +653,18 @@ var sendAndroidMessage = function(dataObject, token) {
 
 		// post the data
 		req.write(dataString);
-		req.end();
 		req.on('error', function(err){
 			log('ERROR failed to send android message', err);
 			reject(err);
 		});
+		req.end();
 	}).then(function(jsonString){
-		return JSON.parse(jsonString);
+		try{		
+			return JSON.parse(jsonString);
+		} catch(e) {
+			log('ERROR failed to parse json response: ' + jsonString);
+			throw e;
+		}
 	});
 };
 exports.sendAndroidMessage = sendAndroidMessage;

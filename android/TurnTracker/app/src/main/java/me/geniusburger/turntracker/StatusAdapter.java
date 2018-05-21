@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import me.geniusburger.turntracker.gcm.NotificationReceiver;
+import me.geniusburger.turntracker.fcm.NotificationReceiver;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.model.Turn;
 import me.geniusburger.turntracker.model.User;

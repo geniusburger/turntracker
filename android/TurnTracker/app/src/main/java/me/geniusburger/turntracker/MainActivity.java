@@ -30,8 +30,8 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
-import me.geniusburger.turntracker.gcm.NotificationReceiver;
-import me.geniusburger.turntracker.gcm.RegistrationIntentService;
+import me.geniusburger.turntracker.fcm.NotificationReceiver;
+import me.geniusburger.turntracker.fcm.RegistrationIntentService;
 import me.geniusburger.turntracker.model.Task;
 import me.geniusburger.turntracker.nfc.TagReceiver;
 

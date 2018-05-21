@@ -14,7 +14,7 @@ exports.database = {
 	}
 };
 
-exports.gcm = {
+exports.fcm = {
 	apiKey: 'apikey',
 	senderID: 'senderid'
 }
