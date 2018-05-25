@@ -261,9 +261,9 @@ router.post('/turn', function(req, res, next) {
 					var otherTokens = otherNotes.map(function(note){
 						return note.androidtoken;
 					});
-					var extractRegistrationIds = function(gcmResults, registrationIds) {
-						gcmResults.forEach(function(gcmRes){
-							if(gcmRes.registration_id) {
+					var extractRegistrationIds = function(fcmResults, registrationIds) {
+						fcmResults.forEach(function(fcmRes){
+							if(fcmRes.registration_id) {
 								registrationIds.push()
 							}
 						});
@@ -273,9 +273,9 @@ router.post('/turn', function(req, res, next) {
 							message: turnTakerUserName + ' just took a turn for ' + otherNotes[0].task + ', ' + nextTurnUser.name + ' is next',
 							taskId: req.body.task_id,
 							userId: req.body.user_id
-						}, otherTokens).then(function(gcmResponse){
-							log('sent ' + gcmResponse.success + ' out of ' + otherTokens.length + ' other notes', typeof gcmResponse, gcmResponse);
-							return gcmResponse.results.map(function(result, i){
+						}, otherTokens).then(function(fcmResponse){
+							log('sent ' + fcmResponse.success + ' out of ' + otherTokens.length + ' other notes', typeof fcmResponse, fcmResponse);
+							return fcmResponse.results.map(function(result, i){
 								return { userId: otherNotes[i].user_id, token: result.registration_id};
 							}).filter(function(update){
 								return update.token;
@@ -291,9 +291,9 @@ router.post('/turn', function(req, res, next) {
 							message: turnTakerUserName + ' just took a turn for ' + nextTurnNote.task + ', you are next',
 							taskId: req.body.task_id,
 							userId: req.body.user_id
-						}, nextTurnNote.androidtoken).then(function(gcmResponse){
-							log('sent ' + gcmResponse.success + ' out of 1 next notes');
-							return gcmResponse.results.map(function(result){
+						}, nextTurnNote.androidtoken).then(function(fcmResponse){
+							log('sent ' + fcmResponse.success + ' out of 1 next notes');
+							return fcmResponse.results.map(function(result){
 								return { userId: nextTurnUser.id, token: result.registration_id};
 							}).filter(function(update){
 								return update.token;

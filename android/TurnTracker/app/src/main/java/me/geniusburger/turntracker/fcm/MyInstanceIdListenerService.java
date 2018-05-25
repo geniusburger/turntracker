@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-package me.geniusburger.turntracker.gcm;
+package me.geniusburger.turntracker.fcm;
 
 import android.content.Intent;
+import android.util.Log;
 
-import com.google.android.gms.iid.InstanceIDListenerService;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.FirebaseInstanceIdService;
 
-public class MyInstanceIDListenerService extends InstanceIDListenerService {
+import static android.content.ContentValues.TAG;
+
+public class MyInstanceIdListenerService extends FirebaseInstanceIdService {
 
     /**
      * Called if InstanceID token is updated. This may occur if the security of
      * the previous token had been compromised. This call is initiated by the
      * InstanceID provider.
      */
-    // [START refresh_token]
     @Override
     public void onTokenRefresh() {
-        // Fetch updated Instance ID token and notify our app's server of any changes (if applicable).
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "Refreshed token: " + refreshedToken);
         Intent intent = new Intent(this, RegistrationIntentService.class);
         startService(intent);
     }
-    // [END refresh_token]
 }

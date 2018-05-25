@@ -161,13 +161,13 @@ public class StatusFragment extends RefreshableFragment implements AbsListView.O
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
+    public void onAttach(Context context) {
+        super.onAttach(context);
         try {
-            mListener = (TurnFragmentInteractionListener) activity;
+            mListener = (TurnFragmentInteractionListener) context;
             mTask = mListener.getCurrentTask();
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
+            throw new ClassCastException(context.toString()
                     + " must implement TurnFragmentInteractionListener");
         }
     }

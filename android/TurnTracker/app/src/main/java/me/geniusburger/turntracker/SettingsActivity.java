@@ -23,8 +23,8 @@ import android.view.MenuItem;
 
 import java.util.List;
 
-import me.geniusburger.turntracker.gcm.NotificationReceiver;
-import me.geniusburger.turntracker.gcm.RegistrationIntentService;
+import me.geniusburger.turntracker.fcm.NotificationReceiver;
+import me.geniusburger.turntracker.fcm.RegistrationIntentService;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
