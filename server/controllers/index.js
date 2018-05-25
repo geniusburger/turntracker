@@ -337,7 +337,7 @@ var deleteTurn = function(conn, turnId) {
 exports.deleteTurn = deleteTurn;
 
 var simpleDeletePromise = function(conn, query, params) {
-	return new Promisefunction(resolve, reject) {
+	return new Promise(function(resolve, reject) {
 		conn.query(query, params, function(err, rows, fields){
 			if(err) {
 				reject(err);
@@ -345,7 +345,7 @@ var simpleDeletePromise = function(conn, query, params) {
 				resolve();
 			}
 		});
-	};
+	});
 };
 
 var deleteTask = function(conn, taskId) {
