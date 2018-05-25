@@ -49,7 +49,7 @@ public class RegistrationIntentService extends IntentService {
             FirebaseInstanceId instanceId = FirebaseInstanceId.getInstance();
             if(refresh) {
                 try {
-                    ToastUtils.showToastOnUiThread(this, "Deleting instance ID", Toast.LENGTH_SHORT);
+                    //ToastUtils.showToastOnUiThread(this, "Deleting instance ID", Toast.LENGTH_SHORT);
                     instanceId.deleteInstanceId();
                 } catch(IOException e) {
                     ToastUtils.showToastOnUiThread(this, "Failed to delete instance ID", Toast.LENGTH_SHORT, TAG, Log::e);
@@ -57,20 +57,22 @@ public class RegistrationIntentService extends IntentService {
                 instanceId = FirebaseInstanceId.getInstance();
             }
             String token = instanceId.getToken();
+
+            if(token == null || token.length() == 0) {
+                throw new Exception("Token is blank");
+            }
+
             Log.i(TAG, "token: " + token);
             if(refresh) {
                 String displayToken = token;
-                if(displayToken == null) {
-                    displayToken = "null";
-                }
-                else if (displayToken.length() > 10) {
+                if (displayToken.length() > 10) {
                     displayToken = displayToken.substring(0, 10) + "...";
                 }
                 ToastUtils.showToastOnUiThread(this, "FCM Registration Token: " + displayToken, Toast.LENGTH_LONG);
-                prefs.setAndroidTokenSentToServer(false);
             }
 
             prefs.setAndroidToken(token);
+            prefs.setAndroidTokenSentToServer(false);
             sendRegistrationToServer(token, prefs);
 
             // Subscribe to topic channels
