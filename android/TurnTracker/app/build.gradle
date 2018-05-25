@@ -9,8 +9,8 @@ android {
         applicationId "me.geniusburger.turntracker"
         minSdkVersion 24
         targetSdkVersion 27
-        versionCode 29
-        versionName "0.3.5"
+        versionCode 30
+        versionName "0.4.0"
     }
     buildTypes {
         release {
