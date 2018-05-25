@@ -149,12 +149,12 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
+    public void onAttach(Context context) {
+        super.onAttach(context);
         try {
-            mListener = (OnTaskSelectedListener) activity;
+            mListener = (OnTaskSelectedListener) context;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
+            throw new ClassCastException(context.toString()
                     + " must implement OnTaskSelectedListener");
         }
     }
