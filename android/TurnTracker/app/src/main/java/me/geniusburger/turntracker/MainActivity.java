@@ -168,9 +168,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onReceive(Context context, Intent intent) {
                 boolean sentToken = prefs.getAndroidTokenSentToServer();
                 if (sentToken) {
-                    Toast.makeText(MainActivity.this, "Registered for GMC", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MainActivity.this, "Registered for FCM", Toast.LENGTH_SHORT).show();
                 } else {
-                    String msg ="Failed to register for GCM";
+                    String msg ="Failed to register for FCM";
                     String error = intent.getStringExtra(Preferences.ANDROID_REGISTRATION_COMPLETE_ERROR);
                     if(error != null) {
                         msg += " - " + error;
