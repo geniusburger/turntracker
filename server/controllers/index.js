@@ -323,6 +323,46 @@ var deleteTurn = function(conn, turnId) {
 };
 exports.deleteTurn = deleteTurn;
 
+var simpleDeletePromise = function(conn, query, params) {
+	return new Promisefunction(resolve, reject) {
+		conn.query(query, params, function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
+	};
+};
+
+var deleteTask = function(conn, taskId) {
+	// delete from participants where task_id = ?;
+	// delete from turns where task_id = ?;
+	// delete from notifications where task_id = ?;
+	// delete from tasks where id = ?;
+
+	return new Promise(function(resolve, reject){
+		conn.beginTransaction(function(transactionError){
+			if(transactionError) throw transactionError;
+			return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskid])
+			.then(function(){
+				return simpleDeletePromise(conn, 'delete from turns where task_id = ?', [taskId]);
+			}).then(function(){
+				return simpleDeletePromise(conn, 'delete from notifications where task_id = ?', [taskId]);
+			}).then(function(){
+				return simpleDeletePromise(conn,'delete from tasks where id = ?', [taskId]);
+			}).catch(function(err){
+				log('ERROR rolling back delete task transaction')
+				return conn.rollback(function() {
+				  throw err;
+			  });
+			});
+		});
+	});
+
+};
+exports.deleteTask = deleteTask;
+
 var saveAddress = function(conn, userId, ip, callback) {
 	return new Promise(function(resolve, reject){
 	    conn.query( 'INSERT INTO addresses SET ? ON DUPLICATE KEY UPDATE user_id = ?',
