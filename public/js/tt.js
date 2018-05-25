@@ -278,7 +278,20 @@
 		    	}, function(res){
 		    		self.handleApiError(res, 'failed to delete turn');
 		    	});
-	    };
+		};
+		
+		self.deleteTask = function() {
+			self.clearError();
+			if (confirm('Are you sure you want to delete this task?')) {
+				return $http.delete('/api/task', {params: {task_id: self.currentTask.taskId, user_id: self.me.id}})
+					.then(function(res){
+						$location.search('t', null);
+						window.location.reload();
+					}, function(res){
+						self.handleApiError(res, 'failed to delete task')
+					});
+			}
+		}
 
 	    self.getSubscriptions = function() {
 	    	self.clearError();

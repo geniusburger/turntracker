@@ -107,6 +107,19 @@ var deleteAndroidSubscriptions = function(conn, userId) {
 };
 exports.deleteAndroidSubscriptions = deleteAndroidSubscriptions;
 
+var isTaskCreator = function(conn, taskId, userId) {
+	return new Promise(function(resolve, reject){
+		conn.query('SELECT count(*) as count FROM tasks where id = ? and creator_user_id = ?', [taskId, userId], function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				resolve(rows[0].count > 0);
+			}
+		});
+	});
+};
+exports.isTaskCreator = isTaskCreator;
+
 var getTasks = function(conn, userId, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
