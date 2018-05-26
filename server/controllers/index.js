@@ -357,7 +357,7 @@ var deleteTask = function(conn, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.beginTransaction(function(transactionError){
 			if(transactionError) throw transactionError;
-			return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskid])
+			return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskId])
 			.then(function(){
 				return simpleDeletePromise(conn, 'delete from turns where task_id = ?', [taskId]);
 			}).then(function(){
