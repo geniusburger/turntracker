@@ -227,8 +227,11 @@ public class StatusAdapter extends BaseAdapter {
                     elapsedChrono.start();
                 } else {
                     elapsedChrono.stop();
-                    elapsedChrono.setBase(SystemClock.elapsedRealtime() - (3600000 * mTask.periodicHours));
-                    exceededChrono.setBase(SystemClock.elapsedRealtime() - (msSinceLastTurn - (3600000 * mTask.periodicHours)));
+                    long now = SystemClock.elapsedRealtime();
+                    long periodicMilliseconds = 3600000L * mTask.periodicHours;
+                    long exceededMilliseconds = msSinceLastTurn - periodicMilliseconds;
+                    elapsedChrono.setBase(now - periodicMilliseconds);
+                    exceededChrono.setBase(now - exceededMilliseconds);
                     exceededChrono.setVisibility(View.VISIBLE);
                     elapsedChrono.setVisibility(View.GONE);
                     exceededChrono.start();

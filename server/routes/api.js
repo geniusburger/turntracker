@@ -225,6 +225,20 @@ var createOrEditTask = function(req, res, next){
 router.put('/task', createOrEditTask);
 router.post('/task', createOrEditTask);
 
+router.delete('/task', function(req, res, next){	
+	using(db.getConnection(), function(conn){
+		log('trying to delete task', req.query);
+		return index.isTaskCreator(conn, req.query.task_id, req.query.user_id).then(function(){
+			return index.deleteTask(conn, req.query.task_id);
+		});
+	}).then(function(){
+		log('Task ' + req.query.task_id + ' deleted by user ' + req.query.user_id);
+		res.json({success: true});
+	}).catch(function(err){
+		next(new ApiError(err, 'Failed to delete task ' + req.query.task_id + ' and its relationships by user ' + req.query.user_id))
+	});
+});
+
 router.post('/turn', function(req, res, next) {
 	using(db.getConnection(), function(conn) {
 		var turnTakerUserId;

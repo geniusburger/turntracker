@@ -1,16 +1,28 @@
 // Schedule task in windows
 // SCHTASKS /CREATE /SC DAILY /TN TURNTRACKER_CRON /TR "node C:\turntracker\server\cron.js" /ST 18:00
 
-var Curl = require('node-libcurl').Curl;
-var curl = new Curl();
+var http = require('http');
 
-curl.setOpt('URL', 'http://localhost:3000/api/remind');
-curl.setOpt('PUT', 1);
-
-curl.on('end', function( statusCode, body, headers ) {
-	console.info(statusCode);
-	this.close();
+var req = http.request({
+	hostname: 'localhost',
+	port: 3000,
+	path: '/api/remind',
+	method: 'PUT',
+	headers: {
+		'Content-Length': 0,
+	}
+}, function(res) {
+	res.setEncoding('utf8');
+	console.log('response code: ' + res.statusCode);
+	console.log('response headers', res.headers);
+	res.on('data', function (chunk) {
+		console.log(chunk);
+	});
 });
- 
-curl.on('error', curl.close.bind(curl));
-curl.perform();
+
+req.write(dataString);
+req.on('error', function(err){
+	console.log('ERROR failed to put', err);
+	reject(err);
+});
+req.end();

@@ -107,6 +107,23 @@ var deleteAndroidSubscriptions = function(conn, userId) {
 };
 exports.deleteAndroidSubscriptions = deleteAndroidSubscriptions;
 
+var isTaskCreator = function(conn, taskId, userId) {
+	return new Promise(function(resolve, reject){
+		conn.query('SELECT count(*) as count FROM tasks where id = ? and creator_user_id = ?', [taskId, userId], function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				if(rows[0].count > 0) {
+					resolve();
+				} else {
+					reject('You must be the creator of the task to delete it.');
+				}
+			}
+		});
+	});
+};
+exports.isTaskCreator = isTaskCreator;
+
 var getTasks = function(conn, userId, taskId) {
 	return new Promise(function(resolve, reject){
 		conn.query(
@@ -322,6 +339,55 @@ var deleteTurn = function(conn, turnId) {
 	});
 };
 exports.deleteTurn = deleteTurn;
+
+var simpleDeletePromise = function(conn, query, params) {
+	return new Promise(function(resolve, reject) {
+		conn.query(query, params, function(err, rows, fields){
+			if(err) {
+				reject(err);
+			} else {
+				log('done with query');
+				resolve();
+			}
+		});
+	});
+};
+
+var deleteTask = function(conn, taskId) {
+	return new Promise(function(resolve, reject){
+		conn.beginTransaction(function(transactionError){
+			if(transactionError) throw transactionError;
+			return simpleDeletePromise(conn, 'delete from turns where task_id = ?', [taskId])
+			.then(function(){
+				return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskId]);
+			}).then(function(){
+				return simpleDeletePromise(conn, 'delete from notifications where task_id = ?', [taskId]);
+			}).then(function(){
+				return simpleDeletePromise(conn,'delete from tasks where id = ?', [taskId]);
+			}).then(function(){
+				return new Promise(function(innerResolve, innerReject){
+					conn.commit(function(err) {
+						if (err) {
+							conn.rollback(function() {
+								innerReject(err);
+							});
+						} else {
+							innerResolve();
+						}
+					});
+				});
+			}).then(function(){
+				resolve();
+			}).catch(function(err){
+				log('ERROR rolling back delete task transaction')
+				conn.rollback(function() {
+				  reject(err);
+			  });
+			});
+		});
+	});
+};
+exports.deleteTask = deleteTask;
 
 var saveAddress = function(conn, userId, ip, callback) {
 	return new Promise(function(resolve, reject){

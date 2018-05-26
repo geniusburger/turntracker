@@ -142,12 +142,7 @@ public class StatusFragment extends RefreshableFragment implements AbsListView.O
         entry.setDuration(300);
         mListView.setLayoutAnimation(new LayoutAnimationController(entry, 0.1f));
         View emptyView = view.findViewById(android.R.id.empty);
-        emptyView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                refreshData(v.getContext());
-            }
-        });
+        emptyView.setOnClickListener(v -> refreshData(v.getContext()));
         mListView.setEmptyView(emptyView);
         mListView.setOnItemClickListener(this);
         mListView.setOnItemLongClickListener(this);
