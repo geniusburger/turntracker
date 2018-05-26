@@ -6,6 +6,9 @@ function ApiError(err, message, data) {
 	this.errorMessage = err.message;
 	this.message = message;
 	this.data = data;
+	if(this.errorMessage === undefined) {
+		this.errorMessage = err;
+	}
 
 	this.getDevResponse = function() {
 		var res = self.data || {};

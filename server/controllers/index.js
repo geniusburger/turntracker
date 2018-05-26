@@ -113,7 +113,11 @@ var isTaskCreator = function(conn, taskId, userId) {
 			if(err) {
 				reject(err);
 			} else {
-				resolve(rows[0].count > 0);
+				if(rows[0].count > 0) {
+					resolve();
+				} else {
+					reject('You must be the creator of the task to delete it.');
+				}
 			}
 		});
 	});
@@ -342,6 +346,7 @@ var simpleDeletePromise = function(conn, query, params) {
 			if(err) {
 				reject(err);
 			} else {
+				log('done with query');
 				resolve();
 			}
 		});
@@ -349,39 +354,38 @@ var simpleDeletePromise = function(conn, query, params) {
 };
 
 var deleteTask = function(conn, taskId) {
-	// delete from participants where task_id = ?;
-	// delete from turns where task_id = ?;
-	// delete from notifications where task_id = ?;
-	// delete from tasks where id = ?;
-
 	return new Promise(function(resolve, reject){
 		conn.beginTransaction(function(transactionError){
 			if(transactionError) throw transactionError;
-			return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskId])
+			return simpleDeletePromise(conn, 'delete from turns where task_id = ?', [taskId])
 			.then(function(){
-				return simpleDeletePromise(conn, 'delete from turns where task_id = ?', [taskId]);
+				return simpleDeletePromise(conn, 'delete from participants where task_id = ?', [taskId]);
 			}).then(function(){
 				return simpleDeletePromise(conn, 'delete from notifications where task_id = ?', [taskId]);
 			}).then(function(){
 				return simpleDeletePromise(conn,'delete from tasks where id = ?', [taskId]);
 			}).then(function(){
-				return conn.commit(function(err) {
-					if (err) {
-						return conn.rollback(function() {
-							throw err;
-						});
-					}
-					resolve();
+				return new Promise(function(innerResolve, innerReject){
+					conn.commit(function(err) {
+						if (err) {
+							conn.rollback(function() {
+								innerReject(err);
+							});
+						} else {
+							innerResolve();
+						}
+					});
 				});
+			}).then(function(){
+				resolve();
 			}).catch(function(err){
 				log('ERROR rolling back delete task transaction')
-				return conn.rollback(function() {
-				  throw err;
+				conn.rollback(function() {
+				  reject(err);
 			  });
 			});
 		});
 	});
-
 };
 exports.deleteTask = deleteTask;
 
