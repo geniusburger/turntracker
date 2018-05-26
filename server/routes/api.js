@@ -228,7 +228,7 @@ router.post('/task', createOrEditTask);
 router.delete('/task', function(req, res, next){	
 	using(db.getConnection(), function(conn){
 		return new Promise(function(resolve, reject){
-			if(index.isTaskCreator(conn, req.query.task_id, req.query.user_id)) {
+			if(!index.isTaskCreator(conn, req.query.task_id, req.query.user_id)) {
 				reject('Not the task creator');
 			} else {
 				return index.deleteTask(conn, req.query.task_id);
