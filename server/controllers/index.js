@@ -364,6 +364,15 @@ var deleteTask = function(conn, taskId) {
 				return simpleDeletePromise(conn, 'delete from notifications where task_id = ?', [taskId]);
 			}).then(function(){
 				return simpleDeletePromise(conn,'delete from tasks where id = ?', [taskId]);
+			}).then(function(){
+				return conn.commit(function(err) {
+					if (err) {
+						return conn.rollback(function() {
+							throw err;
+						});
+					}
+					resolve();
+				});
 			}).catch(function(err){
 				log('ERROR rolling back delete task transaction')
 				return conn.rollback(function() {
