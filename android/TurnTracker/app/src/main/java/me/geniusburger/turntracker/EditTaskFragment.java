@@ -187,10 +187,8 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
         builder.setView(view);
         builder.setCancelable(true);
         builder.setPositiveButton("OK",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // do nothing, just dismiss
-                    }
+                (dialog, id) -> {
+                    // do nothing, just dismiss
                 });
 
         builder.create().show();;

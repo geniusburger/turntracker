@@ -38,7 +38,7 @@ public class StatusAdapter extends BaseAdapter {
 
     private List<User> mUsers = new ArrayList<>();
     private List<Turn> mTurns = new ArrayList<>();
-    private Map<Integer, String> mReasons = new HashMap();
+    private Map<Integer, String> mReasons = new HashMap<>();
     private Map<Integer, String> mMethods = new HashMap<>();
     private Task mTask;
     private Fragment mFragment;
@@ -175,12 +175,12 @@ public class StatusAdapter extends BaseAdapter {
         public Chronometer exceededChrono;
 
         public HeaderViewHolder(View convertView) {
-            periodTextView = (TextView) convertView.findViewById(R.id.periodTextView);
-            creatorTextView = (TextView) convertView.findViewById(R.id.creatorTextView);
-            notificationImageView = (ImageView) convertView.findViewById(R.id.notificationImageView);
-            reminderImageView = (ImageView) convertView.findViewById(R.id.reminderImageView);
-            elapsedChrono = (Chronometer) convertView.findViewById(R.id.elapsedChronometer);
-            exceededChrono = (Chronometer) convertView.findViewById(R.id.exceededChronometer);
+            periodTextView = convertView.findViewById(R.id.periodTextView);
+            creatorTextView = convertView.findViewById(R.id.creatorTextView);
+            notificationImageView = convertView.findViewById(R.id.notificationImageView);
+            reminderImageView = convertView.findViewById(R.id.reminderImageView);
+            elapsedChrono = convertView.findViewById(R.id.elapsedChronometer);
+            exceededChrono = convertView.findViewById(R.id.exceededChronometer);
         }
 
         public void update(StatusAdapter adapter, Object data) {
@@ -259,7 +259,6 @@ public class StatusAdapter extends BaseAdapter {
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
             builder.setIcon(R.drawable.ic_notifications_paused_24dp);
             builder.setTitle("Snooze " + new Preferences(mContext).getNotificationSnoozeLabel() + "?");
-            //builder.setMessage("Snooze " + new Preferences(mContext).getNotificationSnoozeLabel());
             builder.setPositiveButton("Snooze", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -284,7 +283,7 @@ public class StatusAdapter extends BaseAdapter {
         public TextView subHeaderTextView;
 
         public SubHeaderViewHolder(View convertView) {
-            subHeaderTextView = (TextView) convertView.findViewById(R.id.subHeaderTextView);
+            subHeaderTextView = convertView.findViewById(R.id.subHeaderTextView);
         }
 
         public void update(StatusAdapter adapter, Object data) {
@@ -299,8 +298,8 @@ public class StatusAdapter extends BaseAdapter {
 
         public UserItemViewHolder(View convertView) {
             root = convertView;
-            nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
-            turnsTextView = (TextView) convertView.findViewById(R.id.turnsTextView);
+            nameTextView = convertView.findViewById(R.id.nameTextView);
+            turnsTextView = convertView.findViewById(R.id.turnsTextView);
         }
 
         public void update(StatusAdapter adapter, Object data) {
@@ -312,7 +311,6 @@ public class StatusAdapter extends BaseAdapter {
                 nameTextView.setTextColor(adapter.mContext.getColor(R.color.colorAccentText));
             } else {
                 root.setBackground(null);
-                //root.setBackgroundColor(adapter.mContext.getColor(android.R.color.transparent));
                 nameTextView.setTextColor(adapter.mContext.getColor(R.color.colorText));
             }
         }
@@ -325,9 +323,9 @@ public class StatusAdapter extends BaseAdapter {
         public Turn turn;
 
         public TurnItemViewHolder(View convertView) {
-            nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
-            dateTextView = (TextView) convertView.findViewById(R.id.dateTextView);
-            preDateIndicator = (ImageView) convertView.findViewById(R.id.preDateIndicator);
+            nameTextView = convertView.findViewById(R.id.nameTextView);
+            dateTextView = convertView.findViewById(R.id.dateTextView);
+            preDateIndicator = convertView.findViewById(R.id.preDateIndicator);
             preDateIndicator.setOnClickListener(this);
         }
 
