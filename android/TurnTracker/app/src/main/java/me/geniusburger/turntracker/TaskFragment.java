@@ -121,19 +121,14 @@ public class TaskFragment extends RefreshableFragment implements AbsListView.OnI
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_task, container, false);
 
-        mSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe);
+        mSwipeLayout = view.findViewById(R.id.swipe);
         mSwipeLayout.setOnRefreshListener(this);
 
         // Set the adapter
-        mListView = (AbsListView) view.findViewById(android.R.id.list);
+        mListView = view.findViewById(android.R.id.list);
         mListView.setAdapter(mAdapter);
         View emptyView = view.findViewById(android.R.id.empty);
-        emptyView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                refreshData(getContext());
-            }
-        });
+        emptyView.setOnClickListener(v -> refreshData(getContext()));
         mListView.setEmptyView(emptyView);
 
         // Set OnItemClickListener so we can be notified on item clicks

@@ -20,7 +20,6 @@ var req = http.request({
 	});
 });
 
-req.write(dataString);
 req.on('error', function(err){
 	console.log('ERROR failed to put', err);
 	reject(err);
