@@ -102,18 +102,18 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_edit_task, container, false);
 
-        mSwipeLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe);
+        mSwipeLayout = view.findViewById(R.id.swipe);
         mSwipeLayout.setOnRefreshListener(this);
 
-        mListView = (ListView) view.findViewById(android.R.id.list);
+        mListView = view.findViewById(android.R.id.list);
         mListView.setAdapter(mAdapter);
 
         View header = inflater.inflate(R.layout.fragment_edit_task_header, mListView, false);
         mListView.addHeaderView(header, null, false);
         mListView.setHeaderDividersEnabled(true);
-        mNameEditText = (EditText) header.findViewById(R.id.nameEditText);
-        mPeriodEditText = (EditText) header.findViewById(R.id.periodEditText);
-        mSpinner = (Spinner) header.findViewById(R.id.unitSpinner);
+        mNameEditText = header.findViewById(R.id.nameEditText);
+        mPeriodEditText = header.findViewById(R.id.periodEditText);
+        mSpinner = header.findViewById(R.id.unitSpinner);
 
         ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(getContext(),
                 android.R.layout.simple_spinner_item, mUnits.getLabels());
@@ -337,7 +337,7 @@ public class EditTaskFragment extends RefreshableFragment implements SwipeRefres
                     User user = mUsers.get(i);
                     // set the i+1 position to compensate for the header row, which is at position 0
                     mListView.setItemChecked(i + 1, user.selected);
-                    if(user.id == mTask.creatorUserID) {
+                    if(mEdit && user.id == mTask.creatorUserID) {
                         mCreatorUserDisplayName = user.displayName;
                     }
                 }
