@@ -42,10 +42,8 @@
 
         <receiver android:name=".nfc.TagReceiver" android:enabled="true" android:exported="true">
             <intent-filter>
-                <!-- used for reading the "autoturn" tags -->
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <!--<data android:mimeType="text/plain" />-->
                 <data android:mimeType="*/*" />
             </intent-filter>
             <intent-filter>
@@ -57,20 +55,16 @@
             </intent-filter>
         </receiver>
 
-        <!-- [START firebase_service] -->
         <service android:name=".fcm.MyFcmListenerService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <!-- [END firebase_service] -->
-        <!-- [START firebase_iid_service] -->
         <service android:name=".fcm.MyInstanceIdListenerService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>
         </service>
-        <!-- [END firebase_iid_service] -->
 
         <service android:name=".fcm.RegistrationIntentService" android:exported="false">
         </service>
