@@ -21,6 +21,7 @@ import android.widget.Toast;
 import me.geniusburger.turntracker.MainActivity;
 import me.geniusburger.turntracker.Preferences;
 import me.geniusburger.turntracker.R;
+import me.geniusburger.turntracker.utilities.ToastUtils;
 
 public class NotificationReceiver extends BroadcastReceiver {
 
@@ -41,7 +42,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         Log.d(TAG, "received action " + action + " for task " + taskId);
         if(taskId <= 0 && !test) {
-            Log.e(TAG, "received intent for " + action + " missing task ID");
+            ToastUtils.showToastOnUiThread(context, "received intent for " + action + " missing task ID", Toast.LENGTH_LONG, TAG, Log::e);
             return;
         }
 
@@ -114,27 +115,23 @@ public class NotificationReceiver extends BroadcastReceiver {
         intent.putExtra(MainActivity.EXTRA_USER_ID, userId);
         intent.putExtra(MainActivity.EXTRA_TEST, test);
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, (int) taskId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent snoozeIntent = new Intent(context, NotificationReceiver.class);
         snoozeIntent.putExtras(intent.getExtras());
         snoozeIntent.setAction(ACTION_SNOOZE);
-        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context, (int) taskId, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent dismissIntent = new Intent(context, NotificationReceiver.class);
         dismissIntent.putExtras(intent.getExtras());
         dismissIntent.setAction(ACTION_DISMISS);
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 0, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-//        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher, );
-//        Log.d(TAG, "Bitmap size: " + bitmap.getAllocationByteCount());
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, (int) taskId, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         String chanelId = "mysinglenotificationchannel";
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
-                //.setLargeIcon(bitmap)
                 .setContentTitle(context.getResources().getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
